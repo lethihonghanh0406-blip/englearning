@@ -74,7 +74,7 @@ export default async function toeicListening(app) {
     if (needOptions.length) {
       const { data: qs } = await supabase
         .from('questions')
-        .select('group_id, question, option_a, option_b, option_c, option_d')
+        .select('group_id, question, question_vi, option_a, option_b, option_c, option_d, option_a_vi, option_b_vi, option_c_vi, option_d_vi')
         .in('group_id', needOptions.map(g => g.id))
         .order('question_number')
       for (const q of (qs || [])) {
@@ -88,16 +88,25 @@ export default async function toeicListening(app) {
       const pasSentences = (g.passage_a || '').split('\n')
         .map(s => stripSpeaker(s.trim()))
         .filter(Boolean)
-      if (pasSentences.length) return { ...g, sentences: pasSentences }
+      if (pasSentences.length) {
+        const viSentences = (g.passage_a_vi || '').split('\n').map(s => s.trim()).filter(Boolean)
+        return { ...g, sentences: pasSentences, viSentences }
+      }
 
       // Fallback for Part 1 & 2 without passage_a: use question options
       const gqs = qByGroup[g.id] || []
       const sentences = []
+      const viSentences = []
       for (const q of gqs) {
-        if (g.part === 2 && q.question) sentences.push(q.question)
-        ;[q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean).forEach(s => sentences.push(s))
+        if (g.part === 2 && q.question) {
+          sentences.push(q.question)
+          viSentences.push(q.question_vi || '')
+        }
+        const opts   = [q.option_a,    q.option_b,    q.option_c,    q.option_d   ]
+        const optsVI = [q.option_a_vi, q.option_b_vi, q.option_c_vi, q.option_d_vi]
+        opts.forEach((s, i) => { if (s) { sentences.push(s); viSentences.push(optsVI[i] || '') } })
       }
-      return { ...g, sentences }
+      return { ...g, sentences, viSentences }
     }).filter(g => g.sentences.length)
 
     selGroupId  = groups[0]?.id ?? null
@@ -234,8 +243,8 @@ export default async function toeicListening(app) {
 
   // ── Nghe Full ─────────────────────────────────────────────────────────────
   function renderFull(g, sentences, sentence) {
-    const viLines = (g.passage_a_vi||'').split('\n').map(s=>s.trim()).filter(Boolean)
-    const hasVI   = viLines.length > 0
+    const viLines = g.viSentences || []
+    const hasVI   = viLines.some(Boolean)
     return `
       <div style="max-width:700px;margin:auto;padding:28px 24px">
 
