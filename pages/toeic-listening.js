@@ -173,7 +173,7 @@ export default async function toeicListening(app) {
           <div style="display:flex;gap:5px;flex-wrap:wrap">
             ${testsForYear.map(t => `
               <button onclick="listenTest('${t.id}')"
-                style="padding:4px 11px;border-radius:14px;border:none;cursor:pointer;font-size:12px;font-weight:${t.id===selTestId?600:400};background:${t.id===selTestId?'#0f172a':'#f1f5f9'};color:${t.id===selTestId?'white':'#64748b'}">
+                style="padding:4px 11px;border-radius:14px;border:none;cursor:pointer;font-size:12px;font-weight:${t.id===selTestId?600:400};background:${t.id===selTestId?'#2563eb':'#f1f5f9'};color:${t.id===selTestId?'white':'#64748b'}">
                 Test ${t.test_number}
               </button>`).join('')}
           </div>
@@ -321,7 +321,7 @@ export default async function toeicListening(app) {
             <div style="display:flex;gap:4px">
               ${[0.3,0.5,1.0].map(s=>`
                 <button onclick="listenSpeed(${s})"
-                  style="padding:5px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:${speed===s?'#1d4ed8':'#f1f5f9'};color:${speed===s?'white':'#64748b'}">
+                  style="padding:5px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:${speed===s?'#2563eb':'#f1f5f9'};color:${speed===s?'white':'#64748b'}">
                   ${s===1?'100%':s===0.5?'50%':'30%'}
                 </button>`).join('')}
             </div>
@@ -394,7 +394,7 @@ export default async function toeicListening(app) {
           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
           oninput="listenWordType(${wordIdx},this.value)"
           onkeydown="listenWordKey(event,${wordIdx})"
-          style="width:${w}px;border:none;border-bottom:2px solid #2563eb;outline:none;font-size:15px;text-align:center;background:transparent;color:#1d4ed8;font-family:inherit;padding:2px 0"
+          style="width:${w}px;border:none;border-bottom:2px solid #2563eb;outline:none;font-size:15px;text-align:center;background:transparent;color:#2563eb;font-family:inherit;padding:2px 0"
         />${punct?`<span style="font-size:16px;color:#374151">${escapeHtml(punct)}</span>`:''}</span>`
       }
       return `<span onclick="listenActivateHidden(${hiddenPos})"
@@ -411,7 +411,7 @@ export default async function toeicListening(app) {
               <span style="font-size:12px;color:#64748b">Ẩn từ:</span>
               ${[30,50,100].map(p=>`
                 <button onclick="listenHidePercent(${p})"
-                  style="padding:4px 10px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:${hidePercent===p?'#1d4ed8':'#f1f5f9'};color:${hidePercent===p?'white':'#64748b'}">
+                  style="padding:4px 10px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:${hidePercent===p?'#2563eb':'#f1f5f9'};color:${hidePercent===p?'white':'#64748b'}">
                   ${p}%
                 </button>`).join('')}
             </div>
@@ -419,7 +419,7 @@ export default async function toeicListening(app) {
               <span style="font-size:12px;color:#94a3b8">Câu ${sentenceIdx+1}/${sentences.length}</span>
               ${[0.5,1.0].map(s=>`
                 <button onclick="listenSpeed(${s})"
-                  style="padding:4px 10px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:${speed===s?'#1d4ed8':'#f1f5f9'};color:${speed===s?'white':'#64748b'}">
+                  style="padding:4px 10px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:${speed===s?'#2563eb':'#f1f5f9'};color:${speed===s?'white':'#64748b'}">
                   ${s===1?'1x':'0.5x'}
                 </button>`).join('')}
             </div>
