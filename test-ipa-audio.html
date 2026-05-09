@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IPA Audio Verification</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: sans-serif; padding: 24px; background: #f8fafc; margin: 0; }
+  h2 { color: #1e293b; margin-bottom: 4px; }
+  p { color: #475569; font-size: 14px; margin-top: 4px; margin-bottom: 24px; }
+  .group { margin-bottom: 28px; }
+  .group-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    min-width: 100px;
+    text-align: center;
+    transition: border-color .15s;
+  }
+  .card.playing { border-color: #2563eb; }
+  .card.ok      { border-color: #16a34a; background: #f0fdf4; }
+  .card.wrong   { border-color: #dc2626; background: #fef2f2; }
+  .card.missing { border-color: #f97316; background: #fff7ed; opacity: .7; }
+
+  .card .sym  { font-size: 26px; font-weight: 700; color: #0f172a; cursor: pointer; }
+  .card .sym:hover { opacity: 0.7; }
+  .card .name { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .card .word { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+
+  .btns { display: flex; gap: 6px; justify-content: center; }
+  .btn-ok    { flex: 1; padding: 4px; border: none; border-radius: 6px; background: #dcfce7; color: #16a34a; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-wrong { flex: 1; padding: 4px; border: none; border-radius: 6px; background: #fee2e2; color: #dc2626; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-ok:hover    { background: #bbf7d0; }
+  .btn-wrong:hover { background: #fecaca; }
+
+  .wrong-input { margin-top: 6px; }
+  .wrong-input input {
+    width: 100%;
+    border: 1px solid #fca5a5;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 13px;
+    text-align: center;
+    outline: none;
+  }
+  .wrong-input input:focus { border-color: #dc2626; }
+
+  #summary {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #1e293b; color: white;
+    padding: 12px 24px;
+    font-size: 13px;
+    display: none;
+  }
+  #summary b { color: #fbbf24; }
+  #summary .entry { margin-right: 16px; display: inline-block; }
+  #summary .entry span { color: #f87171; font-family: monospace; }
+</style>
+</head>
+<body>
+<h2>IPA Audio Verification</h2>
+<p>Click ký hiệu để nghe · ✓ đúng · ✗ sai (điền âm nghe thấy)</p>
+
+<script>
+const BASE = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/ipa-audio'
+
+const SOUNDS = [
+  // Nguyên âm ngắn
+  { sym:'ɪ',  file:'i-short', word:'sit'   },
+  { sym:'e',  file:'e',       word:'bed'   },
+  { sym:'æ',  file:'ae',      word:'cat'   },
+  { sym:'ʌ',  file:'uh',      word:'cup'   },
+  { sym:'ɒ',  file:'o-short', word:'hot'   },
+  { sym:'ʊ',  file:'u-short', word:'book'  },
+  { sym:'ə',  file:'schwa',   word:'about' },
+  // Nguyên âm dài
+  { sym:'iː', file:'i-long',  word:'feet'  },
+  { sym:'ɜː', file:'er',      word:'bird'  },
+  { sym:'ɑː', file:'a-long',  word:'car'   },
+  { sym:'ɔː', file:'o-long',  word:'law'   },
+  { sym:'uː', file:'u-long',  word:'boot'  },
+  // Nguyên âm đôi
+  { sym:'eɪ', file:'ei',      word:'day'   },
+  { sym:'aɪ', file:'ai',      word:'my'    },
+  { sym:'ɔɪ', file:'oi',      word:'boy'   },
+  { sym:'əʊ', file:'ou',      word:'go'    },
+  { sym:'aʊ', file:'au',      word:'now'   },
+  { sym:'ɪə', file:'ia',      word:'ear'   },
+  { sym:'eə', file:'ea',      word:'air'   },
+  { sym:'ʊə', file:'ua',      word:'pure'  },
+  // Fricatives
+  { sym:'f',  file:'f',       word:'fan'   },
+  { sym:'v',  file:'v',       word:'van'   },
+  { sym:'θ',  file:'th',      word:'thin'  },
+  { sym:'ð',  file:'dh',      word:'the'   },
+  { sym:'s',  file:'s',       word:'see'   },
+  { sym:'z',  file:'z',       word:'zoo'   },
+  { sym:'ʃ',  file:'sh',      word:'she'   },
+  { sym:'ʒ',  file:'zh',      word:'vision'},
+  { sym:'h',  file:'h',       word:'hat'   },
+  // Plosives
+  { sym:'p',  file:'p',       word:'pen'   },
+  { sym:'b',  file:'b',       word:'bed'   },
+  { sym:'t',  file:'t',       word:'tea'   },
+  { sym:'d',  file:'d',       word:'dog'   },
+  { sym:'k',  file:'k',       word:'key'   },
+  { sym:'g',  file:'g',       word:'get'   },
+  // Affricates
+  { sym:'tʃ', file:'ch',      word:'chair' },
+  { sym:'dʒ', file:'dj',      word:'judge' },
+  // Nasals
+  { sym:'m',  file:'m',       word:'man'   },
+  { sym:'n',  file:'n',       word:'no'    },
+  { sym:'ŋ',  file:'ng',      word:'sing'  },
+  // Approximants
+  { sym:'l',  file:'l',       word:'leg'   },
+  { sym:'r',  file:'r',       word:'red'   },
+  { sym:'j',  file:'y',       word:'yes'   },
+  { sym:'w',  file:'w',       word:'wet'   },
+  // Misc
+  { sym:'ʔ',  file:'glottal', word:'(glottal)' },
+  { sym:'ɫ',  file:'dark-l',  word:'tall'  },
+]
+
+const GROUPS = [
+  { title: 'Nguyên âm ngắn',  range: [0,  6]  },
+  { title: 'Nguyên âm dài',   range: [7,  11] },
+  { title: 'Nguyên âm đôi',   range: [12, 19] },
+  { title: 'Fricatives',      range: [20, 28] },
+  { title: 'Plosives',        range: [29, 34] },
+  { title: 'Affricates',      range: [35, 36] },
+  { title: 'Nasals',          range: [37, 39] },
+  { title: 'Approximants',    range: [40, 43] },
+  { title: 'Misc',            range: [44, 45] },
+]
+
+const state = {}  // file → { status: 'ok'|'wrong', heard: '' }
+let lastCard = null
+
+function play(file, cardEl) {
+  if (lastCard) lastCard.classList.remove('playing')
+  cardEl.classList.remove('missing')
+  cardEl.classList.add('playing')
+  lastCard = cardEl
+  const audio = new Audio(`${BASE}/${file}.mp3`)
+  audio.play().catch(() => {
+    cardEl.classList.remove('playing')
+    cardEl.classList.add('missing')
+  })
+  audio.onerror = () => {
+    cardEl.classList.remove('playing')
+    cardEl.classList.add('missing')
+  }
+  audio.onended = () => cardEl.classList.remove('playing')
+}
+
+function markOk(file, cardEl) {
+  state[file] = { status: 'ok', heard: '' }
+  cardEl.classList.remove('wrong')
+  cardEl.classList.add('ok')
+  const wi = cardEl.querySelector('.wrong-input')
+  if (wi) wi.style.display = 'none'
+  updateSummary()
+}
+
+function markWrong(file, cardEl) {
+  state[file] = { status: 'wrong', heard: '' }
+  cardEl.classList.remove('ok')
+  cardEl.classList.add('wrong')
+  const wi = cardEl.querySelector('.wrong-input')
+  wi.style.display = 'block'
+  wi.querySelector('input').focus()
+  updateSummary()
+}
+
+function onInput(file, val) {
+  if (!state[file]) state[file] = { status: 'wrong', heard: '' }
+  state[file].heard = val
+  updateSummary()
+}
+
+function updateSummary() {
+  const wrongs = Object.entries(state).filter(([,v]) => v.status === 'wrong')
+  const sumEl = document.getElementById('summary')
+  if (wrongs.length === 0) { sumEl.style.display = 'none'; return }
+  sumEl.style.display = 'block'
+  sumEl.innerHTML = '<b>Sai:</b> ' + wrongs.map(([file, v]) =>
+    `<span class="entry">${file}.mp3 → <span>${v.heard || '?'}</span></span>`
+  ).join('')
+}
+
+let html = ''
+for (const g of GROUPS) {
+  html += `<div class="group"><div class="group-title">${g.title}</div><div class="grid">`
+  for (let i = g.range[0]; i <= g.range[1]; i++) {
+    const s = SOUNDS[i]
+    html += `
+      <div class="card" id="card-${i}">
+        <div class="sym" onclick="play('${s.file}', document.getElementById('card-${i}'))">${s.sym}</div>
+        <div class="name">${s.file}.mp3</div>
+        <div class="word">${s.word}</div>
+        <div class="btns">
+          <button class="btn-ok"    onclick="markOk('${s.file}',    document.getElementById('card-${i}'))">✓</button>
+          <button class="btn-wrong" onclick="markWrong('${s.file}', document.getElementById('card-${i}'))">✗</button>
+        </div>
+        <div class="wrong-input" style="display:none">
+          <input type="text" placeholder="nghe ra: ..." oninput="onInput('${s.file}', this.value)">
+        </div>
+      </div>`
+  }
+  html += `</div></div>`
+}
+html += `<div id="summary"></div>`
+document.body.innerHTML += html
+</script>
+</body>
+</html>

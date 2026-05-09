@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JJ's Home and Garden Suppliers</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f1f5f9;
+    padding: 32px 20px;
+    color: #1e293b;
+  }
+  .container { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+  /* ── Table 1: Product catalog ── */
+  .catalog {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,.08);
+  }
+  .catalog-header {
+    background: #1e3a5f;
+    color: white;
+    text-align: center;
+    padding: 20px 24px 16px;
+  }
+  .catalog-header h1 { font-size: 20px; font-weight: 700; letter-spacing: .3px; }
+  .catalog-header h2 { font-size: 13px; font-weight: 500; opacity: .75; margin-top: 4px; letter-spacing: 1.5px; text-transform: uppercase; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+  thead th {
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: #64748b;
+    text-align: left;
+  }
+  thead th:last-child { text-align: right; }
+
+  tbody tr { border-bottom: 1px solid #f1f5f9; transition: background .12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f8fafc; }
+
+  td { padding: 14px 16px; font-size: 14px; vertical-align: top; }
+  td.model {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #2563eb;
+    white-space: nowrap;
+  }
+  td.name { font-weight: 600; white-space: nowrap; }
+  td.desc { color: #475569; line-height: 1.6; }
+  td.desc .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin: 2px 2px 0 0;
+    font-weight: 500;
+  }
+  .tag-size  { background: #eff6ff; color: #2563eb; }
+  .tag-power { background: #f0fdf4; color: #16a34a; }
+  .tag-ship  { background: #fef9c3; color: #854d0e; }
+  td.price {
+    font-weight: 700;
+    font-size: 15px;
+    color: #0f172a;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .footnote {
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #dc2626;
+    background: #fff5f5;
+    border-top: 1px solid #fee2e2;
+  }
+
+  /* ── Table 2: Email ── */
+  .email {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,.08);
+  }
+  .email-meta table { width: 100%; border-collapse: collapse; }
+  .email-meta td {
+    padding: 9px 16px;
+    font-size: 13.5px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+  }
+  .email-meta td:first-child {
+    font-weight: 700;
+    color: #64748b;
+    width: 80px;
+    background: #f8fafc;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .email-meta td:last-child { color: #1e293b; }
+  .subject-row td:last-child { font-weight: 600; color: #0f172a; }
+
+  .email-body {
+    padding: 20px 20px 24px;
+    font-size: 14px;
+    line-height: 1.75;
+    color: #334155;
+    border-top: 2px solid #e2e8f0;
+  }
+  .email-body p { margin-bottom: 14px; }
+  .email-body p:last-child { margin-bottom: 0; }
+  .email-body .salutation { font-weight: 600; color: #1e293b; }
+  .email-body .closing { margin-top: 20px; }
+  .email-body .sig { font-weight: 700; color: #1e293b; margin-top: 4px; }
+
+  mark {
+    background: #fef9c3;
+    border-radius: 3px;
+    padding: 0 2px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Table 1: Product Catalog -->
+  <div class="catalog">
+    <div class="catalog-header">
+      <h1>JJ's Home and Garden Suppliers</h1>
+      <h2>Cement Mixers</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="model">HCC-TX</td>
+          <td class="name">Easy Star</td>
+          <td class="desc">
+            <span class="tag tag-size">2 cu ft</span>
+            <span class="tag tag-power">1 hp</span>
+            <span class="tag tag-ship">In-store pickup only</span>
+          </td>
+          <td class="price">$189</td>
+        </tr>
+        <tr>
+          <td class="model">CVY-XU</td>
+          <td class="name">Mr. Buddy*</td>
+          <td class="desc">
+            <span class="tag tag-size">2 cu ft</span>
+            <span class="tag tag-power">5 hp</span>
+            <span class="tag tag-ship">Delivery only, 1–2 weeks</span>
+          </td>
+          <td class="price">$359</td>
+        </tr>
+        <tr>
+          <td class="model">PIT-RX</td>
+          <td class="name">Concretizer</td>
+          <td class="desc">
+            <span class="tag tag-size">4 cu ft</span>
+            <span class="tag tag-power">3 hp</span>
+            <span class="tag tag-ship">In-store pickup</span>
+            <span class="tag tag-ship">5-day delivery</span>
+          </td>
+          <td class="price">$499</td>
+        </tr>
+        <tr>
+          <td class="model">HTK-LM</td>
+          <td class="name">Big Mix</td>
+          <td class="desc">
+            <span class="tag tag-size">5 cu ft</span>
+            <span class="tag tag-power">5 hp</span>
+            <span class="tag tag-ship">In-store pickup only</span>
+          </td>
+          <td class="price">$629</td>
+        </tr>
+        <tr>
+          <td class="model">PPP-HT</td>
+          <td class="name">Max for Pros</td>
+          <td class="desc">
+            <span class="tag tag-size">6 cu ft</span>
+            <span class="tag tag-power">7 hp</span>
+            <span class="tag tag-ship">Delivery only, 2–4 weeks</span>
+          </td>
+          <td class="price">$949</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="footnote">* Out of stock until July 26</div>
+  </div>
+
+  <!-- Table 2: Email -->
+  <div class="email">
+    <div class="email-meta">
+      <table>
+        <tr><td>To</td><td>Customer Service &lt;customerservice@jjshomeandgarden.com&gt;</td></tr>
+        <tr><td>From</td><td>Marshall Weaver &lt;mweaver01@gmail.net&gt;</td></tr>
+        <tr><td>Date</td><td>June 25</td></tr>
+        <tr class="subject-row"><td>Subject</td><td>Delayed order</td></tr>
+      </table>
+    </div>
+    <div class="email-body">
+      <p class="salutation">Dear Customer Service Representative,</p>
+      <p>I received a confirmation e-mail on <mark>June 15</mark> that my <mark>4-cubic-foot cement mixer</mark> would be delivered <mark>one week ago</mark> from JJ's Home and Garden Suppliers. I have a small business and am dependent on my equipment. I have not yet received the product, and I have already left several unanswered phone messages.</p>
+      <p>If the cement mixer is not at my business by the end of the day today, I can still pick it up at either the <mark>New Gralen</mark> or the <mark>Paloner</mark> store if I have to, as I need it for a job tomorrow afternoon. If one is not available by tomorrow, I ask that you cancel my order and provide me with a full refund. I will instead buy a <mark>Mr. Buddy</mark> from Alliance Hardware Store, a small, local store where it is currently in stock (and at your same price).</p>
+      <p>Please advise me on the status of my order immediately. I hope that my order with you will arrive today and that no further action will be needed by either of us.</p>
+      <div class="closing">
+        <p>Sincerely,</p>
+        <p class="sig">Marshall Weaver</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

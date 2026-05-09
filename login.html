@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>LearnLang Login</title>
+<link rel="icon" href="https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/avatars/logo_web.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+html{zoom:1.125}
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+}
+
+.container{
+  display:flex;
+  height:100vh;
+}
+
+/* LEFT */
+.left{
+  flex:0.5;
+  padding:80px;
+  background: linear-gradient(135deg,#2563eb,#3b82f6);
+  color:white;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.left h1{
+  font-family:'Space Grotesk';
+  font-size:56px;
+  line-height:1.2;
+}
+
+.left p{
+  margin-top:20px;
+  opacity:0.9;
+  max-width:500px;
+}
+
+.stats{
+  display:flex;
+  gap:30px;
+  margin-top:40px;
+  font-weight:600;
+}
+
+/* RIGHT */
+.right{
+  flex:0.5; 
+  width:420px;
+  background:#f8faff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.login-box{
+  background:white;
+  padding:40px;
+  border-radius:16px;
+  width:320px;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+
+.logo{
+  font-family:'Space Grotesk';
+  font-size:26px;
+  margin-bottom:20px;
+}
+.logo span{color:#f97316}
+
+.logo img{
+  height:50px;
+  object-fit:contain;
+  margin-bottom:10px;
+}
+
+.google-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+
+.google-btn img{
+  width:20px;
+  height:20px;
+}
+.btn{
+  background:#2563eb;
+  color:white;
+  border:none;
+  padding:14px;
+  width:100%;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+  margin-top:20px;
+}
+
+.btn:hover{
+  background:#1d4ed8;
+}
+
+.terms{
+  font-size:13px;
+  color:#64748b;
+  margin-top:10px;
+}
+
+.switch-auth{
+  margin-top:16px;
+  font-size:14px;
+  color:#64748b;
+}
+
+.switch-auth span{
+  color:#2563eb;
+  font-weight:500;
+  cursor:pointer;
+}
+
+.switch-auth span:hover{
+  text-decoration:underline;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- LEFT -->
+
+  <div class="left">
+    <h1>Chinh phục Ngôn ngữ mới <br>cùng LearnLang</h1>
+
+<p>
+  Học ngoại ngữ với lộ trình cá nhân hóa và hệ thống theo dõi tiến độ thông minh.
+</p>
+
+<div class="stats">
+  <div>40K+ học viên</div>
+  <div>6,000+ từ vựng</div>
+  <div>95% đạt mục tiêu</div>
+</div>
+
+  </div>
+
+  <!-- RIGHT -->
+
+  <div class="right">
+    <div class="login-box">
+      <div class="logo">
+        <img src="https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/avatars/logo-full.png" alt="LearnLang" />
+        </div>
+
+  <h3>Đăng ký</h3>
+  <p>Đăng ký nhanh chóng và an toàn bằng tài khoản Google của bạn.</p>
+
+  <button class="btn google-btn" onclick="loginGoogle()">
+  <img src="https://www.svgrepo.com/show/475656/google-color.svg" />
+  Đăng ký với Google
+   </button>
+
+ <p class="terms">
+  Bằng việc đăng ký, bạn đồng ý với điều khoản sử dụng của chúng tôi.
+</p>
+    <p class="switch-auth">
+    Đã có tài khoản?
+    <span onclick="loginGoogle()">Đăng nhập</span>
+    </p>
+</div>
+
+
+  </div>
+
+</div>
+
+<script type="module">
+import { supabase } from './supabase/client.js'
+
+window.loginGoogle = async () => {
+  await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options:{
+      redirectTo:`${window.location.origin}/dashboard.html`
+    }
+  })
+}
+</script>
+
+</body>
+</html>

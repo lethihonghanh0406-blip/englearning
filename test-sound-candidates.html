@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Find Missing Phonemes</title>
+<style>
+  body { font-family: sans-serif; padding: 24px; background: #f8fafc; }
+  h2 { color: #1e293b; }
+  p { color: #64748b; font-size: 14px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+  .card {
+    background: white; border: 2px solid #e2e8f0; border-radius: 12px;
+    padding: 16px 20px; min-width: 120px; text-align: center; cursor: pointer;
+  }
+  .card:hover { border-color: #2563eb; background: #eff6ff; }
+  .card.playing { border-color: #16a34a; background: #f0fdf4; }
+  .card .num { font-size: 13px; font-weight: 700; color: #0f172a; }
+  .card .btn { margin-top: 10px; padding: 6px 12px; border: none; border-radius: 8px; background: #2563eb; color: white; font-size: 13px; cursor: pointer; }
+  .missing { color: #64748b; font-size: 13px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h2>Tìm âm còn thiếu: /uː/ (boot) · /ɑː/ (car)</h2>
+<p>Click ▶ để nghe từng SOUND — cho tôi biết cái nào là /uː/ và cái nào là /ɑː/.</p>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const BASE = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/ipa-audio'
+const CANDIDATES = [3, 6, 7, 9, 15]
+
+let lastCard = null
+function play(n, cardEl) {
+  if (lastCard) lastCard.classList.remove('playing')
+  cardEl.classList.add('playing')
+  lastCard = cardEl
+  const audio = new Audio(`${BASE}/test-${n}.mp3`)
+  audio.play()
+  audio.onended = () => cardEl.classList.remove('playing')
+  audio.onerror = () => {
+    cardEl.classList.remove('playing')
+    cardEl.querySelector('.missing').textContent = '(file không tồn tại)'
+  }
+}
+
+const grid = document.getElementById('grid')
+for (const n of CANDIDATES) {
+  grid.innerHTML += `
+    <div class="card" id="c${n}">
+      <div class="num">SOUND ${n}</div>
+      <button class="btn" onclick="play(${n}, document.getElementById('c${n}'))">▶ Nghe</button>
+      <div class="missing"></div>
+    </div>`
+}
+</script>
+</body>
+</html>

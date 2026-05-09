@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnLang</title>
+<link rel="icon" href="https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/avatars/logo_web.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#2563eb;
+  --primary-light:#e8f0fe;
+  --text:#0f172a;
+  --muted:#64748b;
+  --border:#e2e8f0;
+  --bg:#f8faff;
+}
+
+html{ zoom:1.125; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.logo{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:22px;
+  font-weight:700;
+}
+.logo span{color:#f97316}
+
+.nav-btns{
+  display:flex;
+  align-items:center;
+  padding:0 60px;
+}
+
+.nav-links a{
+  cursor:pointer;
+  position:relative;
+  transition:0.2s;
+}
+
+.nav-links a:hover{
+  color:var(--primary);
+}
+
+/* underline animation */
+.nav-links a::after{
+  content:"";
+  position:absolute;
+  left:0;
+  bottom:-6px;
+  width:0%;
+  height:2px;
+  background:var(--primary);
+  transition:0.3s;
+}
+
+.nav-links a:hover::after{
+  width:100%;
+}
+
+/* BUTTONS */
+.nav-btns button{
+  padding:10px 18px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:500;
+}
+
+.login{background:#f1f5f9}
+.start{background:var(--primary);color:white}
+
+/* HERO */
+.hero{
+  max-width:1100px;
+  margin:auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:50px 40px;
+  gap:60px;
+}
+
+
+.logo img{
+  height:45px;
+}
+.nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 60px;
+}
+
+
+.user-box{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.user-box img{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+}
+.left{max-width:560px}
+
+.badge{
+  display:inline-block;
+  background:var(--primary-light);
+  color:var(--primary);
+  padding:6px 14px;
+  border-radius:20px;
+  font-size:12px;
+  margin-bottom:18px;
+  font-weight:600;
+}
+
+h1{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:48px;
+  line-height:1.15;
+}
+
+.highlight{color:var(--primary)}
+
+.desc{
+  margin:18px 0 28px;
+  color:var(--muted);
+  line-height:1.6;
+}
+
+/* STATS */
+.stats{
+  display:flex;
+  gap:40px;
+  margin-bottom:28px;
+}
+
+.stat strong{
+  font-family:'Space Grotesk';
+  font-size:28px;
+  color:var(--primary);
+}
+
+.stat span{
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* BUTTONS */
+.buttons{
+  display:flex;
+  gap:12px;
+}
+
+.primary{
+  background:var(--primary);
+  box-shadow: 0 6px 16px rgba(37,99,235,0.25);
+  color:white;
+  padding:14px 26px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+}
+
+.primary:hover{background:#1e40af}
+
+.outline{
+  border:1px solid var(--border);
+  padding:14px 20px;
+  border-radius:12px;
+  background:white;
+  cursor:pointer;
+}
+
+/* RIGHT CARDS */
+.right{
+  width:420px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.card{
+  background:white;
+  border-radius:16px;
+  padding:18px 20px;
+  border:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  gap:14px;
+  transition:.2s;
+}
+
+.card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 25px rgba(0,0,0,0.08);
+}
+
+.card.active{
+  border:2px solid var(--primary);
+}
+
+.icon{
+  width:42px;
+  height:42px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+}
+
+.card-content{flex:1}
+
+.card-title{
+  font-weight:600;
+  font-size:14px;
+}
+
+.card-sub{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.tag{
+  font-size:11px;
+  font-weight:600;
+  padding:4px 8px;
+  border-radius:6px;
+}
+
+.toeic-menu{
+  position:relative;
+  cursor:pointer;
+}
+
+/* dropdown */
+.toeic-dropdown{
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(8px);
+  transition:0.2s;
+}
+
+.toeic-menu:hover .toeic-dropdown{
+  opacity:1;
+  visibility:visible;
+  transform:translateY(0);
+}
+.toeic-menu::after{
+  content:"";
+  position:absolute;
+  top:100%;
+  left:0;
+  width:100%;
+  height:12px;
+}
+
+/* item */
+.toeic-dropdown div{
+  padding:10px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.toeic-dropdown div:hover{
+  background:#f1f5f9;
+}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .hero{flex-direction:column}
+  .right{width:100%}
+}
+
+/* ===== FEATURES ===== */
+.features{
+  max-width:1100px;
+  margin:30px auto;
+}
+
+.section-title{
+  text-align:center;
+  margin-bottom:50px;
+}
+
+.section-title small{
+  color:var(--primary);
+  font-weight:600;
+  letter-spacing:1px;
+}
+
+.section-title h2{
+  font-size:34px;
+  margin-top:10px;
+}
+
+.feature-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:24px;
+}
+
+.feature-card{
+  background:white;
+  border-radius:16px;
+  padding:24px;
+  border:1px solid var(--border);
+  transition:0.25s;
+}
+
+.feature-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 12px 30px rgba(0,0,0,0.08);
+}
+
+.icon-box{
+  width:44px;
+  height:44px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:14px;
+  font-size:18px;
+}
+
+.feature-title{
+  font-weight:600;
+  font-size:16px;
+  margin-bottom:6px;
+}
+
+.feature-desc{
+  font-size:13px;
+  color:var(--muted);
+  line-height:1.5;
+}
+
+.user-box{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+}
+
+.avatar{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:#2563eb;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:600;
+}
+.username{
+  font-size:14px;
+  font-weight:500;
+  color:#0f172a;
+  white-space:nowrap;
+}
+
+.dropdown{
+  position:absolute;
+  top:40px;
+  right:0;
+  background:white;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  padding:10px;
+  display:none;
+  width:140px;
+}
+
+.dropdown div{
+  padding:8px;
+  cursor:pointer;
+  border-radius:6px;
+}
+
+.dropdown div:hover{
+  background:#f1f5f9;
+}
+</style>
+
+</head>
+
+<body>
+<div id="navbar"></div> 
+
+<div id="home">
+
+<div class="hero">
+  <div class="left">
+    <div class="badge">✨ Nền tảng học ngôn ngữ #1 Việt Nam</div>
+
+
+<h1>
+  Chinh phục <span class="highlight">TOEIC 900+</span><br>
+  cùng LearnLang
+</h1>
+
+<div class="desc">
+  Học TOEIC, IELTS, Giao tiếp và Tiếng Trung với lộ trình cá nhân hóa, hệ thống theo dõi tiến độ thông minh và cộng đồng 40,000+ học viên.
+</div>
+
+<div class="stats">
+  <div class="stat"><strong>40K+</strong><span>Học viên</span></div>
+  <div class="stat"><strong>6,000+</strong><span>Từ vựng</span></div>
+  <div class="stat"><strong>95%</strong><span>Đạt mục tiêu</span></div>
+</div>
+
+<div class="buttons">
+  <button class="primary" onclick="loginGoogle()">🚀 Học miễn phí ngay</button>
+  <button class="outline">▶ Làm bài test thử</button>
+</div>
+
+
+  </div>
+
+  <div class="right">
+    <div class="card active">
+      <div class="icon" style="background:#dbeafe;">📘</div>
+      <div class="card-content">
+        <div class="card-title">TOEIC Listening & Reading</div>
+        <div class="card-sub">5000 từ vựng • 200 bài tập • 3 tháng</div>
+      </div>
+      <div class="tag" style="background:#dbeafe;color:#1e40af;">HOT</div>
+    </div>
+
+
+<div class="card">
+  <div class="icon" style="background:#dcfce7;">📗</div>
+  <div class="card-content">
+    <div class="card-title">IELTS Band 7.0+</div>
+    <div class="card-sub">Speaking AI • Writing feedback</div>
+  </div>
+  <div class="tag" style="background:#dcfce7;color:#166534;">MỚI</div>
+</div>
+
+<div class="card">
+  <div class="icon" style="background:#fce7f3;">🀄</div>
+  <div class="card-content">
+    <div class="card-title">HSK 1-6</div>
+    <div class="card-sub">6000 từ • Hán tự </div>
+  </div>
+  <div class="tag" style="background:#fce7f3;color:#9d174d;">PHỔ BIẾN</div>
+</div>
+
+<div class="card">
+  <div class="icon" style="background:#fef3c7;">💬</div>
+  <div class="card-content">
+    <div class="card-title">Giao tiếp</div>
+    <div class="card-sub">Tình huống thực tế • Phát âm</div>
+  </div>
+  <div class="tag" style="background:#fef3c7;color:#92400e;">FREE</div>
+</div>
+
+  </div>
+</div>
+
+<div class="features">
+
+  <div class="section-title">
+    <small>TÍNH NĂNG</small>
+    <h2>Mọi thứ bạn cần để học hiệu quả</h2>
+  </div>
+
+  <div class="feature-grid">
+
+    <div class="feature-card">
+      <div class="icon-box" style="background:#dbeafe;">📊</div>
+      <div class="feature-title">Tracking tiến độ hàng ngày</div>
+      <div class="feature-desc">
+        Theo dõi số từ học mỗi ngày, heatmap streak và thống kê theo tháng.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="icon-box" style="background:#dcfce7;">🧠</div>
+      <div class="feature-title">Spaced Repetition thông minh</div>
+      <div class="feature-desc">
+        Nhắc lại từ đúng thời điểm để nhớ lâu hơn.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="icon-box" style="background:#fce7f3;">📝</div>
+      <div class="feature-title">Quiz & Bài thi thử</div>
+      <div class="feature-desc">
+        Hàng trăm đề luyện TOEIC, IELTS sát thực tế.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="icon-box" style="background:#fef3c7;">🎯</div>
+      <div class="feature-title">Lộ trình cá nhân hóa</div>
+      <div class="feature-desc">
+        AI phân tích và đề xuất lộ trình học phù hợp.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="icon-box" style="background:#fee2e2;">🔴</div>
+      <div class="feature-title">Live class với giáo viên</div>
+      <div class="feature-desc">
+        Học trực tiếp với giáo viên Việt & bản ngữ.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="icon-box" style="background:#e0f2fe;">👥</div>
+      <div class="feature-title">Cộng đồng học tập</div>
+      <div class="feature-desc">
+        Kết nối 40,000+ học viên cùng tiến bộ mỗi ngày.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+
+import { supabase } from './supabase/client.js'
+
+
+window.toggleMenu = () => {
+  const d = document.getElementById("dropdown")
+  d.style.display = d.style.display === "block" ? "none" : "block"
+}
+
+window.goDashboard = () => {
+  window.location.href = "/dashboard.html"
+}
+
+window.logout = async () => {
+  await supabase.auth.signOut()
+  window.location.reload()
+}
+
+window.loginGoogle = async () => {
+  await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/dashboard.html`
+    }
+  })
+}
+
+window.addEventListener("click", (e) => {
+  const dropdown = document.getElementById("dropdown")
+  if (!e.target.closest(".user-box")) {
+    if (dropdown) dropdown.style.display = "none"
+  }
+})
+
+// MỞ modal
+window.goToeic = function(){
+  document.getElementById("toeicModal").style.display = "flex"
+}
+
+// CLICK skill → chuyển trang
+window.goSkill = function(type){
+  if(type === 'lr'){
+    navigate('/toeic-lr')
+  }
+}
+
+// click ngoài để đóng
+window.addEventListener("click", (e) => {
+  const modal = document.getElementById("toeicModal")
+  if(e.target === modal){
+    modal.style.display = "none"
+  }
+})
+</script>
+</div>
+<div id="app"></div>
+<script type="module" src="/router.js"></script>
+<script type="module">
+import { navbar }           from './components/navbar.js'
+import { initVocabScanner } from './components/vocab-scanner.js'
+
+  const nav = document.getElementById("navbar")
+
+  async function loadNavbar(){
+    try{
+      nav.innerHTML = await navbar()
+    }catch(e){
+      console.error("Navbar lỗi:", e)
+    }
+  }
+
+  loadNavbar()
+  initVocabScanner()
+</script>
+</body>
+</html>

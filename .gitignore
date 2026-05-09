@@ -1,0 +1,6 @@
+.vercel
+.claude
+scripts/
+node_modules/
+C:Tempsb.json
+sb_schema.json

@@ -1,0 +1,2 @@
+export const SUPABASE_URL="https://trehfvxlqfshfhcapqca.supabase.co";
+export const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRyZWhmdnhscWZzaGZoY2FwcWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMTA0MTMsImV4cCI6MjA5MjY4NjQxM30.bn_zpEq2VUbkFyU-yOcK4UbeGQINAZlvgBYOwzJcePk";
