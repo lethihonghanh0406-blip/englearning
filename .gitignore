@@ -2,5 +2,5 @@
 .claude
 scripts/
 node_modules/
-C:Tempsb.json
+*Tempsb.json
 sb_schema.json
