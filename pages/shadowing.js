@@ -18,7 +18,7 @@ export default async function shadowingPage(app) {
 
   const { data } = await supabase
     .from('shadowing_lessons')
-    .select('id, title, youtube_id, level, sentences, sentences_pinyin, sentences_vi')
+    .select('*')
     .order('created_at')
 
   lessons = data || []
