@@ -1,6 +1,7 @@
 import pinyinPage      from './pages/pinyin.js'
 import shadowingPage   from './pages/shadowing.js'
 import ipaPage        from './pages/ipa.js'
+import moviesPage     from './pages/movies.js'
 import toeicHub       from './pages/toeic.js'
 import toeicListening from './pages/toeic-listening.js'
 import toeicReading   from './pages/toeic-reading.js'
@@ -42,6 +43,7 @@ function router() {
   else if (path === '/chinese/pinyin')    showPage(pinyinPage)
   else if (path === '/chinese/shadowing') showPage(shadowingPage)
   else if (path === '/english/ipa')       showPage(ipaPage)
+  else if (path === '/english/movies')    showPage(moviesPage)
   else {
     home.style.display = "block"
     app.style.display  = "none"

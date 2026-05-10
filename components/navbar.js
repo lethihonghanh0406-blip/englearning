@@ -146,6 +146,7 @@ return ` <div class="nav">
 
       <div class="toeic-dropdown">
         <div onclick="navigate('/english/ipa')">🔤 Bảng IPA</div>
+        <div onclick="navigate('/english/movies')">🎬 Xem phim</div>
       </div>
     </div>
 
