@@ -12,7 +12,7 @@ export default async function shadowingPage(app) {
 
   const { data } = await supabase
     .from('shadowing_lessons')
-    .select('id, title, youtube_id, level, sentences, sentences_vi')
+    .select('id, title, youtube_id, level, sentences, sentences_pinyin, sentences_vi')
     .order('created_at')
 
   lessons = data || []
@@ -22,8 +22,9 @@ export default async function shadowingPage(app) {
 
   function getLesson() { return lessons.find(l => l.id === selId) || null }
 
-  function getSentences()   { return getLesson()?.sentences   || [] }
-  function getSentencesVI() { return getLesson()?.sentences_vi || [] }
+  function getSentences()      { return getLesson()?.sentences         || [] }
+  function getSentencesPY()    { return getLesson()?.sentences_pinyin  || [] }
+  function getSentencesVI()    { return getLesson()?.sentences_vi      || [] }
 
   function normalize(s) {
     return (s || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim()
@@ -71,8 +72,10 @@ export default async function shadowingPage(app) {
   function render() {
     const lesson    = getLesson()
     const sentences = getSentences()
+    const pyLines   = getSentencesPY()
     const viLines   = getSentencesVI()
     const sentence  = sentences[sentIdx] || ''
+    const pinyin    = pyLines[sentIdx]   || ''
     const vid       = youtubeId(lesson)
 
     const levelColor = { beginner: '#dcfce7', intermediate: '#fef3c7', advanced: '#fee2e2' }
@@ -140,7 +143,10 @@ export default async function shadowingPage(app) {
                   ).join('')}
                 </div>
                 <div style="font-size:12px;color:#64748b;margin-bottom:4px">Bạn nói: <em>"${result.spoken}"</em></div>`
-              : `<div style="font-size:20px;font-weight:500;color:#0f172a;line-height:1.7;margin-bottom:8px">${sentence}</div>`}
+              : `<div style="margin-bottom:8px">
+                  ${pinyin ? `<div style="font-size:13px;color:#94a3b8;line-height:1.8;letter-spacing:.3px;margin-bottom:2px">${pinyin}</div>` : ''}
+                  <div style="font-size:28px;font-weight:500;color:#0f172a;line-height:1.5;letter-spacing:2px">${sentence}</div>
+                </div>`}
 
             ${showVI && viLines[sentIdx]
               ? `<div style="font-size:14px;color:#2563eb;font-style:italic;line-height:1.6;padding-top:8px;border-top:1px solid #f1f5f9">${viLines[sentIdx]}</div>`
