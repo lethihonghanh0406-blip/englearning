@@ -138,6 +138,7 @@ return ` <div class="nav">
 
       <div class="toeic-dropdown">
         <div onclick="navigate('/chinese/pinyin')">🔤 Bảng Pinyin</div>
+        <div onclick="navigate('/chinese/shadowing')">🎤 Shadowing</div>
       </div>
     </div>
     <div class="menu-item toeic-menu">

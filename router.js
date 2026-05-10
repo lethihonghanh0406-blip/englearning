@@ -1,4 +1,5 @@
-import pinyinPage     from './pages/pinyin.js'
+import pinyinPage      from './pages/pinyin.js'
+import shadowingPage   from './pages/shadowing.js'
 import ipaPage        from './pages/ipa.js'
 import toeicHub       from './pages/toeic.js'
 import toeicListening from './pages/toeic-listening.js'
@@ -38,8 +39,9 @@ function router() {
   else if (path === '/quiz')             requireAuth(() => showPage(quizPage, params))
   else if (path === '/pricing')          showPage(pricingPage)
   else if (path === '/vocab/review')     requireAuth(() => showPage(vocabSrsPage))
-  else if (path === '/chinese/pinyin')   showPage(pinyinPage)
-  else if (path === '/english/ipa')      showPage(ipaPage)
+  else if (path === '/chinese/pinyin')    showPage(pinyinPage)
+  else if (path === '/chinese/shadowing') showPage(shadowingPage)
+  else if (path === '/english/ipa')       showPage(ipaPage)
   else {
     home.style.display = "block"
     app.style.display  = "none"
