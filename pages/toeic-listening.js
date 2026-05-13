@@ -14,6 +14,7 @@ export default async function toeicListening(app) {
   let speed     = 1.0
   let showScript    = true
   let showBilingual = false
+  let globalHasVI   = false
 
   // Nghe Chép state
   let hidePercent    = 50
@@ -111,6 +112,7 @@ export default async function toeicListening(app) {
 
     selGroupId  = groups[0]?.id ?? null
     sentenceIdx = 0
+    globalHasVI = groups.some(g => (g.viSentences || []).some(Boolean))
     resetDict()
     render()
   }
@@ -244,7 +246,6 @@ export default async function toeicListening(app) {
   // ── Nghe Full ─────────────────────────────────────────────────────────────
   function renderFull(g, sentences, sentence) {
     const viLines = g.viSentences || []
-    const hasVI   = viLines.some(Boolean)
     return `
       <div style="max-width:700px;margin:auto;padding:28px 24px">
 
@@ -261,7 +262,7 @@ export default async function toeicListening(app) {
               <button onclick="listenToggleScript()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#64748b">
                 ${showScript?'👁 Ẩn script':'👁 Hiện script'}
               </button>
-              ${hasVI ? `
+              ${globalHasVI ? `
                 <button onclick="listenToggleBilingual()"
                   style="padding:4px 10px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:${showBilingual?'#0369a1':'#f1f5f9'};color:${showBilingual?'white':'#64748b'}">
                   🌐 Song ngữ
