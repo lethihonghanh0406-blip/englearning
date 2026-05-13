@@ -87,7 +87,9 @@ export async function initVocabScanner() {
   function render() {
     const meanings = dictData?.meanings || []
     const phonetic = dictData?.phonetic || dictData?.phonetics?.find(p => p.text)?.text || ''
-    const audio    = dictData?.phonetics?.find(p => p.audio?.startsWith('http'))?.audio || ''
+    // Accept both https:// and // (protocol-relative) audio URLs
+    const rawAudio = dictData?.phonetics?.find(p => p.audio)?.audio || ''
+    const audio    = rawAudio.startsWith('//') ? 'https:' + rawAudio : rawAudio
     const examples = meanings.flatMap(m => m.definitions.flatMap(d => d.example ? [{ ex: d.example, pos: m.partOfSpeech }] : []))
     const synonyms = [...new Set(meanings.flatMap(m => [...(m.synonyms || []), ...m.definitions.flatMap(d => d.synonyms || [])]))]
 
@@ -188,12 +190,20 @@ export async function initVocabScanner() {
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
           <div style="flex:1;min-width:0">
             <div style="font-size:18px;font-weight:800;color:#0f172a;font-family:'Space Grotesk',sans-serif;line-height:1.2;word-break:break-word">${word}</div>
-            ${phonetic ? `
-              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-                <span style="font-size:12px;color:#6366f1;font-style:italic">${phonetic}</span>
-                ${audio ? `<button onclick="new Audio('${audio}').play()"
-                  style="background:none;border:none;cursor:pointer;font-size:14px;padding:0;line-height:1">🔊</button>` : ''}
-              </div>` : ''}
+            <div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">
+              ${phonetic ? `<span style="font-size:13px;color:#6366f1;font-style:italic">${phonetic}</span>` : ''}
+              ${audio
+                ? `<button onclick="window._vsPlayAudio('${audio.replace(/'/g, "\\'")}')"
+                    style="display:flex;align-items:center;gap:4px;background:#eff6ff;border:none;cursor:pointer;
+                      color:#2563eb;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;line-height:1.4">
+                    🔊 Nghe
+                  </button>`
+                : `<button onclick="window._vsSpeak('${word.replace(/'/g, "\\'")}')"
+                    style="display:flex;align-items:center;gap:4px;background:#f1f5f9;border:none;cursor:pointer;
+                      color:#64748b;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;line-height:1.4">
+                    🔊 TTS
+                  </button>`}
+            </div>
           </div>
           <button onclick="document.getElementById('vs-popup').style.display='none'"
             style="background:#f1f5f9;border:none;cursor:pointer;color:#64748b;font-size:14px;line-height:1;padding:5px 9px;border-radius:8px;flex-shrink:0;font-weight:600">
@@ -245,8 +255,15 @@ export async function initVocabScanner() {
   }
 
   // ── Window handlers ────────────────────────────────────────────────────────
-  window._vsTab  = (t) => { tab = t; render() }
-  window._vsMode = (m) => { mode = m; render() }
+  window._vsTab       = (t) => { tab = t; render() }
+  window._vsMode      = (m) => { mode = m; render() }
+  window._vsPlayAudio = (url) => { try { new Audio(url).play() } catch(e) {} }
+  window._vsSpeak     = (w)  => {
+    speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance(w)
+    u.lang = 'en-US'; u.rate = 0.9
+    speechSynthesis.speak(u)
+  }
 
   window._vsSynClick = async (syn) => {
     word = syn; tab = 'meaning'; dictData = null; viMeaning = null; addedDeckId = null; srsAdded = false
