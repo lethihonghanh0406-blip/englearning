@@ -156,6 +156,20 @@ export default async function quizPage(app, params) {
       return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     }
 
+    function isSpeakerLine(s) {
+      if (!s) return false
+      if (/^[A-Z][\w\s,\.]*[\(\[]\d{1,2}:\d{2}/.test(s)) return true
+      if (s.startsWith(')')) return true
+      if (/^(TO|FROM|DATE|SUBJECT|CC|BCC)\s*:/i.test(s)) return true
+      if (/^[\w.\-]+@[\w.\-]+\.\w+$/.test(s.trim())) return true
+      if (/^https?:\/\//.test(s.trim())) return true
+      if (/^[a-z][\w-]*\.$/.test(s.trim())) return true
+      return false
+    }
+    function isVISpeakerLine(v) {
+      return /^[A-Z][\w\s]+\(\d{1,2}:\d{2}/.test(v || '')
+    }
+
     // ── Auto passage renderer ──────────────────────────────────────────────
     function autoRenderPassage(raw) {
       if (!raw) return ''
@@ -873,19 +887,18 @@ export default async function quizPage(app, params) {
               if (view === 'vi' && vi && !isHTML) {
                 body = `<div style="white-space:pre-wrap">${escapeHtml(vi)}</div>`
               } else if (view === 'bilingual' && vi && !isHTML) {
-                const splitSentences = s => (s.match(/[^.!?]+[.!?]+/g) || [s]).map(x => x.trim()).filter(Boolean)
-                const enLs = splitSentences(en), viLs = splitSentences(vi)
-                const max = Math.max(enLs.length, viLs.length)
+                const enRaw = en.split('\n').map(s => s.trim())
+                const viRaw = vi.split('\n').map(s => s.trim())
+                const pairs = enRaw.map((eL, i) => ({ en: eL, vi: viRaw[i] || '' })).filter(p => p.en)
                 let html = ''
-                for (let i = 0; i < max; i++) {
-                  const eL = enLs[i] || '', vL = viLs[i] || ''
-                  if (!eL.trim() && !vL.trim()) continue
+                for (const { en: eL, vi: vL } of pairs) {
+                  const speaker = isSpeakerLine(eL) || isVISpeakerLine(vL)
                   html += `
                     <div style="border-radius:10px;overflow:hidden;margin-bottom:8px;border:1px solid #dde8fa;box-shadow:0 1px 3px rgba(37,99,235,.06)">
                       <div style="padding:10px 14px;background:white;font-size:13px;color:#1e293b;line-height:1.75">
-                        ${eL.trim() ? (groupDone ? highlightText(eL, g.highlights) : escapeHtml(eL)) : ''}
+                        ${groupDone ? highlightText(eL, g.highlights) : escapeHtml(eL)}
                       </div>
-                      ${vL.trim() ? `
+                      ${!speaker && vL ? `
                       <div style="padding:8px 14px;background:#eff6ff;border-top:1px solid #dde8fa;display:flex;gap:8px;align-items:flex-start">
                         <span style="flex-shrink:0;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.4px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;line-height:16px">VI</span>
                         <div style="font-size:13px;color:#1d4ed8;line-height:1.7">${escapeHtml(vL)}</div>
