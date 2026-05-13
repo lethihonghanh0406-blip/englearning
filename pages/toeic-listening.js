@@ -106,12 +106,12 @@ export default async function toeicListening(app) {
 
     groups = rawList.map(g => {
       // Always prefer passage_a (strip speaker labels like M:, W:, A:, etc.)
-      const pasSentences = (g.passage_a || '').split('\n')
-        .map(s => stripSpeaker(s.trim()))
-        .filter(Boolean)
-      if (pasSentences.length) {
-        const viSentences = (g.passage_a_vi || '').split('\n').map(s => s.trim()).filter(Boolean)
-        return { ...g, sentences: pasSentences, viSentences }
+      // Pair EN+VI by index so alignment is preserved even when VI has empty strings
+      const enRaw = (g.passage_a || '').split('\n').map(s => stripSpeaker(s.trim()))
+      const viRaw = (g.passage_a_vi || '').split('\n').map(s => s.trim())
+      const pairs = enRaw.map((en, i) => ({ en, vi: viRaw[i] || '' })).filter(p => p.en)
+      if (pairs.length) {
+        return { ...g, sentences: pairs.map(p => p.en), viSentences: pairs.map(p => p.vi) }
       }
 
       // Fallback for Part 1 & 2 without passage_a: use question options
