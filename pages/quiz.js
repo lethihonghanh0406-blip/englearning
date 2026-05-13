@@ -604,6 +604,21 @@ export default async function quizPage(app, params) {
         return safe
       }
     }
+    // Apply highlights to already-rendered HTML without escaping tags
+    function highlightInHTML(html, highlights) {
+      if (!html || !highlights) return html
+      try {
+        const obj = typeof highlights === 'string' ? JSON.parse(highlights) : highlights
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return html
+        const terms = Object.values(obj).flat().map(h => h && h.text).filter(Boolean)
+        if (!terms.length) return html
+        const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const regex = new RegExp(`(${terms.map(esc).join('|')})`, 'gi')
+        return html.replace(/(<[^>]*>|[^<]+)/g, m =>
+          m.startsWith('<') ? m : m.replace(regex, '<mark style="background:#fef08a;padding:0 2px;border-radius:2px;font-weight:600">$1</mark>')
+        )
+      } catch(e) { return html }
+    }
     function startTimer() {
       if (isReview || reviewSession || !isExam || state.timerInterval) return
       state.timerInterval = setInterval(() => {
@@ -888,7 +903,7 @@ export default async function quizPage(app, params) {
                 body = `<div style="white-space:pre-wrap">${escapeHtml(vi)}</div>`
               } else if (view === 'bilingual' && vi && !isHTML) {
                 const enAll = en.split('\n').map(s => s.trim()).filter(Boolean)
-                const viAll = vi.split('\n').map(s => s.trim()).filter(Boolean)
+                const viAll = vi.split('\n').map(s => s.trim())
                 const pairs = enAll.map((eL, i) => ({ en: eL, vi: viAll[i] || '' }))
                 const isChatSpk = s => /^[A-Z][\w\s,\.]*[\(\[]\d{1,2}:\d{2}/.test(s)
                 const hasChatTurns = pairs.some(p => isChatSpk(p.en))
@@ -919,7 +934,7 @@ export default async function quizPage(app, params) {
                 }
                 body = html
               } else {
-                body = autoRenderPassage(en)
+                body = groupDone ? highlightInHTML(autoRenderPassage(en), g.highlights) : autoRenderPassage(en)
               }
               return `${idx > 0 ? '<div style="margin:14px 0;height:1px;background:#e2e8f0"></div>' : ''}${body}`
             }).join('')}
