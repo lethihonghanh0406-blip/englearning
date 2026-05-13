@@ -103,20 +103,18 @@ export default async function moviesPage(app) {
   }
 
   function updateSubtitleDisplay(idx, subs) {
-    const el = document.getElementById('mv-subtitle')
-    if (!el) return
-    if (idx < 0 || !subs[idx]) {
-      el.innerHTML = `<span style="color:#64748b;font-size:14px">▶ Bấm play để bắt đầu</span>`
-      return
+    // Unhighlight previous
+    const prev = document.querySelector('.mv-sub-item.active')
+    if (prev) prev.classList.remove('active')
+
+    if (idx < 0 || !subs[idx]) return
+
+    // Highlight current
+    const el = document.getElementById('mvsub-' + idx)
+    if (el) {
+      el.classList.add('active')
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
     }
-    const sub = subs[idx]
-    el.innerHTML = `
-      <div style="font-size:20px;font-weight:600;color:#f8fafc;line-height:1.5">${sub.en}</div>
-      ${showVI
-        ? sub.vi
-          ? `<div style="font-size:16px;color:#93c5fd;margin-top:5px;font-style:italic">${sub.vi}</div>`
-          : `<div style="font-size:13px;color:#475569;margin-top:5px;font-style:italic">...</div>`
-        : ''}`
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -133,67 +131,78 @@ export default async function moviesPage(app) {
     }
   }
 
+  function buildSubList(subs) {
+    if (!subs.length) return `<div style="padding:20px;color:#64748b;font-size:13px;text-align:center">Không có subtitle</div>`
+    return subs.map((s, i) => `
+      <div id="mvsub-${i}" class="mv-sub-item" onclick="mvSeek(${s.t})"
+        style="padding:10px 14px;border-radius:8px;cursor:pointer;margin-bottom:2px;border:1px solid transparent;transition:.15s">
+        <div class="mv-sub-en" style="font-size:13px;color:#cbd5e1;line-height:1.5">${s.en}</div>
+        ${showVI && s.vi ? `<div class="mv-sub-vi" style="font-size:12px;color:#93c5fd;font-style:italic;margin-top:2px;line-height:1.4">${s.vi}</div>` : ''}
+      </div>`).join('')
+  }
+
   function renderLayout(movie, vid) {
     const lc = { beginner:'#dcfce7', intermediate:'#fef3c7', advanced:'#fee2e2' }
     const lt = { beginner:'#166534', intermediate:'#92400e', advanced:'#dc2626' }
     const ll = { beginner:'Cơ bản',  intermediate:'Trung cấp', advanced:'Nâng cao' }
+    const subs = getSubs()
 
     app.innerHTML = `
+      <style>
+        .mv-sub-item:hover { background:#1e293b !important; }
+        .mv-sub-item.active { background:#1d3461 !important; border-color:#2563eb !important; }
+        .mv-sub-item.active .mv-sub-en { color:#f1f5f9 !important; font-weight:600; }
+      </style>
       <div style="min-height:100vh;background:#0f172a;display:flex;flex-direction:column">
         <!-- Top bar -->
         <div style="background:#1e293b;border-bottom:1px solid #334155;height:56px;padding:0 24px;
-          display:flex;align-items:center;flex-shrink:0;position:sticky;top:0;z-index:20">
-          <button onclick="navigate('/')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0">← Trang chủ</button>
-          <span style="font-size:15px;font-weight:700;color:#f1f5f9;font-family:'Space Grotesk',sans-serif;margin-left:16px">🎬 Xem phim học tiếng Anh</span>
+          display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:20">
+          <div style="display:flex;align-items:center;gap:16px">
+            <button onclick="navigate('/')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0">← Trang chủ</button>
+            <span style="font-size:15px;font-weight:700;color:#f1f5f9;font-family:'Space Grotesk',sans-serif">🎬 Xem phim học tiếng Anh</span>
+          </div>
+          <div>
+            ${isPro ? `
+              <button id="mv-vi-btn" onclick="mvToggleVI()"
+                style="padding:7px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;
+                  background:${showVI?'#2563eb':'#334155'};color:${showVI?'white':'#94a3b8'}">
+                🌐 Song ngữ
+              </button>` : `
+              <button onclick="navigate('/pricing')"
+                style="padding:7px 16px;border-radius:8px;border:1px solid #334155;cursor:pointer;font-size:13px;
+                  background:transparent;color:#f59e0b;font-weight:600">
+                👑 Pro
+              </button>`}
+          </div>
         </div>
 
         <div style="flex:1;display:flex;overflow:hidden;min-height:calc(100vh - 56px)">
-          <!-- Sidebar -->
-          <div id="mv-sidebar" style="width:240px;min-width:240px;background:#1e293b;border-right:1px solid #334155;overflow-y:auto">
+          <!-- Movie list sidebar -->
+          <div id="mv-sidebar" style="width:200px;min-width:200px;background:#1e293b;border-right:1px solid #334155;overflow-y:auto">
             ${buildSidebarContent(lc, lt, ll)}
           </div>
 
-          <!-- Main -->
-          <div style="flex:1;overflow-y:auto;padding:24px">
-            ${movie ? `
-              <div style="max-width:900px;margin:auto;display:flex;flex-direction:column;gap:0">
-                <!-- Video -->
-                <div style="border-radius:14px 14px 0 0;overflow:hidden;aspect-ratio:16/9;background:black;flex-shrink:0">
-                  <div id="mv-yt-container" style="width:100%;height:100%"></div>
-                </div>
-
-                <!-- Subtitle bar -->
-                <div id="mv-card"
-                  style="background:#1e293b;border-radius:0 0 14px 14px;border:1px solid #334155;border-top:none;
-                    padding:18px 24px;display:flex;align-items:center;justify-content:space-between;min-height:80px">
-                  <div id="mv-subtitle" style="flex:1;min-width:0">
-                    <span style="color:#64748b;font-size:14px">▶ Bấm play để bắt đầu</span>
-                  </div>
-                  <div style="margin-left:20px;flex-shrink:0">
-                    ${isPro ? `
-                      <button id="mv-vi-btn" onclick="mvToggleVI()"
-                        style="padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;
-                          background:${showVI?'#2563eb':'#334155'};color:${showVI?'white':'#94a3b8'}">
-                        🌐 Song ngữ
-                      </button>` : `
-                      <button onclick="navigate('/pricing')"
-                        style="padding:8px 18px;border-radius:8px;border:1px solid #334155;cursor:pointer;font-size:13px;
-                          background:transparent;color:#f59e0b;font-weight:600;display:flex;align-items:center;gap:5px">
-                        👑 Pro
-                      </button>`}
-                  </div>
-                </div>
-
-                <!-- Movie info -->
-                <div style="margin-top:16px;padding:16px 20px;background:#1e293b;border-radius:12px;border:1px solid #334155">
-                  <div style="font-size:16px;font-weight:700;color:#f1f5f9;margin-bottom:4px">${movie.title}</div>
-                  <div style="font-size:12px;color:#64748b">${getSubs().length} đoạn subtitle</div>
-                </div>
-              </div>` : `
-              <div style="display:flex;align-items:center;justify-content:center;height:200px;color:#64748b;font-size:14px">
-                Chọn video từ danh sách
-              </div>`}
+          ${movie ? `
+          <!-- Subtitle panel (left) -->
+          <div id="mv-sub-panel" style="width:340px;min-width:340px;background:#0f172a;border-right:1px solid #1e293b;overflow-y:auto;padding:8px">
+            <div style="padding:8px 6px 6px;font-size:10px;font-weight:700;color:#475569;letter-spacing:.8px;margin-bottom:4px">
+              SUBTITLES — ${subs.length} đoạn
+            </div>
+            ${buildSubList(subs)}
           </div>
+
+          <!-- Video panel (right) -->
+          <div style="flex:1;display:flex;flex-direction:column;background:#000;overflow:hidden">
+            <div id="mv-card" style="flex:1;position:relative">
+              <div id="mv-yt-container" style="width:100%;height:100%"></div>
+            </div>
+            <div style="background:#1e293b;padding:10px 16px;border-top:1px solid #334155;font-size:12px;color:#64748b">
+              ${movie.title}
+            </div>
+          </div>` : `
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:14px">
+            Chọn video từ danh sách
+          </div>`}
         </div>
       </div>`
   }
@@ -229,7 +238,8 @@ export default async function moviesPage(app) {
       </div>`
   }
 
-  window.mvSelect   = id => { selId = id; render() }
+  window.mvSelect = id => { selId = id; render() }
+  window.mvSeek   = t  => { if (ytPlayer && ytReady) { ytPlayer.seekTo(t, true); ytPlayer.playVideo() } }
   window.mvToggleVI = () => {
     showVI = !showVI
     const btn = document.getElementById('mv-vi-btn')
@@ -237,6 +247,20 @@ export default async function moviesPage(app) {
       btn.style.background = showVI ? '#2563eb' : '#334155'
       btn.style.color = showVI ? 'white' : '#94a3b8'
     }
-    updateSubtitleDisplay(currentSubIdx, getSubs())
+    // Rebuild subtitle list with/without VI
+    const panel = document.getElementById('mv-sub-panel')
+    if (panel) {
+      const subs = getSubs()
+      panel.innerHTML = `
+        <div style="padding:8px 6px 6px;font-size:10px;font-weight:700;color:#475569;letter-spacing:.8px;margin-bottom:4px">
+          SUBTITLES — ${subs.length} đoạn
+        </div>
+        ${buildSubList(subs)}`
+      // Re-highlight current
+      if (currentSubIdx >= 0) {
+        const el = document.getElementById('mvsub-' + currentSubIdx)
+        if (el) { el.classList.add('active'); el.scrollIntoView({ block: 'center' }) }
+      }
+    }
   }
 }
