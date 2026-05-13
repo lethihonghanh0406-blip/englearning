@@ -262,11 +262,10 @@ export default async function toeicListening(app) {
               <button onclick="listenToggleScript()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#64748b">
                 ${showScript?'👁 Ẩn script':'👁 Hiện script'}
               </button>
-              ${globalHasVI ? `
-                <button onclick="listenToggleBilingual()"
-                  style="padding:4px 10px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:${showBilingual?'#0369a1':'#f1f5f9'};color:${showBilingual?'white':'#64748b'}">
-                  🌐 Song ngữ
-                </button>` : ''}
+              <button onclick="listenToggleBilingual()"
+                style="padding:4px 10px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:${showBilingual?'#0369a1':'#f1f5f9'};color:${showBilingual?'white':'#64748b'}">
+                🌐 Song ngữ
+              </button>
             </div>
             <span style="font-size:12px;color:#94a3b8">Câu ${sentenceIdx+1} / ${sentences.length}</span>
             <div style="display:flex;gap:4px">
