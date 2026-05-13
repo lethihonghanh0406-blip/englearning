@@ -53,9 +53,18 @@ export default async function toeicListening(app) {
     return s.replace(/^[A-Za-z]{1,10}\s*:\s*/, '').trim()
   }
 
-  // Detect speaker/timestamp header lines like "Jared Oxley [9:03 A.M.]" — no VI translation shown
+  // Detect speaker/timestamp header lines — no VI translation shown
+  // Handles full: "Paul Cho (9:47 A.M.)" / partial DB splits: "Paul Cho (9:47 A." / continuations: ") Hi..."
   function isSpeakerLine(s) {
-    return /^[\w][\w\s,\.]+[\(\[]\d{1,2}:\d{2}\s*[AP]\.M\.[\)\]]/.test(s || '')
+    if (!s) return false
+    if (/^[A-Z][\w\s,\.]*[\(\[]\d{1,2}:\d{2}/.test(s)) return true  // name + (HH:MM...
+    if (s.startsWith(')')) return true                                   // continuation fragment
+    return false
+  }
+
+  // VI lines translated as "Name (time) dialogue" combos — skip showing these too
+  function isVISpeakerLine(v) {
+    return /^[A-Z][\w\s]+\(\d{1,2}:\d{2}/.test(v || '')
   }
 
   // ── Fetch groups ──────────────────────────────────────────────────────────
@@ -290,7 +299,7 @@ export default async function toeicListening(app) {
               <div onclick="listenGoSentence(${i})"
                 style="padding:8px 12px;border-radius:8px;margin-bottom:5px;cursor:pointer;background:${i===sentenceIdx?'#eff6ff':'transparent'};border:1px solid ${i===sentenceIdx?'#bfdbfe':'transparent'}">
                 <div style="font-size:14px;color:${i===sentenceIdx?'#1d4ed8':'#374151'};font-weight:${i===sentenceIdx?500:400};line-height:1.7">${escapeHtml(s)}</div>
-                ${showBilingual && viLines[i] && !isSpeakerLine(s) ? `<div style="font-size:12.5px;color:#0369a1;font-style:italic;line-height:1.6;margin-top:3px">${escapeHtml(viLines[i])}</div>` : ''}
+                ${showBilingual && viLines[i] && !isSpeakerLine(s) && !isVISpeakerLine(viLines[i]) ? `<div style="font-size:12.5px;color:#0369a1;font-style:italic;line-height:1.6;margin-top:3px">${escapeHtml(viLines[i])}</div>` : ''}
               </div>`).join('')}
           </div>` : ''}
 
