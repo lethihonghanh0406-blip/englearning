@@ -95,6 +95,7 @@ export default async function moviesPage(app) {
     const subs = getSubs()
     if (!subs[currentSubIdx]) return
     isRecording = true; lastResult = null; interimText = ''
+    if (ytPlayer && ytReady) ytPlayer.pauseVideo()
     updateShadowPanel(currentSubIdx, subs)
     recognition = new SR()
     recognition.lang = 'en-US'; recognition.interimResults = true; recognition.maxAlternatives = 1
