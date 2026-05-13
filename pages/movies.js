@@ -13,6 +13,13 @@ export default async function moviesPage(app) {
   let loopMode      = false
   let loopIdx       = -1
   let speed         = 1.0
+  let isRecording   = false
+  let lastResult    = null
+  let interimText   = ''
+  let recognition   = null
+  let audioCtx      = null
+  let animFrame     = null
+  let mediaStream   = null
 
   app.innerHTML = `<div style="min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center"><div style="color:#64748b;font-size:14px">Đang tải...</div></div>`
 
@@ -36,6 +43,95 @@ export default async function moviesPage(app) {
     if (!movie?.youtube_id) return null
     const m = movie.youtube_id.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/)
     return m ? m[1] : movie.youtube_id
+  }
+
+  // ── English word comparison ────────────────────────────────────────────────
+  function compareEN(expected, spoken) {
+    const norm = s => s.toLowerCase().replace(/[^a-z\s']/g, '').trim()
+    const exp  = norm(expected).split(/\s+/).filter(Boolean)
+    const spk  = norm(spoken).split(/\s+/).filter(Boolean)
+    return exp.map((w, i) => ({ word: w, ok: spk[i] === w }))
+  }
+  function calcAccuracy(words) {
+    return words.length ? Math.round(words.filter(w => w.ok).length / words.length * 100) : 0
+  }
+
+  // ── Waveform ───────────────────────────────────────────────────────────────
+  function startWaveform(stream) {
+    audioCtx = new AudioContext()
+    const analyser = audioCtx.createAnalyser()
+    analyser.fftSize = 128
+    audioCtx.createMediaStreamSource(stream).connect(analyser)
+    const buf = new Uint8Array(analyser.frequencyBinCount)
+    function draw() {
+      animFrame = requestAnimationFrame(draw)
+      analyser.getByteFrequencyData(buf)
+      const canvas = document.getElementById('mv-waveform')
+      if (!canvas) { cancelAnimationFrame(animFrame); return }
+      const ctx = canvas.getContext('2d'), W = canvas.width, H = canvas.height
+      ctx.clearRect(0, 0, W, H)
+      const bw = W / buf.length
+      buf.forEach((v, i) => {
+        const h = (v / 255) * H
+        const g = ctx.createLinearGradient(0, H - h, 0, H)
+        g.addColorStop(0, '#3b82f6'); g.addColorStop(1, '#93c5fd')
+        ctx.fillStyle = g
+        ctx.beginPath(); ctx.roundRect(i * bw + 1, H - h, bw - 2, h, 2); ctx.fill()
+      })
+    }
+    draw()
+  }
+  function stopWaveform() {
+    if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null }
+    if (audioCtx)  { audioCtx.close(); audioCtx = null }
+    const c = document.getElementById('mv-waveform')
+    if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height)
+  }
+
+  // ── Speech recognition (English) ──────────────────────────────────────────
+  function startRecording() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) { alert('Dùng Chrome để sử dụng tính năng này!'); return }
+    const subs = getSubs()
+    if (!subs[currentSubIdx]) return
+    isRecording = true; lastResult = null; interimText = ''
+    updateShadowPanel(currentSubIdx, subs)
+    recognition = new SR()
+    recognition.lang = 'en-US'; recognition.interimResults = true; recognition.maxAlternatives = 1
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      mediaStream = stream; startWaveform(stream)
+    }).catch(() => {})
+    recognition.onresult = e => {
+      let interim = '', final = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript
+        else interim += e.results[i][0].transcript
+      }
+      interimText = interim || final
+      const el = document.getElementById('mv-interim')
+      if (el) el.textContent = interimText
+      if (final) {
+        const words    = compareEN(subs[currentSubIdx].en, final)
+        const accuracy = calcAccuracy(words)
+        const score    = Math.round(((e.results[e.results.length-1][0].confidence || 0.5) * 50) + accuracy * 0.5)
+        lastResult = { words, spoken: final, score, accuracy }
+        interimText = ''; isRecording = false
+        stopWaveform()
+        if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null }
+        updateShadowPanel(currentSubIdx, subs)
+      }
+    }
+    recognition.onerror = () => stopRec()
+    recognition.onend   = () => { if (isRecording) stopRec() }
+    recognition.start()
+  }
+  function stopRec() {
+    isRecording = false; stopWaveform()
+    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null }
+    updateShadowPanel(currentSubIdx, getSubs())
+  }
+  function mvToggleRecording() {
+    if (isRecording) { recognition?.stop(); stopRec() } else startRecording()
   }
 
   // ── Binary search for current subtitle ────────────────────────────────────
@@ -139,9 +235,35 @@ export default async function moviesPage(app) {
       el.innerHTML = `<span style="color:#475569;font-size:14px">▶ Bấm play để bắt đầu</span>`
       return
     }
+
+    // EN words — highlight correct/wrong after result
+    const enHTML = lastResult
+      ? lastResult.words.map(w =>
+          `<span style="display:inline-block;padding:1px 6px;border-radius:5px;margin:2px 1px;font-size:16px;font-weight:600;
+            background:${w.ok?'#166534':'#7f1d1d'};color:${w.ok?'#bbf7d0':'#fca5a5'}">${w.word}</span>`
+        ).join(' ')
+      : `<span style="font-size:17px;font-weight:500;color:#f1f5f9">${sub.en}</span>`
+
     el.innerHTML = `
-      <div style="font-size:18px;font-weight:600;color:#f1f5f9;line-height:1.6;text-align:center">${sub.en}</div>
-      ${showVI && sub.vi ? `<div style="font-size:14px;color:#93c5fd;font-style:italic;margin-top:6px;text-align:center">${sub.vi}</div>` : ''}
+      <div style="text-align:center;margin-bottom:6px">${enHTML}</div>
+      ${showVI && sub.vi ? `<div style="font-size:13px;color:#93c5fd;font-style:italic;text-align:center;margin-bottom:6px">${sub.vi}</div>` : ''}
+
+      ${isRecording ? `
+        <canvas id="mv-waveform" width="500" height="40"
+          style="width:100%;max-width:500px;height:40px;display:block;margin:6px auto;border-radius:6px;background:#0f172a"></canvas>
+        <div id="mv-interim" style="text-align:center;font-size:13px;color:#f97316;min-height:18px">${interimText}</div>` : ''}
+
+      ${lastResult ? `
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:8px">
+          <div style="text-align:center;background:#0f172a;border-radius:8px;padding:8px 16px">
+            <div style="font-size:10px;color:#475569;font-weight:700;letter-spacing:.7px">ĐIỂM</div>
+            <div style="font-size:24px;font-weight:700;color:${lastResult.score>=80?'#4ade80':lastResult.score>=60?'#fbbf24':'#f87171'}">${lastResult.score}</div>
+          </div>
+          <div style="text-align:center;background:#0f172a;border-radius:8px;padding:8px 16px">
+            <div style="font-size:10px;color:#475569;font-weight:700;letter-spacing:.7px">CHÍNH XÁC</div>
+            <div style="font-size:24px;font-weight:700;color:${lastResult.accuracy>=80?'#4ade80':lastResult.accuracy>=60?'#fbbf24':'#f87171'}">${lastResult.accuracy}%</div>
+          </div>
+        </div>` : ''}
     `
   }
 
@@ -255,6 +377,14 @@ export default async function moviesPage(app) {
                   </button>`).join('')}
               </div>
 
+              <!-- Record button -->
+              <button id="mv-rec-btn" onclick="mvToggleRec()"
+                style="padding:6px 18px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;
+                  background:${isRecording?'#ef4444':'#2563eb'};color:white;
+                  box-shadow:0 2px 8px ${isRecording?'rgba(239,68,68,.4)':'rgba(37,99,235,.3)'}">
+                ${isRecording ? '■ Dừng' : '🎤 Kiểm tra'}
+              </button>
+
               <!-- Prev / Next segment -->
               <div style="display:flex;gap:4px;margin-left:auto">
                 <button onclick="mvPrevSub()" title="Câu trước"
@@ -326,16 +456,18 @@ export default async function moviesPage(app) {
     })
   }
 
+  window.mvToggleRec = () => mvToggleRecording()
+
   window.mvPrevSub = () => {
     const subs = getSubs()
     const idx  = Math.max(0, currentSubIdx - 1)
-    if (subs[idx]) { loopIdx = loopMode ? idx : -1; window.mvSeek(subs[idx].t) }
+    if (subs[idx]) { lastResult = null; loopIdx = loopMode ? idx : -1; window.mvSeek(subs[idx].t) }
   }
 
   window.mvNextSub = () => {
     const subs = getSubs()
     const idx  = Math.min(subs.length - 1, currentSubIdx + 1)
-    if (subs[idx]) { loopIdx = loopMode ? idx : -1; window.mvSeek(subs[idx].t) }
+    if (subs[idx]) { lastResult = null; loopIdx = loopMode ? idx : -1; window.mvSeek(subs[idx].t) }
   }
   window.mvToggleVI = () => {
     showVI = !showVI
