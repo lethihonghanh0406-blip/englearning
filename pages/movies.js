@@ -10,6 +10,9 @@ export default async function moviesPage(app) {
   let subtitleTimer = null
   let currentSubIdx = -1
   let layoutMovieId = 'INIT'
+  let loopMode      = false
+  let loopIdx       = -1
+  let speed         = 1.0
 
   app.innerHTML = `<div style="min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center"><div style="color:#64748b;font-size:14px">Đang tải...</div></div>`
 
@@ -86,9 +89,17 @@ export default async function moviesPage(app) {
       if (!ytPlayer || !ytReady) return
       try {
         const state = ytPlayer.getPlayerState()
-        if (state !== 1 && state !== 2) return  // only sync while playing/paused
+        if (state !== 1 && state !== 2) return
         const t = ytPlayer.getCurrentTime()
         const idx = findSubIdx(subs, t)
+
+        // Loop: if moved past the loop segment, seek back
+        if (loopMode && loopIdx >= 0 && idx !== loopIdx) {
+          ytPlayer.seekTo(subs[loopIdx].t, true)
+          ytPlayer.playVideo()
+          return
+        }
+
         if (idx !== currentSubIdx) {
           currentSubIdx = idx
           updateSubtitleDisplay(idx, subs)
@@ -107,14 +118,31 @@ export default async function moviesPage(app) {
     const prev = document.querySelector('.mv-sub-item.active')
     if (prev) prev.classList.remove('active')
 
-    if (idx < 0 || !subs[idx]) return
-
-    // Highlight current
-    const el = document.getElementById('mvsub-' + idx)
-    if (el) {
-      el.classList.add('active')
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    // Highlight in list
+    if (idx >= 0 && subs[idx]) {
+      const el = document.getElementById('mvsub-' + idx)
+      if (el) {
+        el.classList.add('active')
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }
     }
+
+    // Update shadowing panel
+    updateShadowPanel(idx, subs)
+  }
+
+  function updateShadowPanel(idx, subs) {
+    const el = document.getElementById('mv-shadow-panel')
+    if (!el) return
+    const sub = subs[idx]
+    if (!sub) {
+      el.innerHTML = `<span style="color:#475569;font-size:14px">▶ Bấm play để bắt đầu</span>`
+      return
+    }
+    el.innerHTML = `
+      <div style="font-size:18px;font-weight:600;color:#f1f5f9;line-height:1.6;text-align:center">${sub.en}</div>
+      ${showVI && sub.vi ? `<div style="font-size:14px;color:#93c5fd;font-style:italic;margin-top:6px;text-align:center">${sub.vi}</div>` : ''}
+    `
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -192,12 +220,48 @@ export default async function moviesPage(app) {
           </div>
 
           <!-- Video panel (right): fixed, no scroll -->
-          <div style="flex:1;display:flex;flex-direction:column;background:#000;overflow:hidden;height:100%">
-            <div id="mv-card" style="position:relative;width:100%;padding-top:56.25%;flex-shrink:0">
+          <div style="flex:1;display:flex;flex-direction:column;background:#0f172a;overflow:hidden;height:100%">
+            <!-- Video -->
+            <div id="mv-card" style="position:relative;width:100%;padding-top:56.25%;flex-shrink:0;background:#000">
               <div id="mv-yt-container" style="position:absolute;top:0;left:0;width:100%;height:100%"></div>
             </div>
-            <div style="background:#1e293b;padding:10px 16px;border-top:1px solid #334155;font-size:12px;color:#94a3b8;flex-shrink:0">
-              ${movie.title}
+
+            <!-- Current subtitle display -->
+            <div id="mv-shadow-panel"
+              style="padding:14px 20px;min-height:64px;display:flex;align-items:center;justify-content:center;
+                border-bottom:1px solid #1e293b;flex-shrink:0">
+              <span style="color:#475569;font-size:14px">▶ Bấm play để bắt đầu</span>
+            </div>
+
+            <!-- Shadowing controls -->
+            <div style="padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+              background:#1e293b;border-top:1px solid #334155;flex-wrap:wrap">
+              <span style="font-size:11px;font-weight:700;color:#475569;letter-spacing:.8px">SHADOWING</span>
+
+              <!-- Loop -->
+              <button id="mv-loop-btn" onclick="mvToggleLoop()"
+                style="padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                  background:${loopMode?'#dc2626':'#334155'};color:${loopMode?'white':'#94a3b8'}">
+                🔄 Lặp câu
+              </button>
+
+              <!-- Speed -->
+              <div style="display:flex;gap:4px">
+                ${[0.5, 0.75, 1.0].map(s => `
+                  <button onclick="mvSetSpeed(${s})"
+                    style="padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                      background:${speed===s?'#2563eb':'#334155'};color:${speed===s?'white':'#94a3b8'}">
+                    ${s === 1 ? '1x' : s + 'x'}
+                  </button>`).join('')}
+              </div>
+
+              <!-- Prev / Next segment -->
+              <div style="display:flex;gap:4px;margin-left:auto">
+                <button onclick="mvPrevSub()" title="Câu trước"
+                  style="padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;background:#334155;color:#94a3b8">⏮ Trước</button>
+                <button onclick="mvNextSub()" title="Câu sau"
+                  style="padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;background:#334155;color:#94a3b8">Sau ⏭</button>
+              </div>
             </div>
           </div>` : `
           <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:14px">
@@ -238,8 +302,41 @@ export default async function moviesPage(app) {
       </div>`
   }
 
-  window.mvSelect = id => { selId = id; render() }
-  window.mvSeek   = t  => { if (ytPlayer && ytReady) { ytPlayer.seekTo(t, true); ytPlayer.playVideo() } }
+  window.mvSelect  = id => { selId = id; render() }
+  window.mvSeek    = t  => { if (ytPlayer && ytReady) { ytPlayer.seekTo(t, true); ytPlayer.playVideo() } }
+
+  window.mvToggleLoop = () => {
+    loopMode = !loopMode
+    loopIdx  = loopMode ? currentSubIdx : -1
+    const btn = document.getElementById('mv-loop-btn')
+    if (btn) {
+      btn.style.background = loopMode ? '#dc2626' : '#334155'
+      btn.style.color      = loopMode ? 'white'   : '#94a3b8'
+    }
+  }
+
+  window.mvSetSpeed = s => {
+    speed = s
+    if (ytPlayer && ytReady) ytPlayer.setPlaybackRate(s)
+    // Update speed buttons
+    document.querySelectorAll('[onclick^="mvSetSpeed"]').forEach(btn => {
+      const bs = parseFloat(btn.getAttribute('onclick').match(/[\d.]+/)[0])
+      btn.style.background = bs === s ? '#2563eb' : '#334155'
+      btn.style.color      = bs === s ? 'white'   : '#94a3b8'
+    })
+  }
+
+  window.mvPrevSub = () => {
+    const subs = getSubs()
+    const idx  = Math.max(0, currentSubIdx - 1)
+    if (subs[idx]) { loopIdx = loopMode ? idx : -1; window.mvSeek(subs[idx].t) }
+  }
+
+  window.mvNextSub = () => {
+    const subs = getSubs()
+    const idx  = Math.min(subs.length - 1, currentSubIdx + 1)
+    if (subs[idx]) { loopIdx = loopMode ? idx : -1; window.mvSeek(subs[idx].t) }
+  }
   window.mvToggleVI = () => {
     showVI = !showVI
     const btn = document.getElementById('mv-vi-btn')
@@ -261,6 +358,7 @@ export default async function moviesPage(app) {
         const el = document.getElementById('mvsub-' + currentSubIdx)
         if (el) { el.classList.add('active'); el.scrollIntoView({ block: 'center' }) }
       }
+      updateShadowPanel(currentSubIdx, getSubs())
     }
   }
 }
