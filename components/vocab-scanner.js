@@ -405,7 +405,7 @@ export async function initVocabScanner() {
 
     const sel  = window.getSelection()
     const text = sel?.toString().trim().replace(/\s+/g, ' ')
-    if (!text || text.length < 2 || text.length > 60) {
+    if (!text || text.length < 2 || text.length > 120) {
       if (!text || text.length < 2) el.style.display = 'none'
       return
     }

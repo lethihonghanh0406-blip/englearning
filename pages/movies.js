@@ -285,10 +285,10 @@ export default async function moviesPage(app) {
   function buildSubList(subs) {
     if (!subs.length) return `<div style="padding:20px;color:#64748b;font-size:13px;text-align:center">Không có subtitle</div>`
     return subs.map((s, i) => `
-      <div id="mvsub-${i}" class="mv-sub-item" onclick="mvSeek(${s.t})"
+      <div id="mvsub-${i}" class="mv-sub-item" onclick="if(!window.getSelection()?.toString()?.trim())mvSeek(${s.t})"
         style="padding:10px 14px;border-radius:8px;cursor:pointer;margin-bottom:2px;border:1px solid transparent;transition:.15s">
-        <div class="mv-sub-en" style="font-size:13px;color:#cbd5e1;line-height:1.5">${s.en}</div>
-        ${showVI && s.vi ? `<div class="mv-sub-vi" style="font-size:12px;color:#93c5fd;font-style:italic;margin-top:2px;line-height:1.4">${s.vi}</div>` : ''}
+        <div class="mv-sub-en" style="font-size:13px;color:#cbd5e1;line-height:1.5;user-select:text;cursor:text">${s.en}</div>
+        ${showVI && s.vi ? `<div class="mv-sub-vi" style="font-size:12px;color:#93c5fd;font-style:italic;margin-top:2px;line-height:1.4;user-select:text;cursor:text">${s.vi}</div>` : ''}
       </div>`).join('')
   }
 
