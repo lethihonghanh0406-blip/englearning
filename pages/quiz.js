@@ -887,9 +887,9 @@ export default async function quizPage(app, params) {
               if (view === 'vi' && vi && !isHTML) {
                 body = `<div style="white-space:pre-wrap">${escapeHtml(vi)}</div>`
               } else if (view === 'bilingual' && vi && !isHTML) {
-                const enAll = en.split('\n').map(s => s.trim())
-                const viAll = vi.split('\n').map(s => s.trim())
-                const pairs = enAll.map((eL, i) => ({ en: eL, vi: viAll[i] || '' })).filter(p => p.en)
+                const enAll = en.split('\n').map(s => s.trim()).filter(Boolean)
+                const viAll = vi.split('\n').map(s => s.trim()).filter(Boolean)
+                const pairs = enAll.map((eL, i) => ({ en: eL, vi: viAll[i] || '' }))
                 const isChatSpk = s => /^[A-Z][\w\s,\.]*[\(\[]\d{1,2}:\d{2}/.test(s)
                 const hasChatTurns = pairs.some(p => isChatSpk(p.en))
                 const viCard = (vL) => vL && !isSpeakerLine(vL) ? `<div style="padding:8px 14px;background:#eff6ff;border-top:1px solid #dde8fa;display:flex;gap:8px;align-items:flex-start"><span style="flex-shrink:0;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.4px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;line-height:16px">VI</span><div style="font-size:13px;color:#1d4ed8;line-height:1.7">${escapeHtml(vL)}</div></div>` : ''
