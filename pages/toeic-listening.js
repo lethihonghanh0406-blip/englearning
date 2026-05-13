@@ -65,6 +65,8 @@ export default async function toeicListening(app) {
     // Lines that are mostly an email address or URL (no real text to translate)
     if (/^[\w.\-]+@[\w.\-]+\.\w+$/.test(s.trim())) return true
     if (/^https?:\/\//.test(s.trim())) return true
+    // Domain/URL fragments from split lines: "gernackhome." or "com." or "www."
+    if (/^[a-z][\w-]*\.$/.test(s.trim())) return true
     return false
   }
 
