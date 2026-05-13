@@ -53,12 +53,18 @@ export default async function toeicListening(app) {
     return s.replace(/^[A-Za-z]{1,10}\s*:\s*/, '').trim()
   }
 
-  // Detect speaker/timestamp header lines — no VI translation shown
-  // Handles full: "Paul Cho (9:47 A.M.)" / partial DB splits: "Paul Cho (9:47 A." / continuations: ") Hi..."
+  // Lines that should never show VI translation
   function isSpeakerLine(s) {
     if (!s) return false
-    if (/^[A-Z][\w\s,\.]*[\(\[]\d{1,2}:\d{2}/.test(s)) return true  // name + (HH:MM...
-    if (s.startsWith(')')) return true                                   // continuation fragment
+    // Speaker+timestamp: "Paul Cho (9:47 A.M.)" or partial "Paul Cho (9:47 A."
+    if (/^[A-Z][\w\s,\.]*[\(\[]\d{1,2}:\d{2}/.test(s)) return true
+    // Continuation fragment from split line: ") Hi, Marisol."
+    if (s.startsWith(')')) return true
+    // Email header fields: "TO:", "FROM:", "DATE:", "SUBJECT:", "CC:", "BCC:"
+    if (/^(TO|FROM|DATE|SUBJECT|CC|BCC)\s*:/i.test(s)) return true
+    // Lines that are mostly an email address or URL (no real text to translate)
+    if (/^[\w.\-]+@[\w.\-]+\.\w+$/.test(s.trim())) return true
+    if (/^https?:\/\//.test(s.trim())) return true
     return false
   }
 
