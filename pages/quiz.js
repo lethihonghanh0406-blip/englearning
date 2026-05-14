@@ -955,7 +955,7 @@ export default async function quizPage(app, params) {
               </div>` : ''}
           </div>` : ''}
 
-        ${part <= 4 && !examStyle && groupDone ? qs.filter(q => q.question_vi || q.options_vi.some(Boolean)).map(q => {
+        ${part <= 4 && !examStyle && groupDone && state.passageView !== 'bilingual' ? qs.filter(q => q.question_vi || q.options_vi.some(Boolean)).map(q => {
           const ans = state.answers[q.id]
           return `
             <div style="background:#eff6ff;border-radius:12px;padding:14px;border:1px solid #bfdbfe;margin-top:10px">
@@ -1008,9 +1008,17 @@ export default async function quizPage(app, params) {
             ← Nhóm câu trước
           </button>` : ''}
         <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden">
-          <div style="padding:14px 20px;background:#f8faff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:10px">
+          <div style="padding:14px 20px;background:#f8faff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span style="font-size:14px;font-weight:700;color:#0f172a">Question</span>
             ${qs.length > 1 ? `<span style="font-size:12px;color:#64748b;background:white;border:1px solid #e2e8f0;padding:3px 12px;border-radius:20px">Nhóm câu ${qRange} (${qs.length} câu hỏi)</span>` : ''}
+            ${!examStyle && part <= 4 && qs.some(q => q.question_vi || q.options_vi.some(Boolean)) ? `
+              <div style="margin-left:auto;display:flex;gap:2px;background:#f1f5f9;padding:3px;border-radius:9px">
+                ${[['en','EN'],['bilingual','🌐 Song ngữ']].map(([v,lbl])=>`
+                  <button onclick="quizSetPassageViewGated('${v}')"
+                    style="padding:5px 11px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:${state.passageView===v?700:500};background:${state.passageView===v?'white':'transparent'};color:${state.passageView===v?'#0f172a':'#64748b'};box-shadow:${state.passageView===v?'0 1px 2px rgba(0,0,0,.1)':'none'};transition:all .15s;position:relative">
+                    ${lbl}${v==='bilingual'?'<span style="position:absolute;top:-5px;right:-4px;font-size:9px;background:#f59e0b;color:white;border-radius:4px;padding:0 3px;font-weight:700;line-height:14px">PRO</span>':''}
+                  </button>`).join('')}
+              </div>` : ''}
           </div>
           <div style="padding:20px;display:flex;flex-direction:column;gap:24px">
             ${qs.map((q, i) => renderQuestion(q, i, i === qs.length - 1)).join('')}
