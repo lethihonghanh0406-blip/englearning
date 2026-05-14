@@ -639,6 +639,7 @@ export default async function toeicListening(app) {
         resetDict(); render()
       }
     }
+    setTimeout(() => window.listenReplay(), 80)
   }
 
   // Mark done + advance
@@ -657,6 +658,7 @@ export default async function toeicListening(app) {
         resetDict(); render()
       }
     }
+    setTimeout(() => window.listenReplay(), 80)
   }
 
   window.listenNextSentenceNav = () => window.listenNextSentence()
