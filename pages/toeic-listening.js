@@ -353,6 +353,10 @@ export default async function toeicListening(app) {
       : tab === 'check'   ? renderCheck(sentences, sentence, words)
       :                     renderDictate(sentences, sentence, words)
 
+    // Pause old audio before replacing DOM
+    const prevAudio = document.getElementById('listen-audio')
+    if (prevAudio) prevAudio.pause()
+
     app.innerHTML = `
       <div style="min-height:100vh;background:#f1f5f9;display:flex;flex-direction:column">
 
@@ -375,7 +379,7 @@ export default async function toeicListening(app) {
       </div>`
 
     const audio = document.getElementById('listen-audio')
-    if (audio) audio.playbackRate = speed
+    if (audio) { audio.playbackRate = speed; audio.load() }
     // Show progress thumb on hover
     const progressEl = app.querySelector('[id="listen-progress-thumb"]')?.parentElement
     if (progressEl) {
@@ -588,7 +592,7 @@ export default async function toeicListening(app) {
     sentenceIdx = si
     resetDict()
     render()
-    setTimeout(() => listenPlayAudio(), 120)
+    setTimeout(() => window.listenReplay(), 200)
   }
 
   window.listenPlayAudio = () => {
@@ -639,7 +643,7 @@ export default async function toeicListening(app) {
         resetDict(); render()
       }
     }
-    setTimeout(() => window.listenReplay(), 80)
+    setTimeout(() => window.listenReplay(), 200)
   }
 
   // Mark done + advance
@@ -658,7 +662,7 @@ export default async function toeicListening(app) {
         resetDict(); render()
       }
     }
-    setTimeout(() => window.listenReplay(), 80)
+    setTimeout(() => window.listenReplay(), 200)
   }
 
   window.listenNextSentenceNav = () => window.listenNextSentence()
