@@ -133,7 +133,7 @@ export default async function toeicListening(app) {
     if (!test) return ''
     const year2  = String(test.year).slice(-2)
     const letter = String.fromCharCode(97 + (sIdx || 0))
-    return `https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/audio_dictation/${test.test_number}_audio_${year2}_t${test.test_number}_p${selPart}_${g.group_order}_${letter}.mp3`
+    return `https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/audio_dictation/${g.group_order}_audio_${year2}_t${test.test_number}_p${selPart}_${g.group_order}_${letter}.mp3`
   }
 
   // ── Hidden word calc ───────────────────────────────────────────────────────
