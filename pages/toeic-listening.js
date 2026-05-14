@@ -134,9 +134,17 @@ export default async function toeicListening(app) {
   function buildAudioUrl(g, sIdx) {
     const test = allTests.find(t => t.id === selTestId)
     if (!test) return ''
-    const year2  = String(test.year).slice(-2)
-    const letter = String.fromCharCode(97 + (sIdx || 0))
-    return `https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/audio_dictation/${g.group_order}_audio_${year2}_t${test.test_number}_p${selPart}_${g.group_order}_${letter}.mp3?cb=${_audioCb}`
+    const year2 = String(test.year).slice(-2)
+    const base  = `https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/audio_dictation/${g.group_order}_audio_${year2}_t${test.test_number}_p${selPart}_${g.group_order}`
+
+    if (selPart === 2) {
+      // sIdx=0 → question audio (no letter); sIdx=1,2,3 → options a,b,c
+      const suffix = sIdx === 0 ? '' : `_${String.fromCharCode(96 + sIdx)}`
+      return `${base}${suffix}.mp3?cb=${_audioCb}`
+    }
+
+    // Part 1, 3, 4: sIdx 0→a, 1→b, 2→c, 3→d
+    return `${base}_${String.fromCharCode(97 + (sIdx || 0))}.mp3?cb=${_audioCb}`
   }
 
   // ── Hidden word calc ───────────────────────────────────────────────────────
