@@ -156,6 +156,48 @@ export default async function quizPage(app, params) {
       return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     }
 
+    function cefrBadge(level) {
+      if (!level) return ''
+      const bg    = level==='A1'?'#dcfce7':level==='A2'?'#d1fae5':level==='B1'?'#dbeafe':level==='B2'?'#ede9fe':level==='C1'?'#fce7f3':'#fee2e2'
+      const color = level==='A1'?'#15803d':level==='A2'?'#059669':level==='B1'?'#1d4ed8':level==='B2'?'#7c3aed':level==='C1'?'#be185d':'#dc2626'
+      return `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;background:${bg};color:${color}">${level}</span>`
+    }
+
+    const quizDictCache = new Map()
+
+    async function quizFetchDict(word) {
+      if (quizDictCache.has(word)) return quizDictCache.get(word)
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
+        if (!res.ok) { quizDictCache.set(word, null); return null }
+        const data = await res.json()
+        const entry = data[0]
+        const phonetics = entry?.phonetics || []
+        const usP = phonetics.find(p => p.audio?.includes('-us.')) || phonetics.find(p => p.audio?.trim())
+        const ukP = phonetics.find(p => p.audio?.includes('-uk.'))
+        const meanings = entry?.meanings || []
+        const pos = meanings[0]?.partOfSpeech || ''
+        const synonyms = []
+        for (const m of meanings) {
+          synonyms.push(...(m.synonyms || []))
+          for (const d of (m.definitions || [])) synonyms.push(...(d.synonyms || []))
+        }
+        const result = {
+          ipa_us: usP?.text || '',
+          ipa_uk: ukP?.text || '',
+          audio_us: usP?.audio || '',
+          audio_uk: ukP?.audio || '',
+          pos,
+          synonyms: [...new Set(synonyms)].slice(0, 3),
+        }
+        quizDictCache.set(word, result)
+        return result
+      } catch {
+        quizDictCache.set(word, null)
+        return null
+      }
+    }
+
     function isSpeakerLine(s) {
       if (!s) return false
       if (/^[A-Z][\w\s,\.]*[\(\[]\d{1,2}:\d{2}/.test(s)) return true
@@ -818,16 +860,42 @@ export default async function quizPage(app, params) {
         }
         if (q.vocab.length) {
           explain += `
-            <div style="margin-top:8px;background:#fefce8;border-radius:12px;padding:14px;border:1px solid #fde68a">
-              <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#92400e;margin-bottom:10px">
-                📖 Từ vựng nên học (Câu ${q.question_number})
+            <div style="margin-top:8px">
+              <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                📖 Từ vựng nên học (${q.vocab.length}) · câu ${q.question_number}
               </div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px">
-                ${q.vocab.map(v => `
-                  <div style="background:white;border:1px solid #fde68a;border-radius:8px;padding:6px 12px;font-size:12px;display:flex;gap:5px;align-items:center">
-                    <strong style="color:#92400e">${escapeHtml(v.word)}</strong>
-                    <span style="color:#64748b">${escapeHtml(v.meaning)}</span>
-                  </div>`).join('')}
+              <div style="display:flex;flex-direction:column;gap:8px">
+                ${q.vocab.map(v => {
+                  const cached = quizDictCache.get(v.word)
+                  return `
+                    <div style="background:white;border-radius:12px;border:1px solid #fde68a;padding:12px 14px">
+                      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:6px">
+                        <span style="font-size:15px;font-weight:700;color:#0f172a">${escapeHtml(v.word)}</span>
+                        <span id="qpos-${v.id}" style="font-size:11px;color:#6366f1;background:#eef2ff;padding:2px 7px;border-radius:7px">${cached?.pos ? `(${cached.pos})` : ''}</span>
+                        ${cefrBadge(v.level)}
+                        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+                          <div style="display:flex;align-items:center;gap:3px">
+                            <span style="font-size:10px;font-weight:600;color:#94a3b8">US</span>
+                            <span id="qipa-us-${v.id}" style="font-size:12px;color:#6366f1;font-style:italic">${escapeHtml(cached?.ipa_us||'')}</span>
+                            <button onclick="quizPlayVocab('${escapeHtml(v.word)}','us','qipa-us-${v.id}')"
+                              style="width:22px;height:22px;border-radius:50%;border:1px solid #e2e8f0;background:white;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center">🔊</button>
+                          </div>
+                          <div style="display:flex;align-items:center;gap:3px">
+                            <span style="font-size:10px;font-weight:600;color:#94a3b8">UK</span>
+                            <span id="qipa-uk-${v.id}" style="font-size:12px;color:#6366f1;font-style:italic">${escapeHtml(cached?.ipa_uk||'')}</span>
+                            <button onclick="quizPlayVocab('${escapeHtml(v.word)}','uk','qipa-uk-${v.id}')"
+                              style="width:22px;height:22px;border-radius:50%;border:1px solid #e2e8f0;background:white;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center">🔊</button>
+                          </div>
+                        </div>
+                      </div>
+                      <div style="font-size:13px;color:#1e293b;font-weight:500;line-height:1.5;margin-bottom:${v.example?6:0}px">${escapeHtml(v.meaning||'')}</div>
+                      ${v.example ? `
+                        <div style="background:#fefce8;border-left:2px solid #fde68a;border-radius:0 6px 6px 0;padding:6px 10px;margin-bottom:4px">
+                          <div style="font-size:12px;color:#64748b;font-style:italic;line-height:1.6">${escapeHtml(v.example)}</div>
+                        </div>` : ''}
+                      <div id="qsyn-${v.id}" style="font-size:11px;color:#94a3b8;margin-top:2px">${cached?.synonyms?.length ? `≈ ${cached.synonyms.map(s=>escapeHtml(s)).join(' · ')}` : ''}</div>
+                    </div>`
+                }).join('')}
               </div>
             </div>`
         }
@@ -1071,9 +1139,49 @@ export default async function quizPage(app, params) {
         </div>`
 
       if (examStyle && !state.timerInterval) startTimer()
+
+      // Lazy-load IPA/POS/synonyms for visible vocab cards
+      const g2 = organizedGroups[state.groupIdx]
+      const groupDone2 = isReview || reviewSession || g2.questions.every(q => state.answers[q.id] !== undefined)
+      if (groupDone2) {
+        for (const q of g2.questions) {
+          for (const v of (q.vocab || [])) {
+            if (!quizDictCache.has(v.word)) {
+              quizFetchDict(v.word).then(data => {
+                if (!data) return
+                const posEl = document.getElementById(`qpos-${v.id}`)
+                const usEl  = document.getElementById(`qipa-us-${v.id}`)
+                const ukEl  = document.getElementById(`qipa-uk-${v.id}`)
+                const synEl = document.getElementById(`qsyn-${v.id}`)
+                if (posEl && data.pos) posEl.textContent = `(${data.pos})`
+                if (usEl)  usEl.textContent = data.ipa_us || ''
+                if (ukEl)  ukEl.textContent = data.ipa_uk || ''
+                if (synEl && data.synonyms?.length) synEl.textContent = `≈ ${data.synonyms.join(' · ')}`
+              })
+            }
+          }
+        }
+      }
     }
 
     // ── Event handlers ─────────────────────────────────────────────────────
+    window.quizPlayVocab = async (word, variant, ipaElId) => {
+      const data = await quizFetchDict(word)
+      const url  = variant === 'uk' ? (data?.audio_uk || '') : (data?.audio_us || '')
+      if (url) {
+        new Audio(url).play().catch(() => {})
+      } else {
+        const utt = new SpeechSynthesisUtterance(word)
+        utt.lang  = variant === 'uk' ? 'en-GB' : 'en-US'
+        speechSynthesis.speak(utt)
+      }
+      if (ipaElId && data) {
+        const el  = document.getElementById(ipaElId)
+        const ipa = variant === 'uk' ? data.ipa_uk : data.ipa_us
+        if (el && ipa) el.textContent = ipa
+      }
+    }
+
     window.quizAnswer = (qId, i) => {
       if (isReview || reviewSession || state.answers[qId] !== undefined) return
       state.answers[qId] = i
