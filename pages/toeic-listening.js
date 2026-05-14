@@ -301,7 +301,8 @@ export default async function toeicListening(app) {
     const audioToolbar = `
       <div style="background:white;border-bottom:1px solid #e2e8f0;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0">
         ${g ? `<audio id="listen-audio" src="${audioUrl}" preload="metadata" style="display:none"
-          ontimeupdate="listenAudioProgress()" onplay="document.getElementById('listen-play-btn').innerHTML='⏸'" onpause="document.getElementById('listen-play-btn').innerHTML='▶'" onended="document.getElementById('listen-play-btn').innerHTML='▶'"></audio>` : ''}
+          ontimeupdate="listenAudioProgress()" onplay="document.getElementById('listen-play-btn').innerHTML='⏸'" onpause="document.getElementById('listen-play-btn').innerHTML='▶'" onended="document.getElementById('listen-play-btn').innerHTML='▶'"
+          onerror="listenAudioFallback(this)"></audio>` : ''}
 
         <!-- Nav buttons -->
         <button onclick="listenPrevSentence()" ${atDisPrev?'disabled':''}
@@ -623,6 +624,14 @@ export default async function toeicListening(app) {
       const s = Math.floor(a.currentTime)
       time.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`
     }
+  }
+
+  // If letter-only URL (e.g. _b.mp3) returns 404, retry with _b1.mp3
+  window.listenAudioFallback = (el) => {
+    if (/[a-d]1\.mp3/.test(el.src)) return  // already tried fallback, give up
+    el.src = el.src.replace(/([a-d])(\.mp3)/, '$11$2')
+    el.load()
+    el.play().catch(() => {})
   }
 
   window.listenSeekClick = (e, el) => {
