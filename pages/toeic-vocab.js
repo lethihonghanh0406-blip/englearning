@@ -21,6 +21,7 @@ export default async function toeicVocab(app) {
   let gameLocking  = false
 
   let learned = new Set()
+  let selected = new Set()
   let currentUserId = null
 
   async function loadLearnedFromDB() {
@@ -34,7 +35,8 @@ export default async function toeicVocab(app) {
     for (const row of (data || [])) learned.add(row.vocab_id)
   }
 
-  const dictCache = new Map() // word → { ipa, audio } | null
+  const dictCache  = new Map() // word → { ipa, ipa_us, ipa_uk, audio_us, audio_uk, pos, synonyms } | null
+  const translCache = new Map() // vocab_id → VI translation of example
 
   async function fetchDictData(word) {
     if (dictCache.has(word)) return dictCache.get(word)
@@ -43,10 +45,25 @@ export default async function toeicVocab(app) {
       if (!res.ok) { dictCache.set(word, null); return null }
       const data = await res.json()
       const entry = data[0]
-      const phonetic = entry?.phonetics?.find(p => p.audio && p.audio.trim())
+      const phonetics = entry?.phonetics || []
+      const usP = phonetics.find(p => p.audio?.includes('-us.')) || phonetics.find(p => p.audio?.trim())
+      const ukP = phonetics.find(p => p.audio?.includes('-uk.'))
+      const meanings = entry?.meanings || []
+      const pos = meanings[0]?.partOfSpeech || ''
+      const synonyms = []
+      for (const m of meanings) {
+        synonyms.push(...(m.synonyms || []))
+        for (const d of (m.definitions || [])) synonyms.push(...(d.synonyms || []))
+      }
       const result = {
-        ipa:   entry?.phonetic || entry?.phonetics?.find(p => p.text)?.text || '',
-        audio: phonetic?.audio || ''
+        ipa:      entry?.phonetic || phonetics.find(p => p.text)?.text || '',
+        ipa_us:   usP?.text || '',
+        ipa_uk:   ukP?.text || '',
+        audio:    usP?.audio || '',
+        audio_us: usP?.audio || '',
+        audio_uk: ukP?.audio || '',
+        pos,
+        synonyms: [...new Set(synonyms)].slice(0, 3),
       }
       dictCache.set(word, result)
       return result
@@ -56,8 +73,25 @@ export default async function toeicVocab(app) {
     }
   }
 
+  async function translateText(text) {
+    try {
+      const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`)
+      const data = await res.json()
+      return data[0]?.map(t => t[0]).join('') || ''
+    } catch {
+      return ''
+    }
+  }
+
   function escapeHtml(s) {
     return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  }
+
+  function cefrBadge(level) {
+    if (!level) return ''
+    const bg    = level==='A1'?'#dcfce7':level==='A2'?'#d1fae5':level==='B1'?'#dbeafe':level==='B2'?'#ede9fe':level==='C1'?'#fce7f3':'#fee2e2'
+    const color = level==='A1'?'#15803d':level==='A2'?'#059669':level==='B1'?'#1d4ed8':level==='B2'?'#7c3aed':level==='C1'?'#be185d':'#dc2626'
+    return `<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:8px;background:${bg};color:${color}">${level}</span>`
   }
 
   app.innerHTML = `<div style="min-height:100vh;background:#f8faff;display:flex;align-items:center;justify-content:center"><div style="color:#94a3b8;font-size:14px">Đang tải...</div></div>`
@@ -109,7 +143,7 @@ export default async function toeicVocab(app) {
       part: gPartMap[qGroupMap[v.question_id]] || 0
     }))
 
-    cardIdx = 0; flipped = false; search = ''
+    cardIdx = 0; flipped = false; search = ''; selected = new Set()
     render()
   }
 
@@ -240,64 +274,145 @@ export default async function toeicVocab(app) {
         })
       }
     }
+
+    // Lazy-load dict data + VI translations for list mode
+    if (mode === 'list') {
+      for (const v of filtered) {
+        if (!dictCache.has(v.word)) {
+          fetchDictData(v.word).then(data => {
+            if (!data) return
+            const usEl  = document.getElementById(`ipa-us-${v.id}`)
+            const ukEl  = document.getElementById(`ipa-uk-${v.id}`)
+            const posEl = document.getElementById(`pos-${v.id}`)
+            const synEl = document.getElementById(`syn-${v.id}`)
+            if (usEl)  usEl.textContent  = data.ipa_us || data.ipa || ''
+            if (ukEl)  ukEl.textContent  = data.ipa_uk || ''
+            if (posEl && data.pos) posEl.textContent = `(${data.pos})`
+            if (synEl && data.synonyms?.length)
+              synEl.innerHTML = `<span style="color:#94a3b8">≈</span> ${data.synonyms.map(s => escapeHtml(s)).join(' · ')}`
+          })
+        }
+        if (v.example && !translCache.has(v.id)) {
+          translateText(v.example).then(vi => {
+            if (!vi) return
+            translCache.set(v.id, vi)
+            const el = document.getElementById(`ex-vi-${v.id}`)
+            if (el) el.textContent = vi
+          })
+        }
+      }
+    }
   }
 
   // ── List mode ─────────────────────────────────────────────────────────────
   function renderList(filtered) {
+    const allSelected = filtered.length > 0 && filtered.every(v => selected.has(v.id))
     return `
-      <div style="max-width:900px;margin:auto;padding:24px">
-        <div style="background:white;border-radius:12px;border:1px solid #e2e8f0;padding:10px 14px;margin-bottom:20px;display:flex;align-items:center;gap:10px">
+      <div style="max-width:780px;margin:auto;padding:24px">
+
+        <!-- Search -->
+        <div style="background:white;border-radius:12px;border:1px solid #e2e8f0;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
           <span style="color:#94a3b8;font-size:16px">🔍</span>
           <input type="text" id="vocab-search" placeholder="Tìm từ vựng..." value="${escapeHtml(search)}"
             oninput="vocabSearch(this.value)"
             style="border:none;outline:none;font-size:14px;color:#0f172a;flex:1;background:transparent"
           />
-          ${search ? `<button onclick="vocabSearch('')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px">×</button>` : ''}
+          ${search ? `<button onclick="vocabSearch('')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;line-height:1">×</button>` : ''}
         </div>
 
         ${!filtered.length ? `<div style="text-align:center;padding:40px;color:#94a3b8">Không tìm thấy từ nào</div>` : `
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">
-            ${filtered.map((v,i) => {
+          <!-- Action bar -->
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <button onclick="vocabToggleSelectAll()"
+              style="display:flex;align-items:center;gap:6px;padding:6px 13px;border-radius:8px;border:1px solid #e2e8f0;background:${allSelected?'#eff6ff':'white'};cursor:pointer;font-size:12px;color:${allSelected?'#2563eb':'#374151'}">
+              <span style="width:15px;height:15px;border-radius:50%;border:2px solid ${allSelected?'#2563eb':'#94a3b8'};background:${allSelected?'#2563eb':'white'};display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:white;flex-shrink:0">${allSelected?'✓':''}</span>
+              Chọn tất cả
+            </button>
+            <button onclick="vocabAddSelected()"
+              style="padding:6px 13px;border-radius:8px;border:none;background:${selected.size>0?'#2563eb':'#f1f5f9'};cursor:pointer;font-size:12px;font-weight:${selected.size>0?600:400};color:${selected.size>0?'white':'#94a3b8'}">
+              + Thêm vào giỏ từ${selected.size > 0 ? ` (${selected.size})` : ''}
+            </button>
+            <button onclick="vocabMode('flash')"
+              style="padding:6px 13px;border-radius:8px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-size:12px;color:#374151">
+              🃏 Học ngay
+            </button>
+            <span style="margin-left:auto;font-size:12px;color:#94a3b8">${filtered.length} từ</span>
+          </div>
+
+          <!-- Word cards -->
+          <div style="display:flex;flex-direction:column;gap:10px">
+            ${filtered.map(v => {
               const isLearned = learned.has(v.id)
+              const isSel     = selected.has(v.id)
+              const cached    = dictCache.get(v.word)
+              const ipaUS     = cached?.ipa_us || cached?.ipa || ''
+              const ipaUK     = cached?.ipa_uk || ''
+              const pos       = cached?.pos || ''
+              const synonyms  = cached?.synonyms || []
+              const exVI      = translCache.get(v.id) || ''
               return `
-                <div style="background:white;border-radius:14px;border:1.5px solid ${isLearned?'#86efac':'#e2e8f0'};padding:18px;transition:all .15s;position:relative"
-                  onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,0.07)'"
+                <div style="background:white;border-radius:14px;border:1.5px solid ${isSel?'#93c5fd':isLearned?'#86efac':'#e2e8f0'};padding:16px 18px;display:flex;gap:12px;align-items:flex-start;transition:border-color .15s"
+                  onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,0.06)'"
                   onmouseout="this.style.boxShadow='none'">
 
-                  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
-                    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
-                      <span style="background:#fef3c7;color:#92400e;font-size:14px;font-weight:700;padding:3px 12px;border-radius:20px">${escapeHtml(v.word)}</span>
-                      <button onclick="vocabPlayAudio('${escapeHtml(v.word)}','ipa-${v.id}')" title="Nghe phát âm"
-                        style="width:26px;height:26px;border-radius:50%;border:1px solid #e2e8f0;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                        🔊
+                  <!-- Checkbox -->
+                  <div onclick="vocabToggleSelect('${v.id}')"
+                    style="width:22px;height:22px;border-radius:50%;border:2px solid ${isSel?'#2563eb':'#cbd5e1'};background:${isSel?'#2563eb':'white'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:4px;transition:all .15s">
+                    ${isSel ? `<span style="color:white;font-size:10px;font-weight:700">✓</span>` : ''}
+                  </div>
+
+                  <!-- Content -->
+                  <div style="flex:1;min-width:0">
+
+                    <!-- Row 1: word + pos + CEFR + part + learned -->
+                    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:7px">
+                      <span style="font-size:17px;font-weight:700;color:#0f172a">${escapeHtml(v.word)}</span>
+                      <span id="pos-${v.id}" style="font-size:11px;color:#6366f1;background:#eef2ff;padding:2px 7px;border-radius:7px">${pos ? `(${pos})` : ''}</span>
+                      ${cefrBadge(v.level)}
+                      ${v.part ? `<span style="font-size:11px;color:#94a3b8;background:#f1f5f9;padding:2px 7px;border-radius:7px">Part ${v.part}</span>` : ''}
+                      <button onclick="vocabToggleLearned('${v.id}')" title="${isLearned?'Bỏ đánh dấu':'Đánh dấu đã học'}"
+                        style="margin-left:auto;width:28px;height:28px;border-radius:50%;border:1.5px solid ${isLearned?'#86efac':'#e2e8f0'};background:${isLearned?'#f0fdf4':'white'};cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        ${isLearned?'✓':'○'}
                       </button>
                     </div>
-                    <button onclick="vocabToggleLearned('${v.id}')"
-                      title="${isLearned?'Bỏ đánh dấu':'Đánh dấu đã học'}"
-                      style="width:28px;height:28px;border-radius:50%;border:1.5px solid ${isLearned?'#86efac':'#e2e8f0'};background:${isLearned?'#f0fdf4':'white'};cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                      ${isLearned?'✓':'○'}
-                    </button>
+
+                    <!-- Row 2: IPA US / UK -->
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:9px;flex-wrap:wrap">
+                      <div style="display:flex;align-items:center;gap:4px">
+                        <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.5px">US</span>
+                        <span id="ipa-us-${v.id}" style="font-size:13px;color:#6366f1;font-style:italic">${escapeHtml(ipaUS)}</span>
+                        <button onclick="vocabPlayAudio('${escapeHtml(v.word)}','us','ipa-us-${v.id}')"
+                          style="width:24px;height:24px;border-radius:50%;border:1px solid #e2e8f0;background:white;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">🔊</button>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:4px">
+                        <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.5px">UK</span>
+                        <span id="ipa-uk-${v.id}" style="font-size:13px;color:#6366f1;font-style:italic">${escapeHtml(ipaUK)}</span>
+                        <button onclick="vocabPlayAudio('${escapeHtml(v.word)}','uk','ipa-uk-${v.id}')"
+                          style="width:24px;height:24px;border-radius:50%;border:1px solid #e2e8f0;background:white;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">🔊</button>
+                      </div>
+                    </div>
+
+                    <!-- Row 3: Vietnamese meaning -->
+                    <div style="font-size:14px;color:#1e293b;font-weight:500;line-height:1.5;margin-bottom:${v.example?8:6}px">${escapeHtml(v.meaning||'')}</div>
+
+                    <!-- Row 4: Example + VI translation -->
+                    ${v.example ? `
+                      <div style="background:#f8faff;border-left:3px solid #fde68a;border-radius:0 8px 8px 0;padding:8px 12px;margin-bottom:8px">
+                        <div style="font-size:13px;color:#64748b;font-style:italic;line-height:1.6">${escapeHtml(v.example)}</div>
+                        <div id="ex-vi-${v.id}" style="font-size:12px;color:#3b82f6;margin-top:3px;line-height:1.5">${escapeHtml(exVI)}</div>
+                      </div>` : ''}
+
+                    <!-- Row 5: Cụm + synonyms -->
+                    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+                      <span style="font-size:12px;color:#64748b">
+                        <span style="color:#94a3b8">Cụm:</span> ${escapeHtml(v.word)} – ${escapeHtml(v.meaning||'')}
+                      </span>
+                      <span id="syn-${v.id}" style="font-size:12px;color:#64748b">${
+                        synonyms.length ? `<span style="color:#94a3b8">≈</span> ${synonyms.map(s=>escapeHtml(s)).join(' · ')}` : ''
+                      }</span>
+                    </div>
+
                   </div>
-                  <div style="margin-bottom:8px">
-                    <span id="ipa-${v.id}" style="font-size:12px;color:#6366f1;font-style:italic">${dictCache.get(v.word)?.ipa || ''}</span>
-                  </div>
-
-                  <div style="font-size:13px;color:#374151;line-height:1.6;margin-bottom:6px">${escapeHtml(v.meaning||'')}</div>
-
-                  ${v.example ? `
-                    <div style="font-size:12px;color:#64748b;line-height:1.6;font-style:italic;padding:8px;background:#f8faff;border-radius:8px;border-left:3px solid #fde68a">
-                      ${escapeHtml(v.example)}
-                    </div>` : ''}
-
-                  ${v.part || v.level ? `
-                    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-                      ${v.part ? `<span style="font-size:11px;color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:10px">Part ${v.part}</span>` : ''}
-                      ${v.level ? `<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;
-                        background:${v.level==='A1'?'#dcfce7':v.level==='A2'?'#d1fae5':v.level==='B1'?'#dbeafe':v.level==='B2'?'#ede9fe':v.level==='C1'?'#fce7f3':'#fee2e2'};
-                        color:${v.level==='A1'?'#15803d':v.level==='A2'?'#059669':v.level==='B1'?'#1d4ed8':v.level==='B2'?'#7c3aed':v.level==='C1'?'#be185d':'#dc2626'}">
-                        ${v.level}
-                      </span>` : ''}
-                    </div>` : ''}
                 </div>`
             }).join('')}
           </div>
@@ -334,11 +449,7 @@ export default async function toeicVocab(app) {
             <span style="background:#fef3c7;color:#92400e;font-size:22px;font-weight:700;padding:6px 20px;border-radius:24px;display:inline-block">
               ${escapeHtml(v.word)}
             </span>
-            ${v.level ? `<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:10px;
-              background:${v.level==='A1'?'#dcfce7':v.level==='A2'?'#d1fae5':v.level==='B1'?'#dbeafe':v.level==='B2'?'#ede9fe':v.level==='C1'?'#fce7f3':'#fee2e2'};
-              color:${v.level==='A1'?'#15803d':v.level==='A2'?'#059669':v.level==='B1'?'#1d4ed8':v.level==='B2'?'#7c3aed':v.level==='C1'?'#be185d':'#dc2626'}">
-              ${v.level}
-            </span>` : ''}
+            ${cefrBadge(v.level)}
           </div>
 
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
@@ -558,13 +669,29 @@ export default async function toeicVocab(app) {
     render()
   }
 
-  window.vocabPlayAudio = async (word, ipaElId) => {
-    playWithFallback(word)
-    if (ipaElId) {
-      const data = await fetchDictData(word)
-      if (data?.ipa) {
-        const el = document.getElementById(ipaElId)
-        if (el) el.textContent = data.ipa
+  window.vocabPlayAudio = async (word, variantOrElId, ipaElId) => {
+    let variant = 'us', elId = variantOrElId
+    if (variantOrElId === 'us' || variantOrElId === 'uk') {
+      variant = variantOrElId
+      elId = ipaElId
+    }
+
+    const data = await fetchDictData(word)
+    const audioUrl = variant === 'uk'
+      ? (data?.audio_uk || '')
+      : (data?.audio_us || data?.audio || '')
+
+    if (audioUrl) {
+      new Audio(audioUrl).play().catch(() => {})
+    } else {
+      playWithFallback(word)
+    }
+
+    if (elId && data) {
+      const el = document.getElementById(elId)
+      if (el) {
+        const ipa = variant === 'uk' ? (data.ipa_uk || data.ipa) : (data.ipa_us || data.ipa)
+        if (ipa) el.textContent = ipa
       }
     }
   }
@@ -684,6 +811,27 @@ export default async function toeicVocab(app) {
         .eq('user_id', currentUserId)
       render()
     })
+  }
+
+  window.vocabToggleSelect = id => {
+    if (selected.has(id)) selected.delete(id)
+    else selected.add(id)
+    render()
+  }
+
+  window.vocabToggleSelectAll = () => {
+    const filtered = search
+      ? vocab.filter(v => v.word.toLowerCase().includes(search.toLowerCase()) || (v.meaning||'').toLowerCase().includes(search.toLowerCase()))
+      : vocab
+    const allSel = filtered.length > 0 && filtered.every(v => selected.has(v.id))
+    if (allSel) filtered.forEach(v => selected.delete(v.id))
+    else filtered.forEach(v => selected.add(v.id))
+    render()
+  }
+
+  window.vocabAddSelected = () => {
+    if (!selected.size) return
+    alert(`Đã chọn ${selected.size} từ. Tính năng "Giỏ từ" sẽ sớm ra mắt!`)
   }
 
   window.vocabFlipCard = () => { flipped = !flipped; render() }
