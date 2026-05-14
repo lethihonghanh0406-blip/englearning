@@ -171,6 +171,13 @@ export default async function toeicListening(app) {
 
   function getGroup()  { return groups.find(g => g.id === selGroupId) || null }
 
+  function buildAudioUrl(g) {
+    const test = allTests.find(t => t.id === selTestId)
+    if (!test) return g.audio_url || ''
+    const year2 = String(test.year).slice(-2)
+    return `https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/audio_dictation/${test.test_number}_audio_${year2}_t${test.test_number}_p${selPart}_${g.group_order}_a.mp3`
+  }
+
   // ── Main render ───────────────────────────────────────────────────────────
   function render() {
     const g         = getGroup()
@@ -275,7 +282,7 @@ export default async function toeicListening(app) {
           <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px">
             <button onclick="listenPrevSentence()" ${sentenceIdx===0?'disabled':''}
               style="width:34px;height:34px;border-radius:50%;border:1px solid #e2e8f0;background:white;cursor:${sentenceIdx===0?'default':'pointer'};color:#64748b;font-size:14px;display:flex;align-items:center;justify-content:center;opacity:${sentenceIdx===0?.4:1}">⏮</button>
-            <audio id="listen-audio" controls controlsList="nodownload noplaybackrate" style="height:38px" src="${escapeHtml(g.audio_url||'')}"></audio>
+            <audio id="listen-audio" controls controlsList="nodownload noplaybackrate" style="height:38px" src="${buildAudioUrl(g)}"></audio>
             <button onclick="listenNextSentence()" ${sentenceIdx>=sentences.length-1?'disabled':''}
               style="width:34px;height:34px;border-radius:50%;border:1px solid #e2e8f0;background:white;cursor:${sentenceIdx>=sentences.length-1?'default':'pointer'};color:#64748b;font-size:14px;display:flex;align-items:center;justify-content:center;opacity:${sentenceIdx>=sentences.length-1?.4:1}">⏭</button>
           </div>
@@ -337,7 +344,7 @@ export default async function toeicListening(app) {
       <div style="max-width:700px;margin:auto;padding:28px 24px">
 
         <div style="background:white;border-radius:16px;border:1px solid #e2e8f0;padding:18px;margin-bottom:18px">
-          <audio id="listen-audio" controls controlsList="nodownload noplaybackrate" style="width:100%;display:block;margin-bottom:12px" src="${escapeHtml(g.audio_url||'')}"></audio>
+          <audio id="listen-audio" controls controlsList="nodownload noplaybackrate" style="width:100%;display:block;margin-bottom:12px" src="${buildAudioUrl(g)}"></audio>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <span style="font-size:12px;color:#64748b">Câu ${sentenceIdx+1} / ${sentences.length}</span>
             <div style="display:flex;gap:4px">
@@ -427,7 +434,7 @@ export default async function toeicListening(app) {
       <div style="max-width:700px;margin:auto;padding:28px 24px">
 
         <div style="background:white;border-radius:16px;border:1px solid #e2e8f0;padding:18px;margin-bottom:18px">
-          <audio id="listen-audio" controls controlsList="nodownload noplaybackrate" style="width:100%;display:block;margin-bottom:12px" src="${escapeHtml(g.audio_url||'')}"></audio>
+          <audio id="listen-audio" controls controlsList="nodownload noplaybackrate" style="width:100%;display:block;margin-bottom:12px" src="${buildAudioUrl(g)}"></audio>
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
             <div style="display:flex;align-items:center;gap:8px">
               <span style="font-size:12px;color:#64748b">Ẩn từ:</span>
