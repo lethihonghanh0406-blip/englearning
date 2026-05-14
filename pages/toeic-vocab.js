@@ -289,7 +289,15 @@ export default async function toeicVocab(app) {
                       ${escapeHtml(v.example)}
                     </div>` : ''}
 
-                  ${v.part ? `<div style="margin-top:8px"><span style="font-size:11px;color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:10px">Part ${v.part}</span></div>` : ''}
+                  ${v.part || v.level ? `
+                    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                      ${v.part ? `<span style="font-size:11px;color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:10px">Part ${v.part}</span>` : ''}
+                      ${v.level ? `<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;
+                        background:${v.level==='A1'?'#dcfce7':v.level==='A2'?'#d1fae5':v.level==='B1'?'#dbeafe':v.level==='B2'?'#ede9fe':v.level==='C1'?'#fce7f3':'#fee2e2'};
+                        color:${v.level==='A1'?'#15803d':v.level==='A2'?'#059669':v.level==='B1'?'#1d4ed8':v.level==='B2'?'#7c3aed':v.level==='C1'?'#be185d':'#dc2626'}">
+                        ${v.level}
+                      </span>` : ''}
+                    </div>` : ''}
                 </div>`
             }).join('')}
           </div>
@@ -322,9 +330,16 @@ export default async function toeicVocab(app) {
           onmouseover="this.style.boxShadow='0 8px 30px rgba(0,0,0,0.1)'"
           onmouseout="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.06)'">
 
-          <span style="background:#fef3c7;color:#92400e;font-size:22px;font-weight:700;padding:6px 20px;border-radius:24px;margin-bottom:10px;display:inline-block">
-            ${escapeHtml(v.word)}
-          </span>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;justify-content:center">
+            <span style="background:#fef3c7;color:#92400e;font-size:22px;font-weight:700;padding:6px 20px;border-radius:24px;display:inline-block">
+              ${escapeHtml(v.word)}
+            </span>
+            ${v.level ? `<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:10px;
+              background:${v.level==='A1'?'#dcfce7':v.level==='A2'?'#d1fae5':v.level==='B1'?'#dbeafe':v.level==='B2'?'#ede9fe':v.level==='C1'?'#fce7f3':'#fee2e2'};
+              color:${v.level==='A1'?'#15803d':v.level==='A2'?'#059669':v.level==='B1'?'#1d4ed8':v.level==='B2'?'#7c3aed':v.level==='C1'?'#be185d':'#dc2626'}">
+              ${v.level}
+            </span>` : ''}
+          </div>
 
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
             <span id="flash-ipa" style="font-size:14px;color:#6366f1;font-style:italic">${dictCache.get(v.word)?.ipa || ''}</span>
