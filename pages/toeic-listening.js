@@ -33,6 +33,9 @@ export default async function toeicListening(app) {
     return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
   }
 
+  // Fixed per page session — refresh page to pick up newly uploaded audio files
+  const _audioCb = Date.now()
+
   app.innerHTML = `<div style="min-height:100vh;background:#f1f5f9;display:flex;align-items:center;justify-content:center"><div style="color:#94a3b8;font-size:14px">Đang tải...</div></div>`
 
   const { data: testsData } = await supabase
@@ -126,9 +129,6 @@ export default async function toeicListening(app) {
     resetDict()
     render()
   }
-
-  // Cache-buster: fixed per page session — refresh page to pick up newly uploaded files
-  const _audioCb = Date.now()
 
   // ── Audio URL per sentence ─────────────────────────────────────────────────
   function buildAudioUrl(g, sIdx) {
