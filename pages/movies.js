@@ -319,7 +319,7 @@ export default async function moviesPage(app) {
         #mv-url-input:focus { border-color:#2563eb !important; outline:none; }
         #mv-url-input::placeholder { color:#475569; }
       </style>
-      <div style="position:fixed;top:${navBottom}px;left:0;right:0;bottom:0;background:#0f172a;display:flex;flex-direction:column;overflow:hidden;z-index:5">
+      <div style="position:fixed;top:${navBottom}px;left:0;right:0;bottom:0;background:#0f172a;display:flex;flex-direction:column;z-index:5">
         <!-- Top bar -->
         <div style="background:#1e293b;border-bottom:1px solid #334155;height:56px;padding:0 24px;
           display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:20">
@@ -368,7 +368,7 @@ export default async function moviesPage(app) {
 
           ${movie ? `
           <!-- Subtitle panel (left) -->
-          <div id="mv-sub-panel" style="width:340px;min-width:340px;background:#0f172a;border-right:1px solid #1e293b;overflow-y:auto;padding:8px">
+          <div id="mv-sub-panel" style="width:340px;min-width:340px;background:#0f172a;border-right:1px solid #1e293b;overflow-y:auto;padding:8px;user-select:text">
             <div style="padding:8px 6px 6px;font-size:10px;font-weight:700;color:#475569;letter-spacing:.8px;margin-bottom:4px">
               SUBTITLES — ${subs.length} đoạn
             </div>
