@@ -169,7 +169,8 @@ return ` <div class="nav">
     padding:18px 60px;
     background:white;
     border-bottom:1px solid #eee;
-    position:relative;
+    position:sticky;
+    top:0;
     z-index:100;
   }
 
