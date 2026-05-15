@@ -56,7 +56,7 @@ export default async function handler(req) {
       const { result, raw: supaRaw } = await fetchViaSupadata(videoId, supaKey)
       if (debug) return json({ method: 'SUPADATA', hasKey: !!supaKey, raw: supaRaw, subs: result?.subs?.slice(0, 3) }, 200, corsHeaders)
       if (result?.subs?.length) {
-        saveToCache(videoId, result.subs, supaHeaders).catch(() => {})
+        await saveToCache(videoId, result.subs, supaHeaders).catch(() => {})
         return json(result, 200, corsHeaders)
       }
     }
@@ -76,7 +76,7 @@ export default async function handler(req) {
       if (td) {
         const subs = parseEvents(td).map(e => ({ t: e.t, dur: e.dur, en: e.text, vi: '' }))
         if (debug) return json({ method: 'TIMEDTEXT', sample: subs.slice(0, 3) }, 200, corsHeaders)
-        saveToCache(videoId, subs, supaHeaders).catch(() => {})
+        await saveToCache(videoId, subs, supaHeaders).catch(() => {})
         return json({ subs, hasVI: false, isAsr: true }, 200, corsHeaders)
       }
     }
@@ -123,7 +123,7 @@ export default async function handler(req) {
       return { t: en.t, dur: en.dur, en: en.text, vi }
     })
 
-    saveToCache(videoId, subs, supaHeaders).catch(() => {})
+    await saveToCache(videoId, subs, supaHeaders).catch(() => {})
     return json({ subs, hasVI: viItems.length > 0, isAsr: enTrack.kind === 'asr' }, 200, corsHeaders)
 
   } catch (e) {
