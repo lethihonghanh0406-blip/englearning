@@ -38,10 +38,43 @@ export default async function moviesPage(app) {
       (!profile.plan_expires_at || new Date(profile.plan_expires_at) > new Date())
   }
 
+  const urlParams  = new URLSearchParams(window.location.search)
+  const autoLoadId = urlParams.get('v')
+
   const { data } = await supabase.from('movie_lessons').select('id,title,youtube_id,level,subtitles').order('created_at')
   movies = data || []
   selId  = movies[0]?.id || null
   render()
+
+  if (autoLoadId) {
+    history.replaceState({}, '', '/english/movies')
+    const btn = document.getElementById('mv-load-btn')
+    if (btn) { btn.textContent = '⏳ Đang tải...'; btn.disabled = true }
+    try {
+      const res  = await fetch(`/api/transcript?v=${autoLoadId}`)
+      const data2 = await res.json()
+      if (!res.ok || data2.error) {
+        alert('⚠️ ' + (data2.error || 'Không thể tải phụ đề'))
+      } else {
+        customMovie   = { id: `yt-${autoLoadId}`, youtube_id: autoLoadId, title: data2.title || autoLoadId, level: null, subtitles: data2.subs }
+        selId         = customMovie.id
+        currentSubIdx = -1
+        lastResult    = null
+        stopSync()
+        renderLayout(customMovie, autoLoadId)
+        layoutMovieId = selId
+        initYTPlayer(autoLoadId)
+        setTimeout(() => {
+          const el = document.getElementById('mv-url-input')
+          if (el) el.value = `https://www.youtube.com/watch?v=${autoLoadId}`
+        }, 80)
+      }
+    } catch (e) {
+      alert('Lỗi kết nối: ' + e.message)
+    } finally {
+      if (btn) { btn.textContent = '▶ Tải video'; btn.disabled = false }
+    }
+  }
 
   function getMovie() { return customMovie?.id === selId ? customMovie : (movies.find(m => m.id === selId) || null) }
   function getSubs()  { return getMovie()?.subtitles || [] }

@@ -1,6 +1,9 @@
 // Fetch YouTube captions — Supadata API primary, InnerTube fallback
 export const config = { runtime: 'edge' }
 
+const SUPA_URL = 'https://trehfvxlqfshfhcapqca.supabase.co'
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRyZWhmdnhscWZzaGZoY2FwcWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMTA0MTMsImV4cCI6MjA5MjY4NjQxM30.bn_zpEq2VUbkFyU-yOcK4UbeGQINAZlvgBYOwzJcePk'
+
 export default async function handler(req) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -18,13 +21,44 @@ export default async function handler(req) {
   if (!videoId) return json({ error: 'Invalid or missing video ID' }, 400, corsHeaders)
 
   try {
+    // ── 0. Supabase cache lookup ───────────────────────────────────────────
+    const supaHeaders = { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
+    try {
+      const cacheRes = await fetch(
+        `${SUPA_URL}/rest/v1/youtube_cache?youtube_id=eq.${videoId}&select=id,subtitles,title,thumbnail,channel`,
+        { headers: supaHeaders }
+      )
+      if (cacheRes.ok) {
+        const cacheRows = await cacheRes.json()
+        if (Array.isArray(cacheRows) && cacheRows.length > 0) {
+          const cachedData = cacheRows[0]
+          if (cachedData.subtitles && Array.isArray(cachedData.subtitles) && cachedData.subtitles.length > 0) {
+            // Fire-and-forget: increment views via RPC
+            fetch(
+              `${SUPA_URL}/rest/v1/rpc/increment_youtube_views`,
+              {
+                method: 'POST',
+                headers: { ...supaHeaders, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vid: videoId })
+              }
+            ).catch(() => {})
+            const subs = cachedData.subtitles
+            return json({ subs, hasVI: subs.some(s => s.vi), isAsr: false }, 200, corsHeaders)
+          }
+        }
+      }
+    } catch (_) {}
+
     // ── 1. Supadata (dedicated service — not blocked by YouTube) ──────────
     const supaKey = process.env.SUPADATA_KEY
     if (debug && !supaKey) return json({ error: 'SUPADATA_KEY not set in env' }, 200, corsHeaders)
     if (supaKey) {
       const { result, raw: supaRaw } = await fetchViaSupadata(videoId, supaKey)
       if (debug) return json({ method: 'SUPADATA', hasKey: !!supaKey, raw: supaRaw, subs: result?.subs?.slice(0, 3) }, 200, corsHeaders)
-      if (result?.subs?.length) return json(result, 200, corsHeaders)
+      if (result?.subs?.length) {
+        saveToCache(videoId, result.subs, supaHeaders).catch(() => {})
+        return json(result, 200, corsHeaders)
+      }
     }
 
     // ── 2. InnerTube fallbacks (may be blocked on non-edge IPs) ──────────
@@ -42,6 +76,7 @@ export default async function handler(req) {
       if (td) {
         const subs = parseEvents(td).map(e => ({ t: e.t, dur: e.dur, en: e.text, vi: '' }))
         if (debug) return json({ method: 'TIMEDTEXT', sample: subs.slice(0, 3) }, 200, corsHeaders)
+        saveToCache(videoId, subs, supaHeaders).catch(() => {})
         return json({ subs, hasVI: false, isAsr: true }, 200, corsHeaders)
       }
     }
@@ -88,6 +123,7 @@ export default async function handler(req) {
       return { t: en.t, dur: en.dur, en: en.text, vi }
     })
 
+    saveToCache(videoId, subs, supaHeaders).catch(() => {})
     return json({ subs, hasVI: viItems.length > 0, isAsr: enTrack.kind === 'asr' }, 200, corsHeaders)
 
   } catch (e) {
@@ -252,6 +288,42 @@ function parseEvents(data) {
     .filter(e => e.segs && e.tStartMs != null)
     .map(e => ({ t: e.tStartMs / 1000, dur: (e.dDurationMs || 2000) / 1000, text: e.segs.map(s => s.utf8 || '').join('').replace(/\n/g, ' ').trim() }))
     .filter(e => e.text.length > 0)
+}
+
+// ── Supabase cache helpers ────────────────────────────────────────────────────
+async function saveToCache(videoId, subs, supaHeaders) {
+  // Fetch video metadata from YouTube oEmbed
+  let title = '', channel = ''
+  try {
+    const oembed = await fetch(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+    )
+    if (oembed.ok) {
+      const meta = await oembed.json()
+      title   = meta.title       || ''
+      channel = meta.author_name || ''
+    }
+  } catch (_) {}
+
+  const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+
+  await fetch(`${SUPA_URL}/rest/v1/youtube_cache`, {
+    method: 'POST',
+    headers: {
+      ...supaHeaders,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=ignore-duplicates',
+    },
+    body: JSON.stringify({
+      youtube_id: videoId,
+      title,
+      thumbnail,
+      channel,
+      subtitles: subs,
+      sub_count: subs.length,
+      views: 1,
+    }),
+  })
 }
 
 function json(data, status, headers) {
