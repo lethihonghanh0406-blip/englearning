@@ -372,15 +372,15 @@ export default async function moviesPage(app) {
           </div>
 
           <!-- Video panel (right): fixed, no scroll -->
-          <div style="flex:1;display:flex;flex-direction:column;background:#0f172a;overflow:hidden;height:100%">
-            <!-- Video -->
-            <div id="mv-card" style="position:relative;width:100%;padding-top:min(56.25%,380px);flex-shrink:0;background:#000">
+          <div style="flex:1;display:flex;flex-direction:column;background:#0f172a;overflow:hidden;height:100%;min-width:0">
+            <!-- Video: fills all available space -->
+            <div id="mv-card" style="flex:1;min-height:0;position:relative;background:#000">
               <div id="mv-yt-container" style="position:absolute;top:0;left:0;width:100%;height:100%"></div>
             </div>
 
             <!-- Current subtitle display -->
             <div id="mv-shadow-panel"
-              style="padding:14px 20px;min-height:64px;display:flex;align-items:center;justify-content:center;
+              style="padding:10px 20px;height:90px;overflow:hidden;display:flex;align-items:center;justify-content:center;
                 border-bottom:1px solid #1e293b;flex-shrink:0">
               <span style="color:#475569;font-size:14px">▶ Bấm play để bắt đầu</span>
             </div>
