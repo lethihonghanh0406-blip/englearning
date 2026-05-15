@@ -25,6 +25,7 @@ export default async function moviesPage(app) {
   let customMovie   = null
   const ipaCache    = new Map()   // word → /ipa/
   const viCache     = new Map()   // en text → vi translation
+  let _translateCtrl = null
 
   app.innerHTML = `<div style="min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center"><div style="color:#64748b;font-size:14px">Đang tải...</div></div>`
 
@@ -551,13 +552,48 @@ export default async function moviesPage(app) {
   async function translateVI(text) {
     if (viCache.has(text)) return viCache.get(text)
     try {
-      const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|vi`)
+      const r = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`
+      )
       const d = await r.json()
-      const t = d?.responseData?.translatedText
-      const result = (t && t !== text && !t.startsWith('PLEASE SELECT')) ? t : ''
+      const result = d?.[0]?.map(x => x?.[0]).filter(Boolean).join('') || ''
       viCache.set(text, result)
       return result
     } catch { viCache.set(text, ''); return '' }
+  }
+
+  async function translateAllSubs(subs) {
+    if (_translateCtrl) _translateCtrl.cancelled = true
+    const ctrl = { cancelled: false }
+    _translateCtrl = ctrl
+
+    const tasks = subs.map((s, i) => ({ i, s })).filter(({ s }) => !s.vi)
+    let ptr = 0
+
+    async function worker() {
+      while (ptr < tasks.length) {
+        if (ctrl.cancelled) break
+        const { i, s } = tasks[ptr++]
+        if (s.vi) continue
+        const vi = await translateVI(s.en)
+        if (ctrl.cancelled || !vi) continue
+        subs[i].vi = vi
+        if (!showVI) continue
+        const item = document.getElementById('mvsub-' + i)
+        if (item && !item.querySelector('.mv-sub-vi')) {
+          const d = document.createElement('div')
+          d.className = 'mv-sub-vi'
+          d.style.cssText = 'font-size:13px;color:#93c5fd;font-style:italic;margin-top:2px;line-height:1.4;user-select:text;cursor:text'
+          d.textContent = vi
+          item.appendChild(d)
+        }
+        // Update shadow panel if this is the active subtitle
+        if (i === currentSubIdx) updateShadowPanel(i, subs)
+      }
+    }
+
+    // 10 concurrent workers
+    await Promise.all(Array.from({ length: 10 }, worker))
   }
 
   async function loadSentenceIpa(sentence, subIdx) {
@@ -634,21 +670,24 @@ export default async function moviesPage(app) {
       btn.style.background = showVI ? '#2563eb' : '#334155'
       btn.style.color = showVI ? 'white' : '#94a3b8'
     }
+    const subs = getSubs()
     // Rebuild subtitle list with/without VI
     const panel = document.getElementById('mv-sub-panel')
     if (panel) {
-      const subs = getSubs()
       panel.innerHTML = `
         <div style="padding:8px 6px 6px;font-size:10px;font-weight:700;color:#475569;letter-spacing:.8px;margin-bottom:4px">
           SUBTITLES — ${subs.length} đoạn
         </div>
         ${buildSubList(subs)}`
-      // Re-highlight current
       if (currentSubIdx >= 0) {
         const el = document.getElementById('mvsub-' + currentSubIdx)
         if (el) { el.classList.add('active'); el.scrollIntoView({ block: 'center' }) }
       }
-      updateShadowPanel(currentSubIdx, getSubs())
+      updateShadowPanel(currentSubIdx, subs)
     }
+    // Auto-translate all subs if VI is missing
+    if (showVI && subs.some(s => !s.vi)) translateAllSubs(subs)
+    // Cancel translation if turned off
+    if (!showVI && _translateCtrl) _translateCtrl.cancelled = true
   }
 }
