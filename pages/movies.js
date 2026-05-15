@@ -24,6 +24,7 @@ export default async function moviesPage(app) {
   // Custom YouTube URL mode
   let customMovie   = null
   const ipaCache    = new Map()   // word → /ipa/
+  const viCache     = new Map()   // en text → vi translation
 
   app.innerHTML = `<div style="min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center"><div style="color:#64748b;font-size:14px">Đang tải...</div></div>`
 
@@ -235,6 +236,25 @@ export default async function moviesPage(app) {
     if (idx >= 0 && subs[idx]?.en && !lastResult) {
       loadSentenceIpa(subs[idx].en, idx)
     }
+
+    // Async: auto-translate EN→VI if showVI and no vi yet
+    if (showVI && idx >= 0 && subs[idx]?.en && !subs[idx].vi) {
+      translateVI(subs[idx].en).then(vi => {
+        if (!vi || !subs[idx]) return
+        subs[idx].vi = vi
+        // Update shadow panel
+        updateShadowPanel(idx, subs)
+        // Update subtitle list item
+        const item = document.getElementById('mvsub-' + idx)
+        if (item && !item.querySelector('.mv-sub-vi')) {
+          const viDiv = document.createElement('div')
+          viDiv.className = 'mv-sub-vi'
+          viDiv.style.cssText = 'font-size:13px;color:#93c5fd;font-style:italic;margin-top:2px;line-height:1.4;user-select:text;cursor:text'
+          viDiv.textContent = vi
+          item.appendChild(viDiv)
+        }
+      })
+    }
   }
 
   function updateShadowPanel(idx, subs) {
@@ -328,17 +348,11 @@ export default async function moviesPage(app) {
             <span style="font-size:15px;font-weight:700;color:#f1f5f9;font-family:'Space Grotesk',sans-serif">🎬 Xem phim học tiếng Anh</span>
           </div>
           <div>
-            ${isPro ? `
-              <button id="mv-vi-btn" onclick="mvToggleVI()"
-                style="padding:7px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;
-                  background:${showVI?'#2563eb':'#334155'};color:${showVI?'white':'#94a3b8'}">
-                🌐 Song ngữ
-              </button>` : `
-              <button onclick="navigate('/pricing')"
-                style="padding:7px 16px;border-radius:8px;border:1px solid #334155;cursor:pointer;font-size:13px;
-                  background:transparent;color:#f59e0b;font-weight:600">
-                👑 Pro
-              </button>`}
+            <button id="mv-vi-btn" onclick="mvToggleVI()"
+              style="padding:7px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;
+                background:${showVI?'#2563eb':'#334155'};color:${showVI?'white':'#94a3b8'}">
+              🌐 Song ngữ
+            </button>
           </div>
         </div>
 
@@ -532,6 +546,18 @@ export default async function moviesPage(app) {
         </div>`
       }).join('')}
     </div>`
+  }
+
+  async function translateVI(text) {
+    if (viCache.has(text)) return viCache.get(text)
+    try {
+      const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|vi`)
+      const d = await r.json()
+      const t = d?.responseData?.translatedText
+      const result = (t && t !== text && !t.startsWith('PLEASE SELECT')) ? t : ''
+      viCache.set(text, result)
+      return result
+    } catch { viCache.set(text, ''); return '' }
   }
 
   async function loadSentenceIpa(sentence, subIdx) {
