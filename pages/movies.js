@@ -356,23 +356,23 @@ export default async function moviesPage(app) {
           </button>
         </div>
 
-        <div style="display:flex;overflow:hidden;height:calc(100vh - 56px - 58px)">
+        <div style="display:flex;flex:1;min-height:0;overflow:hidden">
           <!-- Movie list sidebar -->
-          <div id="mv-sidebar" style="width:200px;min-width:200px;background:#1e293b;border-right:1px solid #334155;overflow-y:auto;height:100%">
+          <div id="mv-sidebar" style="width:200px;min-width:200px;background:#1e293b;border-right:1px solid #334155;overflow-y:auto">
             ${buildSidebarContent(lc, lt, ll)}
           </div>
 
           ${movie ? `
           <!-- Subtitle panel (left) -->
-          <div id="mv-sub-panel" style="width:340px;min-width:340px;background:#0f172a;border-right:1px solid #1e293b;overflow-y:auto;padding:8px;height:100%">
+          <div id="mv-sub-panel" style="width:340px;min-width:340px;background:#0f172a;border-right:1px solid #1e293b;overflow-y:auto;padding:8px">
             <div style="padding:8px 6px 6px;font-size:10px;font-weight:700;color:#475569;letter-spacing:.8px;margin-bottom:4px">
               SUBTITLES — ${subs.length} đoạn
             </div>
             ${buildSubList(subs)}
           </div>
 
-          <!-- Video panel (right): fixed, no scroll -->
-          <div style="flex:1;display:flex;flex-direction:column;background:#0f172a;overflow:hidden;height:100%;min-width:0">
+          <!-- Video panel (right): no scroll -->
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#0f172a;overflow:hidden">
             <!-- Video: fills all available space -->
             <div id="mv-card" style="flex:1;min-height:0;position:relative;background:#000">
               <div id="mv-yt-container" style="position:absolute;top:0;left:0;width:100%;height:100%"></div>
