@@ -20,12 +20,11 @@ export default async function handler(req) {
   try {
     // ── 1. Supadata (dedicated service — not blocked by YouTube) ──────────
     const supaKey = process.env.SUPADATA_KEY
+    if (debug && !supaKey) return json({ error: 'SUPADATA_KEY not set in env' }, 200, corsHeaders)
     if (supaKey) {
-      const result = await fetchViaSupadata(videoId, supaKey)
-      if (result?.subs?.length) {
-        if (debug) return json({ method: 'SUPADATA', sample: result.subs.slice(0, 3) }, 200, corsHeaders)
-        return json(result, 200, corsHeaders)
-      }
+      const { result, raw: supaRaw } = await fetchViaSupadata(videoId, supaKey)
+      if (debug) return json({ method: 'SUPADATA', hasKey: !!supaKey, raw: supaRaw, subs: result?.subs?.slice(0, 3) }, 200, corsHeaders)
+      if (result?.subs?.length) return json(result, 200, corsHeaders)
     }
 
     // ── 2. InnerTube fallbacks (may be blocked on non-edge IPs) ──────────
@@ -106,9 +105,8 @@ async function fetchViaSupadata(videoId, apiKey) {
       `https://api.supadata.ai/v1/youtube/transcript?url=${encodeURIComponent(url)}&lang=en`,
       { headers: { 'x-api-key': apiKey } }
     )
-    if (!enRes.ok) return null
-    const enData = await enRes.json()
-    if (!enData?.content?.length) return null
+    const enData = await enRes.json().catch(() => null)
+    if (!enRes.ok || !enData?.content?.length) return { result: null, raw: { status: enRes.status, body: enData } }
 
     const enItems = enData.content.map(c => ({
       t:   c.offset / 1000,
@@ -145,8 +143,8 @@ async function fetchViaSupadata(videoId, apiKey) {
       return { ...en, vi }
     })
 
-    return { subs, hasVI: viItems.length > 0, isAsr: false }
-  } catch { return null }
+    return { result: { subs, hasVI: viItems.length > 0, isAsr: false }, raw: { status: 200, langs: availLangs } }
+  } catch (e) { return { result: null, raw: { error: e.message } } }
 }
 
 // ── InnerTube clients ─────────────────────────────────────────────────────────
