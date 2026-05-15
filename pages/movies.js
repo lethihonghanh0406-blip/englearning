@@ -25,6 +25,10 @@ export default async function moviesPage(app) {
   let customMovie   = null
   const ipaCache    = new Map()   // word → /ipa/
 
+  // Lock page scroll (zoom:1.125 on html makes 100vh overflow)
+  document.documentElement.style.overflow = 'hidden'
+  document.body.style.overflow = 'hidden'
+
   app.innerHTML = `<div style="min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center"><div style="color:#64748b;font-size:14px">Đang tải...</div></div>`
 
   // Check pro status
