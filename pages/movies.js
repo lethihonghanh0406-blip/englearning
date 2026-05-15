@@ -296,8 +296,8 @@ export default async function moviesPage(app) {
     return subs.map((s, i) => `
       <div id="mvsub-${i}" class="mv-sub-item" onclick="if(!window.getSelection()?.toString()?.trim())mvSeek(${s.t})"
         style="padding:10px 14px;border-radius:8px;cursor:pointer;margin-bottom:2px;border:1px solid transparent;transition:.15s">
-        <div class="mv-sub-en" style="font-size:13px;color:#cbd5e1;line-height:1.5;user-select:text;cursor:text">${s.en}</div>
-        ${showVI && s.vi ? `<div class="mv-sub-vi" style="font-size:12px;color:#93c5fd;font-style:italic;margin-top:2px;line-height:1.4;user-select:text;cursor:text">${s.vi}</div>` : ''}
+        <div class="mv-sub-en" style="font-size:15px;color:#cbd5e1;line-height:1.5;user-select:text;cursor:text">${s.en}</div>
+        ${showVI && s.vi ? `<div class="mv-sub-vi" style="font-size:13px;color:#93c5fd;font-style:italic;margin-top:2px;line-height:1.4;user-select:text;cursor:text">${s.vi}</div>` : ''}
       </div>`).join('')
   }
 
@@ -374,7 +374,7 @@ export default async function moviesPage(app) {
           <!-- Video panel (right): fixed, no scroll -->
           <div style="flex:1;display:flex;flex-direction:column;background:#0f172a;overflow:hidden;height:100%">
             <!-- Video -->
-            <div id="mv-card" style="position:relative;width:100%;padding-top:56.25%;flex-shrink:0;background:#000">
+            <div id="mv-card" style="position:relative;width:100%;max-height:220px;height:220px;flex-shrink:0;background:#000">
               <div id="mv-yt-container" style="position:absolute;top:0;left:0;width:100%;height:100%"></div>
             </div>
 
@@ -523,8 +523,8 @@ export default async function moviesPage(app) {
         const clean = w.replace(/[^a-zA-Z'-]/g, '').toLowerCase()
         const cached = (!STOP.has(clean) && clean.length > 1) ? ipaCache.get(clean) : ''
         return `<div style="text-align:center">
-          <div style="font-size:16px;font-weight:500;color:#f1f5f9">${w}</div>
-          <div style="font-size:11px;color:#60a5fa;font-style:italic;min-height:14px">${cached || ''}</div>
+          <div style="font-size:20px;font-weight:500;color:#f1f5f9">${w}</div>
+          <div style="font-size:12px;color:#60a5fa;font-style:italic;min-height:15px">${cached || ''}</div>
         </div>`
       }).join('')}
     </div>`
@@ -544,8 +544,8 @@ export default async function moviesPage(app) {
     if (!row) return
     row.innerHTML = results.map(({ w, ipa }) => `
       <div style="text-align:center">
-        <div style="font-size:16px;font-weight:500;color:#f1f5f9">${w}</div>
-        <div style="font-size:11px;color:#60a5fa;font-style:italic;min-height:14px">${ipa}</div>
+        <div style="font-size:20px;font-weight:500;color:#f1f5f9">${w}</div>
+        <div style="font-size:12px;color:#60a5fa;font-style:italic;min-height:15px">${ipa}</div>
       </div>`).join('')
   }
 
