@@ -1,77 +1,71 @@
-// Fetch YouTube captions via InnerTube API (bypass CORS + bot detection)
-module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  if (req.method === 'OPTIONS') { res.status(200).end(); return }
+// Vercel Edge Function — runs on edge network (non-Lambda IPs, bypasses YouTube IP blocks)
+export const config = { runtime: 'edge' }
 
-  const raw     = req.query.v || ''
+export default async function handler(req) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Content-Type': 'application/json',
+  }
+
+  if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: corsHeaders })
+
+  const { searchParams } = new URL(req.url)
+  const raw     = searchParams.get('v') || ''
   const videoId = raw.match(/[A-Za-z0-9_-]{11}/)?.[0]
-  if (!videoId) return res.status(400).json({ error: 'Invalid or missing video ID' })
+  const debug   = searchParams.get('debug') === '1'
 
-  const debug = req.query.debug === '1'
+  if (!videoId) return json({ error: 'Invalid or missing video ID' }, 400, corsHeaders)
 
   try {
     const attempts = []
 
-    // ── 1. ANDROID via youtubei.googleapis.com (different routing/IPs) ────
+    // ── 1. ANDROID via youtubei.googleapis.com ────────────────────────────
     let captionTracks = await tryClient('ANDROID_GAPI', videoId, attempts)
+    if (!captionTracks) captionTracks = await tryClient('IOS',     videoId, attempts)
+    if (!captionTracks) captionTracks = await tryClient('ANDROID', videoId, attempts)
+    if (!captionTracks) captionTracks = await tryClient('WEB',     videoId, attempts)
+    if (!captionTracks) captionTracks = await tryClient('TVHTML5', videoId, attempts)
 
-    // ── 2. IOS client ─────────────────────────────────────────────────────
-    if (!captionTracks?.length) captionTracks = await tryClient('IOS', videoId, attempts)
-
-    // ── 3. ANDROID via youtube.com ────────────────────────────────────────
-    if (!captionTracks?.length) captionTracks = await tryClient('ANDROID', videoId, attempts)
-
-    // ── 4. WEB client ─────────────────────────────────────────────────────
-    if (!captionTracks?.length) captionTracks = await tryClient('WEB', videoId, attempts)
-
-    // ── 5. TVHTML5 client ─────────────────────────────────────────────────
-    if (!captionTracks?.length) captionTracks = await tryClient('TVHTML5', videoId, attempts)
-
-    // ── 6. Direct timedtext URL (bypasses InnerTube entirely) ─────────────
-    if (!captionTracks?.length) {
+    // ── 2. Direct timedtext URL ───────────────────────────────────────────
+    if (!captionTracks) {
       const td = await fetchViaTimedtext(videoId)
       attempts.push({ client: 'TIMEDTEXT', found: td ? 1 : 0 })
       if (td) {
-        // timedtext returns subtitle data directly — skip to parse step
         const enItems = parseEvents(td)
         const subs = enItems.map(en => ({ t: en.t, dur: en.dur, en: en.text, vi: '' }))
-        if (debug) return res.json({ attempts, method: 'TIMEDTEXT', subs: subs.slice(0, 3) })
-        return res.json({ subs, hasVI: false, isAsr: true })
+        if (debug) return json({ attempts, method: 'TIMEDTEXT', subs: subs.slice(0, 3) }, 200, corsHeaders)
+        return json({ subs, hasVI: false, isAsr: true }, 200, corsHeaders)
       }
     }
 
-    // ── 7. HTML parse fallback ────────────────────────────────────────────
-    if (!captionTracks?.length) {
+    // ── 3. HTML parse fallback ────────────────────────────────────────────
+    if (!captionTracks) {
       captionTracks = await fetchViaHtml(videoId)
       attempts.push({ client: 'HTML', found: captionTracks?.length ?? 0 })
+      if (!captionTracks?.length) captionTracks = null
     }
 
-    if (debug) return res.json({ attempts, captionTracks: captionTracks?.slice(0, 2) || null })
+    if (debug) return json({ attempts, captionTracks: captionTracks?.slice(0, 2) || null }, 200, corsHeaders)
 
-    if (!captionTracks?.length) {
-      return res.status(404).json({
+    if (!captionTracks) {
+      return json({
         error: 'Video này không có phụ đề tiếng Anh. Hãy thử video khác có CC (🇬🇧 phụ đề).',
         debug: attempts,
-      })
+      }, 404, corsHeaders)
     }
 
-    // ── Pick EN track ─────────────────────────────────────────────────────
     const enTrack = captionTracks.find(t => t.languageCode === 'en' && t.kind !== 'asr')
                  || captionTracks.find(t => t.languageCode === 'en')
                  || captionTracks.find(t => (t.languageCode || '').startsWith('en'))
-
     const viTrack = captionTracks.find(t => t.languageCode === 'vi')
 
     if (!enTrack?.baseUrl) {
-      const langs = captionTracks.map(t =>
-        `${t.languageCode}${t.kind === 'asr' ? '(auto)' : ''}`
-      ).join(', ')
-      return res.status(404).json({ error: `Không có phụ đề tiếng Anh. Có sẵn: ${langs || 'không có'}` })
+      const langs = captionTracks.map(t => `${t.languageCode}${t.kind === 'asr' ? '(auto)' : ''}`).join(', ')
+      return json({ error: `Không có phụ đề tiếng Anh. Có sẵn: ${langs || 'không có'}` }, 404, corsHeaders)
     }
 
     const toJson3 = url => url.includes('fmt=') ? url : url + '&fmt=json3'
-
     const [enData, viData] = await Promise.all([
       fetch(toJson3(enTrack.baseUrl)).then(r => r.json()),
       viTrack ? fetch(toJson3(viTrack.baseUrl)).then(r => r.json()) : Promise.resolve(null),
@@ -83,24 +77,23 @@ module.exports = async function handler(req, res) {
     const subs = enItems.map(en => {
       let vi = ''
       if (viItems.length) {
-        const best = viItems.reduce((a, b) =>
-          Math.abs(b.t - en.t) < Math.abs(a.t - en.t) ? b : a
-        )
+        const best = viItems.reduce((a, b) => Math.abs(b.t - en.t) < Math.abs(a.t - en.t) ? b : a)
         if (Math.abs(best.t - en.t) < 2) vi = best.text
       }
       return { t: en.t, dur: en.dur, en: en.text, vi }
     })
 
-    const isAsr = enTrack.kind === 'asr'
-    res.json({ subs, hasVI: viItems.length > 0, isAsr })
+    return json({ subs, hasVI: viItems.length > 0, isAsr: enTrack.kind === 'asr' }, 200, corsHeaders)
 
   } catch (e) {
-    console.error('transcript error:', e)
-    res.status(500).json({ error: e.message })
+    return json({ error: e.message }, 500, corsHeaders)
   }
 }
 
-// ── Multi-client InnerTube dispatcher ─────────────────────────────────────────
+function json(data, status, headers) {
+  return new Response(JSON.stringify(data), { status, headers })
+}
+
 async function tryClient(name, videoId, attempts) {
   let tracks = null
   try {
@@ -159,22 +152,19 @@ async function fetchIos(videoId) {
 }
 
 async function fetchAndroid(videoId) {
-  const r = await fetch(
-    'https://www.youtube.com/youtubei/v1/player?prettyPrint=false',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-YouTube-Client-Name': '3',
-        'X-YouTube-Client-Version': '19.09.37',
-        'User-Agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
-      },
-      body: JSON.stringify({
-        videoId,
-        context: { client: { hl: 'en', gl: 'US', clientName: 'ANDROID', clientVersion: '19.09.37', androidSdkVersion: 30 } },
-      }),
-    }
-  )
+  const r = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-YouTube-Client-Name': '3',
+      'X-YouTube-Client-Version': '19.09.37',
+      'User-Agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
+    },
+    body: JSON.stringify({
+      videoId,
+      context: { client: { hl: 'en', gl: 'US', clientName: 'ANDROID', clientVersion: '19.09.37', androidSdkVersion: 30 } },
+    }),
+  })
   if (!r.ok) return null
   const data = await r.json()
   return data?.captions?.playerCaptionsTracklistRenderer?.captionTracks || null
@@ -205,28 +195,24 @@ async function fetchWeb(videoId) {
 }
 
 async function fetchTv(videoId) {
-  const r = await fetch(
-    'https://www.youtube.com/youtubei/v1/player?prettyPrint=false',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-YouTube-Client-Name': '7',
-        'X-YouTube-Client-Version': '7.20230405.08.01',
-        'User-Agent': 'Mozilla/5.0 (SMART-TV; Linux; Tizen 5.0) AppleWebKit/537.36',
-      },
-      body: JSON.stringify({
-        videoId,
-        context: { client: { hl: 'en', gl: 'US', clientName: 'TVHTML5', clientVersion: '7.20230405.08.01' } },
-      }),
-    }
-  )
+  const r = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-YouTube-Client-Name': '7',
+      'X-YouTube-Client-Version': '7.20230405.08.01',
+      'User-Agent': 'Mozilla/5.0 (SMART-TV; Linux; Tizen 5.0) AppleWebKit/537.36',
+    },
+    body: JSON.stringify({
+      videoId,
+      context: { client: { hl: 'en', gl: 'US', clientName: 'TVHTML5', clientVersion: '7.20230405.08.01' } },
+    }),
+  })
   if (!r.ok) return null
   const data = await r.json()
   return data?.captions?.playerCaptionsTracklistRenderer?.captionTracks || null
 }
 
-// ── Direct timedtext URL (public endpoint, no InnerTube needed) ───────────────
 async function fetchViaTimedtext(videoId) {
   const candidates = [
     `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&fmt=json3`,
@@ -248,7 +234,6 @@ async function fetchViaTimedtext(videoId) {
   return null
 }
 
-// ── HTML page parse fallback ──────────────────────────────────────────────────
 async function fetchViaHtml(videoId) {
   try {
     const r = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, {
@@ -272,13 +257,9 @@ async function fetchViaHtml(videoId) {
       else if (c === ']' || c === '}') { depth--; if (depth === 0) { end = i; break } }
     }
     return JSON.parse(html.slice(arrStart, end + 1))
-  } catch (e) {
-    console.error('HTML parse error:', e.message)
-    return null
-  }
+  } catch { return null }
 }
 
-// ── Shared caption parser ─────────────────────────────────────────────────────
 function parseEvents(data) {
   if (!data?.events) return []
   return data.events
