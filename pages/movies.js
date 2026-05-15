@@ -25,10 +25,6 @@ export default async function moviesPage(app) {
   let customMovie   = null
   const ipaCache    = new Map()   // word → /ipa/
 
-  // Lock page scroll (zoom:1.125 on html makes 100vh overflow)
-  document.documentElement.style.overflow = 'hidden'
-  document.body.style.overflow = 'hidden'
-
   app.innerHTML = `<div style="min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center"><div style="color:#64748b;font-size:14px">Đang tải...</div></div>`
 
   // Check pro status
@@ -311,6 +307,10 @@ export default async function moviesPage(app) {
     const ll = { beginner:'Cơ bản',  intermediate:'Trung cấp', advanced:'Nâng cao' }
     const subs = getSubs()
 
+    // Measure navbar bottom to fill exactly the remaining viewport space
+    const navbarEl = document.getElementById('navbar')
+    const navBottom = navbarEl ? Math.round(navbarEl.getBoundingClientRect().bottom) : 0
+
     app.innerHTML = `
       <style>
         .mv-sub-item:hover { background:#1e293b !important; }
@@ -319,7 +319,7 @@ export default async function moviesPage(app) {
         #mv-url-input:focus { border-color:#2563eb !important; outline:none; }
         #mv-url-input::placeholder { color:#475569; }
       </style>
-      <div style="height:100vh;overflow:hidden;background:#0f172a;display:flex;flex-direction:column">
+      <div style="position:fixed;top:${navBottom}px;left:0;right:0;bottom:0;background:#0f172a;display:flex;flex-direction:column;overflow:hidden;z-index:5">
         <!-- Top bar -->
         <div style="background:#1e293b;border-bottom:1px solid #334155;height:56px;padding:0 24px;
           display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:20">
