@@ -315,7 +315,7 @@ export default async function moviesPage(app) {
         #mv-url-input:focus { border-color:#2563eb !important; outline:none; }
         #mv-url-input::placeholder { color:#475569; }
       </style>
-      <div style="min-height:100vh;background:#0f172a;display:flex;flex-direction:column">
+      <div style="height:100vh;overflow:hidden;background:#0f172a;display:flex;flex-direction:column">
         <!-- Top bar -->
         <div style="background:#1e293b;border-bottom:1px solid #334155;height:56px;padding:0 24px;
           display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:20">
