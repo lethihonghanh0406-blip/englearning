@@ -1,6 +1,6 @@
 {
   "rewrites": [
     { "source": "/dashboard.html", "destination": "/dashboard.html" },
-    { "source": "/((?!dashboard\\.html|login\\.html|index\\.html|assets|supabase|components|pages|utils|config|logo|icon).*)", "destination": "/index.html" }
+    { "source": "/((?!dashboard\\.html|login\\.html|index\\.html|assets|supabase|components|pages|utils|config|logo|icon|api).*)", "destination": "/index.html" }
   ]
 }

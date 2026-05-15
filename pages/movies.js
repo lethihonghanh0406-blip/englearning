@@ -21,6 +21,10 @@ export default async function moviesPage(app) {
   let animFrame     = null
   let mediaStream   = null
 
+  // Custom YouTube URL mode
+  let customMovie   = null
+  const ipaCache    = new Map()   // word → /ipa/
+
   app.innerHTML = `<div style="min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center"><div style="color:#64748b;font-size:14px">Đang tải...</div></div>`
 
   // Check pro status
@@ -37,7 +41,7 @@ export default async function moviesPage(app) {
   selId  = movies[0]?.id || null
   render()
 
-  function getMovie() { return movies.find(m => m.id === selId) || null }
+  function getMovie() { return customMovie?.id === selId ? customMovie : (movies.find(m => m.id === selId) || null) }
   function getSubs()  { return getMovie()?.subtitles || [] }
   function getVid(movie) {
     if (!movie?.youtube_id) return null
@@ -226,6 +230,11 @@ export default async function moviesPage(app) {
 
     // Update shadowing panel
     updateShadowPanel(idx, subs)
+
+    // Async: load IPA for current sentence words
+    if (idx >= 0 && subs[idx]?.en && !lastResult) {
+      loadSentenceIpa(subs[idx].en, idx)
+    }
   }
 
   function updateShadowPanel(idx, subs) {
@@ -243,7 +252,7 @@ export default async function moviesPage(app) {
           `<span style="display:inline-block;padding:1px 6px;border-radius:5px;margin:2px 1px;font-size:16px;font-weight:600;
             background:${w.ok?'#166534':'#7f1d1d'};color:${w.ok?'#bbf7d0':'#fca5a5'}">${w.word}</span>`
         ).join(' ')
-      : `<span style="font-size:17px;font-weight:500;color:#f1f5f9">${sub.en}</span>`
+      : buildIpaWordDisplay(sub.en, idx)
 
     el.innerHTML = `
       <div style="text-align:center;margin-bottom:6px">${enHTML}</div>
@@ -303,6 +312,8 @@ export default async function moviesPage(app) {
         .mv-sub-item:hover { background:#1e293b !important; }
         .mv-sub-item.active { background:#1d3461 !important; border-color:#2563eb !important; }
         .mv-sub-item.active .mv-sub-en { color:#f1f5f9 !important; font-weight:600; }
+        #mv-url-input:focus { border-color:#2563eb !important; outline:none; }
+        #mv-url-input::placeholder { color:#475569; }
       </style>
       <div style="min-height:100vh;background:#0f172a;display:flex;flex-direction:column">
         <!-- Top bar -->
@@ -327,7 +338,25 @@ export default async function moviesPage(app) {
           </div>
         </div>
 
-        <div style="display:flex;overflow:hidden;height:calc(100vh - 56px)">
+        <!-- YouTube URL input bar -->
+        <div style="background:#0f172a;border-bottom:1px solid #1e293b;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-shrink:0">
+          <div style="flex:1;position:relative">
+            <input id="mv-url-input" type="url"
+              placeholder="🔗  Dán link YouTube vào đây (youtube.com/watch?v=... hoặc youtu.be/...)"
+              value="${customMovie ? 'https://www.youtube.com/watch?v=' + (customMovie.youtube_id || '') : ''}"
+              onkeydown="if(event.key==='Enter')mvLoadURL()"
+              style="width:100%;box-sizing:border-box;background:#1e293b;border:1px solid #334155;border-radius:10px;
+                padding:10px 14px;color:#f1f5f9;font-size:14px;transition:border-color .15s"/>
+          </div>
+          <button id="mv-load-btn" onclick="mvLoadURL()"
+            style="padding:10px 22px;border-radius:10px;border:none;cursor:pointer;background:#2563eb;
+              color:white;font-size:14px;font-weight:700;white-space:nowrap;flex-shrink:0;
+              box-shadow:0 2px 10px rgba(37,99,235,.4);transition:opacity .15s">
+            ▶ Tải video
+          </button>
+        </div>
+
+        <div style="display:flex;overflow:hidden;height:calc(100vh - 56px - 58px)">
           <!-- Movie list sidebar -->
           <div id="mv-sidebar" style="width:200px;min-width:200px;background:#1e293b;border-right:1px solid #334155;overflow-y:auto;height:100%">
             ${buildSidebarContent(lc, lt, ll)}
@@ -470,6 +499,104 @@ export default async function moviesPage(app) {
     const idx  = Math.min(subs.length - 1, currentSubIdx + 1)
     if (subs[idx]) { lastResult = null; loopIdx = loopMode ? idx : -1; window.mvSeek(subs[idx].t) }
   }
+  // ── IPA helpers ───────────────────────────────────────────────────────────
+  async function fetchWordIpa(word) {
+    const key = word.toLowerCase().replace(/[^a-z']/g, '')
+    if (!key || key.length < 2) return ''
+    if (ipaCache.has(key)) return ipaCache.get(key)
+    try {
+      const r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${key}`)
+      if (!r.ok) { ipaCache.set(key, ''); return '' }
+      const d = await r.json()
+      const ipa = d[0]?.phonetics?.find(p => p.text)?.text || d[0]?.phonetic || ''
+      ipaCache.set(key, ipa)
+      return ipa
+    } catch { ipaCache.set(key, ''); return '' }
+  }
+
+  const STOP = new Set(['a','an','the','of','in','on','at','for','to','and','or','is','it','i','be','as','up','by'])
+
+  function buildIpaWordDisplay(sentence, subIdx) {
+    const words = sentence.split(/\s+/).filter(Boolean)
+    return `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px 10px;padding:4px 0" id="ipa-row-${subIdx}">
+      ${words.map(w => {
+        const clean = w.replace(/[^a-zA-Z'-]/g, '').toLowerCase()
+        const cached = (!STOP.has(clean) && clean.length > 1) ? ipaCache.get(clean) : ''
+        return `<div style="text-align:center">
+          <div style="font-size:16px;font-weight:500;color:#f1f5f9">${w}</div>
+          <div style="font-size:11px;color:#60a5fa;font-style:italic;min-height:14px">${cached || ''}</div>
+        </div>`
+      }).join('')}
+    </div>`
+  }
+
+  async function loadSentenceIpa(sentence, subIdx) {
+    const words = sentence.split(/\s+/).filter(Boolean)
+    const fetches = words.map(async w => {
+      const clean = w.replace(/[^a-zA-Z'-]/g, '').toLowerCase()
+      if (STOP.has(clean) || clean.length < 2) return { w, ipa: '' }
+      const ipa = await fetchWordIpa(clean)
+      return { w, ipa }
+    })
+    const results = await Promise.all(fetches)
+
+    const row = document.getElementById(`ipa-row-${subIdx}`)
+    if (!row) return
+    row.innerHTML = results.map(({ w, ipa }) => `
+      <div style="text-align:center">
+        <div style="font-size:16px;font-weight:500;color:#f1f5f9">${w}</div>
+        <div style="font-size:11px;color:#60a5fa;font-style:italic;min-height:14px">${ipa}</div>
+      </div>`).join('')
+  }
+
+  // ── Load YouTube URL ───────────────────────────────────────────────────────
+  window.mvLoadURL = async () => {
+    const urlEl = document.getElementById('mv-url-input')
+    const url   = (urlEl?.value || '').trim()
+    if (!url) return
+
+    const m = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/)
+    const videoId = m?.[1] || (url.match(/[A-Za-z0-9_-]{11}/)?.[0])
+    if (!videoId || videoId.length !== 11) {
+      urlEl.style.borderColor = '#ef4444'
+      setTimeout(() => { if (urlEl) urlEl.style.borderColor = '#334155' }, 2000)
+      return
+    }
+
+    const btn = document.getElementById('mv-load-btn')
+    if (btn) { btn.textContent = '⏳ Đang tải...'; btn.disabled = true }
+
+    try {
+      const res  = await fetch(`/api/transcript?v=${videoId}`)
+      const data = await res.json()
+
+      if (!res.ok || data.error) {
+        alert('⚠️ ' + (data.error || 'Không thể tải phụ đề'))
+        return
+      }
+
+      customMovie = { id: `yt-${videoId}`, youtube_id: videoId, title: data.title || url, level: null, subtitles: data.subs }
+      selId         = customMovie.id
+      currentSubIdx = -1
+      lastResult    = null
+
+      stopSync()
+      renderLayout(customMovie, videoId)
+      layoutMovieId = selId
+      initYTPlayer(videoId)
+
+      setTimeout(() => {
+        const el = document.getElementById('mv-url-input')
+        if (el) el.value = `https://www.youtube.com/watch?v=${videoId}`
+      }, 80)
+
+    } catch (e) {
+      alert('Lỗi kết nối: ' + e.message)
+    } finally {
+      if (btn) { btn.textContent = '▶ Tải video'; btn.disabled = false }
+    }
+  }
+
   window.mvToggleVI = () => {
     showVI = !showVI
     const btn = document.getElementById('mv-vi-btn')
