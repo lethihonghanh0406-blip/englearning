@@ -8,22 +8,43 @@ module.exports = async function handler(req, res) {
   const videoId = raw.match(/[A-Za-z0-9_-]{11}/)?.[0]
   if (!videoId) return res.status(400).json({ error: 'Invalid or missing video ID' })
 
-  try {
-    // ── 1. Try InnerTube API (most reliable) ──────────────────────────────
-    let captionTracks = await fetchViaInnerTube(videoId)
+  const debug = req.query.debug === '1'
 
-    // ── 2. Fallback: parse HTML page ──────────────────────────────────────
+  try {
+    const attempts = []
+
+    // ── 1. Try ANDROID client (least restricted by YouTube) ──────────────
+    let captionTracks = await fetchViaAndroid(videoId)
+    attempts.push({ client: 'ANDROID', found: captionTracks?.length ?? 0 })
+
+    // ── 2. Try WEB client ──────────────────────────────────────────────────
+    if (!captionTracks?.length) {
+      captionTracks = await fetchViaInnerTube(videoId)
+      attempts.push({ client: 'WEB', found: captionTracks?.length ?? 0 })
+    }
+
+    // ── 3. Try TVHTML5 client ──────────────────────────────────────────────
+    if (!captionTracks?.length) {
+      captionTracks = await fetchViaTv(videoId)
+      attempts.push({ client: 'TVHTML5', found: captionTracks?.length ?? 0 })
+    }
+
+    // ── 4. Fallback: parse HTML page ──────────────────────────────────────
     if (!captionTracks?.length) {
       captionTracks = await fetchViaHtml(videoId)
+      attempts.push({ client: 'HTML', found: captionTracks?.length ?? 0 })
     }
+
+    if (debug) return res.json({ attempts, captionTracks })
 
     if (!captionTracks?.length) {
       return res.status(404).json({
         error: 'Video này không có phụ đề tiếng Anh. Hãy thử video khác có CC (🇬🇧 phụ đề).',
+        debug: attempts,
       })
     }
 
-    // ── 3. Pick EN track (prefer manual over auto-generated) ──────────────
+    // ── 5. Pick EN track (prefer manual over auto-generated) ──────────────
     const enTrack = captionTracks.find(t => t.languageCode === 'en' && t.kind !== 'asr')
                  || captionTracks.find(t => t.languageCode === 'en')
                  || captionTracks.find(t => (t.languageCode || '').startsWith('en'))
@@ -37,7 +58,7 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ error: `Không có phụ đề tiếng Anh. Có sẵn: ${langs || 'không có'}` })
     }
 
-    // ── 4. Fetch JSON3 caption data ───────────────────────────────────────
+    // ── 6. Fetch JSON3 caption data ───────────────────────────────────────
     const toJson3 = url => url.includes('fmt=') ? url : url + '&fmt=json3'
 
     const [enData, viData] = await Promise.all([
@@ -81,10 +102,44 @@ module.exports = async function handler(req, res) {
   }
 }
 
-// ── InnerTube (YouTube internal API) ─────────────────────────────────────────
+// ── ANDROID InnerTube (most permissive — bypasses many server-IP blocks) ──────
+async function fetchViaAndroid(videoId) {
+  try {
+    const r = await fetch(
+      'https://www.youtube.com/youtubei/v1/player?prettyPrint=false',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-YouTube-Client-Name': '3',
+          'X-YouTube-Client-Version': '19.09.37',
+          'User-Agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
+        },
+        body: JSON.stringify({
+          videoId,
+          context: {
+            client: {
+              hl: 'en', gl: 'US',
+              clientName:    'ANDROID',
+              clientVersion: '19.09.37',
+              androidSdkVersion: 30,
+            },
+          },
+        }),
+      }
+    )
+    if (!r.ok) return null
+    const data = await r.json()
+    return data?.captions?.playerCaptionsTracklistRenderer?.captionTracks || null
+  } catch (e) {
+    console.error('Android InnerTube error:', e.message)
+    return null
+  }
+}
+
+// ── WEB InnerTube ─────────────────────────────────────────────────────────────
 async function fetchViaInnerTube(videoId) {
   try {
-    // WEB client — includes captions.playerCaptionsTracklistRenderer
     const r = await fetch(
       'https://www.youtube.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8&prettyPrint=false',
       {
@@ -114,6 +169,40 @@ async function fetchViaInnerTube(videoId) {
     return data?.captions?.playerCaptionsTracklistRenderer?.captionTracks || null
   } catch (e) {
     console.error('InnerTube error:', e.message)
+    return null
+  }
+}
+
+// ── TVHTML5 InnerTube (smart TV client — different trust level) ───────────────
+async function fetchViaTv(videoId) {
+  try {
+    const r = await fetch(
+      'https://www.youtube.com/youtubei/v1/player?prettyPrint=false',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-YouTube-Client-Name': '7',
+          'X-YouTube-Client-Version': '7.20230405.08.01',
+          'User-Agent': 'Mozilla/5.0 (SMART-TV; Linux; Tizen 5.0) AppleWebKit/537.36',
+        },
+        body: JSON.stringify({
+          videoId,
+          context: {
+            client: {
+              hl: 'en', gl: 'US',
+              clientName:    'TVHTML5',
+              clientVersion: '7.20230405.08.01',
+            },
+          },
+        }),
+      }
+    )
+    if (!r.ok) return null
+    const data = await r.json()
+    return data?.captions?.playerCaptionsTracklistRenderer?.captionTracks || null
+  } catch (e) {
+    console.error('TV InnerTube error:', e.message)
     return null
   }
 }
