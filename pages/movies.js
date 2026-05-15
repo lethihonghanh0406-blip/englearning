@@ -374,7 +374,7 @@ export default async function moviesPage(app) {
           <!-- Video panel (right): fixed, no scroll -->
           <div style="flex:1;display:flex;flex-direction:column;background:#0f172a;overflow:hidden;height:100%">
             <!-- Video -->
-            <div id="mv-card" style="position:relative;width:100%;max-height:220px;height:220px;flex-shrink:0;background:#000">
+            <div id="mv-card" style="position:relative;width:100%;height:280px;flex-shrink:0;background:#000">
               <div id="mv-yt-container" style="position:absolute;top:0;left:0;width:100%;height:100%"></div>
             </div>
 
