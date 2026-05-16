@@ -1,4 +1,4 @@
-const IMG = 'https://www.languageguide.org/images/im/outdoors_ha.svgz'
+const IMG = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/image/vocab_image/camping.png'
 
 const WORDS = [
   // A – Shelter
