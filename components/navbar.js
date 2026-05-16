@@ -148,8 +148,7 @@ return ` <div class="nav">
         <div onclick="navigate('/english/ipa')">🔤 Bảng IPA</div>
         <div onclick="navigate('/english/movies')">🎬 Xem phim</div>
         <div onclick="navigate('/english/practice')">🎯 Luyện tập</div>
-        <div onclick="navigate('/english/vocab')">📖 Cơ thể người</div>
-        <div onclick="navigate('/english/vocab/camping')">🏕️ Cắm trại</div>
+        <div onclick="navigate('/english/vocab')">📖 Từ vựng hình ảnh</div>
       </div>
     </div>
 

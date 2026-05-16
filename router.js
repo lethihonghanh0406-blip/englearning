@@ -1,3 +1,4 @@
+import vocabHubPage     from './pages/vocab-hub.js'
 import vocabBodyPage    from './pages/vocab-body.js'
 import vocabCampingPage from './pages/vocab-camping.js'
 import pinyinPage      from './pages/pinyin.js'
@@ -48,8 +49,9 @@ function router() {
   else if (path === '/english/ipa')       showPage(ipaPage)
   else if (path === '/english/movies')    showPage(moviesPage)
   else if (path === '/english/practice')  showPage(practicePage)
-  else if (path === '/english/vocab')     showPage(vocabBodyPage)
-  else if (path === '/english/vocab/camping') showPage(vocabCampingPage)
+  else if (path === '/english/vocab')          showPage(vocabHubPage)
+  else if (path === '/english/vocab/body')     showPage(vocabBodyPage)
+  else if (path === '/english/vocab/camping')  showPage(vocabCampingPage)
   else {
     home.style.display = "block"
     app.style.display  = "none"
