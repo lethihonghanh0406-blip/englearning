@@ -1,4 +1,4 @@
-const IMG = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/image/vocab_image/humanbody.png'
+const IMG = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/image/vocab_image/body.png'
 
 const WORDS = [
   // A – The Body
