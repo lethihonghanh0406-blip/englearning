@@ -1,55 +1,49 @@
 const IMG = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/image/vocab_image/body.png'
+const AUDIO_URL = 'https://www.languageguide.org/snd/en/body.m4a'
 
 const WORDS = [
-  // A – Front Body (front figure left side + face inset upper-left)
-  { num:1,  en:'head',          vi:'đầu',              s:'A', x:24,   y:7   },
-  { num:2,  en:'face',          vi:'khuôn mặt',        s:'A', x:4.5,  y:8   },
-  { num:3,  en:'neck',          vi:'cổ',               s:'A', x:24,   y:16  },
-  { num:4,  en:'shoulder',      vi:'vai',              s:'A', x:20,   y:21  },
-  { num:5,  en:'chest',         vi:'ngực',             s:'A', x:37,   y:29  },
-  { num:6,  en:'armpit',        vi:'nách',             s:'A', x:36,   y:24  },
-  { num:7,  en:'upper arm',     vi:'cánh tay trên',    s:'A', x:37,   y:17  },
-  { num:8,  en:'arm',           vi:'cánh tay',         s:'A', x:8,    y:36  },
-  { num:9,  en:'elbow',         vi:'khuỷu tay',        s:'A', x:11,   y:43  },
-  { num:10, en:'forearm',       vi:'cẳng tay',         s:'A', x:8,    y:49  },
-  { num:11, en:'waist',         vi:'eo',               s:'A', x:25,   y:44  },
-  { num:12, en:'abdomen',       vi:'bụng',             s:'A', x:39,   y:44  },
-  { num:13, en:'navel',         vi:'rốn',              s:'A', x:36,   y:49  },
-  { num:14, en:'hip',           vi:'hông',             s:'A', x:26,   y:53  },
-  { num:15, en:'groin',         vi:'háng',             s:'A', x:35,   y:54  },
-  { num:16, en:'thigh',         vi:'đùi',              s:'A', x:23,   y:62  },
-  { num:17, en:'knee',          vi:'đầu gối',          s:'A', x:12,   y:65  },
-  { num:18, en:'shin',          vi:'ống chân',         s:'A', x:39,   y:68  },
-  { num:19, en:'calf',          vi:'bắp chân',         s:'A', x:40,   y:76  },
-  { num:20, en:'ankle',         vi:'mắt cá chân',      s:'A', x:23,   y:85  },
-  { num:21, en:'foot',          vi:'bàn chân',         s:'A', x:23,   y:90  },
-  // B – The Hand (middle section: x≈45-62%, y≈24-52%)
-  { num:22, en:'thumb',         vi:'ngón cái',         s:'B', x:47,   y:38  },
-  { num:23, en:'index finger',  vi:'ngón trỏ',         s:'B', x:50,   y:29  },
-  { num:24, en:'middle finger', vi:'ngón giữa',        s:'B', x:53,   y:27  },
-  { num:25, en:'ring finger',   vi:'ngón đeo nhẫn',    s:'B', x:56,   y:29  },
-  { num:26, en:'little finger', vi:'ngón út',          s:'B', x:59,   y:33  },
-  { num:27, en:'fingernail',    vi:'móng tay',         s:'B', x:52,   y:24  },
-  { num:28, en:'knuckle',       vi:'đốt ngón tay',     s:'B', x:52,   y:40  },
-  { num:29, en:'palm',          vi:'lòng bàn tay',     s:'B', x:53,   y:45  },
-  { num:30, en:'wrist',         vi:'cổ tay',           s:'B', x:52,   y:52  },
-  // C – The Foot (middle-lower section: x≈48-63%, y≈60-90%)
-  { num:31, en:'ankle',         vi:'mắt cá chân',      s:'C', x:52,   y:63  },
-  { num:32, en:'heel',          vi:'gót chân',         s:'C', x:58,   y:78  },
-  { num:33, en:'instep',        vi:'mu bàn chân',      s:'C', x:53,   y:73  },
-  { num:34, en:'sole',          vi:'lòng bàn chân',    s:'C', x:56,   y:83  },
-  { num:35, en:'big toe',       vi:'ngón chân cái',    s:'C', x:50,   y:85  },
-  { num:36, en:'toe',           vi:'ngón chân',        s:'C', x:53,   y:87  },
-  { num:37, en:'toenail',       vi:'móng chân',        s:'C', x:52,   y:90  },
-  // D – Back Body (right figure: x≈68-87%, callouts: x≈87-99%)
-  { num:38, en:'back',          vi:'lưng',             s:'D', x:77,   y:30  },
-  { num:39, en:'shoulder blade',vi:'xương bả vai',     s:'D', x:75,   y:22  },
-  { num:40, en:'lower back',    vi:'lưng dưới',        s:'D', x:77,   y:44  },
-  { num:41, en:'buttocks',      vi:'mông',             s:'D', x:90,   y:46  },
-  { num:42, en:'hamstring',     vi:'gân kheo',         s:'D', x:77,   y:62  },
-  { num:43, en:'back of knee',  vi:'khoeo chân',       s:'D', x:77,   y:70  },
-  { num:44, en:'calf',          vi:'bắp chân',         s:'D', x:90,   y:74  },
-  { num:45, en:'heel',          vi:'gót chân',         s:'D', x:90,   y:83  },
+  // A – Front Body
+  { num:1,  en:'arm',            vi:'cánh tay',            s:'A', t:1.56,  x:10,   y:36  },
+  { num:2,  en:'leg',            vi:'chân',                s:'A', t:2.57,  x:32,   y:80  },
+  { num:3,  en:'armpit',         vi:'nách',                s:'A', t:3.62,  x:36,   y:24  },
+  { num:4,  en:'nipple',         vi:'núm vú',              s:'A', t:4.73,  x:28,   y:31  },
+  { num:5,  en:'navel',          vi:'rốn',                 s:'A', t:5.7,   x:36,   y:49  },
+  { num:6,  en:'chest',          vi:'ngực',                s:'A', t:8.01,  x:37,   y:29  },
+  { num:7,  en:'abdomen',        vi:'bụng',                s:'A', t:9.13,  x:39,   y:42  },
+  { num:8,  en:'thigh',          vi:'đùi',                 s:'A', t:14.91, x:23,   y:62  },
+  { num:9,  en:'knee',           vi:'đầu gối',             s:'A', t:16.04, x:12,   y:65  },
+  { num:10, en:'head',           vi:'đầu',                 s:'A', t:17.35, x:24,   y:7   },
+  { num:11, en:'neck',           vi:'cổ',                  s:'A', t:18.26, x:24,   y:16  },
+  { num:12, en:'shoulder',       vi:'vai',                 s:'A', t:40.47, x:20,   y:21  },
+  { num:13, en:'elbow',          vi:'khuỷu tay',           s:'A', t:41.64, x:11,   y:43  },
+  { num:14, en:'hip',            vi:'hông',                s:'A', t:51.23, x:26,   y:53  },
+  // B – The Hand
+  { num:15, en:'wrist',          vi:'cổ tay',              s:'B', t:13.76, x:52,   y:52  },
+  { num:16, en:'hand',           vi:'bàn tay',             s:'B', t:19.42, x:53,   y:42  },
+  { num:17, en:'thumb',          vi:'ngón cái',            s:'B', t:20.61, x:47,   y:38  },
+  { num:18, en:'index finger',   vi:'ngón trỏ',            s:'B', t:21.58, x:50,   y:29  },
+  { num:19, en:'middle finger',  vi:'ngón giữa',           s:'B', t:23.34, x:53,   y:27  },
+  { num:20, en:'ring finger',    vi:'ngón đeo nhẫn',       s:'B', t:24.97, x:56,   y:29  },
+  { num:21, en:'little finger',  vi:'ngón út',             s:'B', t:26.67, x:59,   y:33  },
+  { num:22, en:'palm',           vi:'lòng bàn tay',        s:'B', t:29.07, x:53,   y:45  },
+  { num:23, en:'finger',         vi:'ngón tay',            s:'B', t:30.05, x:54,   y:33  },
+  { num:24, en:'fingernail',     vi:'móng tay',            s:'B', t:31.14, x:52,   y:24  },
+  { num:25, en:'knuckle',        vi:'đốt ngón tay',        s:'B', t:32.45, x:52,   y:40  },
+  // C – The Foot
+  { num:26, en:'foot',           vi:'bàn chân',            s:'C', t:33.52, x:52,   y:69  },
+  { num:27, en:'heel',           vi:'gót chân',            s:'C', t:34.6,  x:58,   y:78  },
+  { num:28, en:'arch',           vi:'lòng cung bàn chân',  s:'C', t:35.7,  x:55,   y:74  },
+  { num:29, en:'toes',           vi:'các ngón chân',       s:'C', t:36.81, x:51,   y:87  },
+  { num:30, en:'big toe',        vi:'ngón chân cái',       s:'C', t:38.14, x:49,   y:85  },
+  { num:31, en:'ankle',          vi:'mắt cá chân',         s:'C', t:39.41, x:52,   y:63  },
+  { num:32, en:'bottom of foot', vi:'lòng bàn chân',       s:'C', t:-1,    x:56,   y:83  },
+  // D – Back Body
+  { num:33, en:'buttocks',       vi:'mông',                s:'D', t:43.09, x:77,   y:54  },
+  { num:34, en:'hamstring',      vi:'gân kheo',            s:'D', t:44.23, x:77,   y:62  },
+  { num:35, en:'calf',           vi:'bắp chân',            s:'D', t:45.49, x:90,   y:74  },
+  { num:36, en:'behind',         vi:'mông sau',            s:'D', t:46.63, x:90,   y:52  },
+  { num:37, en:'back',           vi:'lưng',                s:'D', t:48.78, x:77,   y:30  },
+  { num:38, en:'shoulder blade', vi:'xương bả vai',        s:'D', t:49.93, x:75,   y:22  },
 ]
 
 const SECTIONS = {
@@ -62,9 +56,20 @@ const SECTIONS = {
 export default function vocabBodyPage(app) {
   let activeSection = 'All'
   let hovered = null
+  let _audio = null
 
-  // ── Speak ──────────────────────────────────────────────────────────────────
-  function speak(text) {
+  // ── Audio ──────────────────────────────────────────────────────────────────
+  function playWord(num) {
+    const word = WORDS.find(w => w.num === num)
+    if (!word) return
+    if (word.t < 0) { speakTTS(word.en); return }
+    if (!_audio) _audio = new Audio(AUDIO_URL)
+    _audio.pause()
+    _audio.currentTime = word.t
+    _audio.play().catch(() => speakTTS(word.en))
+  }
+
+  function speakTTS(text) {
     speechSynthesis.cancel()
     const doSpeak = () => {
       const utt = new SpeechSynthesisUtterance(text)
@@ -80,7 +85,7 @@ export default function vocabBodyPage(app) {
     }
     const voices = speechSynthesis.getVoices()
     if (voices.length) doSpeak()
-    else { speechSynthesis.onvoiceschanged = doSpeak }
+    else speechSynthesis.onvoiceschanged = doSpeak
   }
 
   // ── Filter ─────────────────────────────────────────────────────────────────
@@ -107,17 +112,13 @@ export default function vocabBodyPage(app) {
     const word = WORDS.find(w => w.num === num)
     if (!word) return
 
-    // Hotspot
     document.querySelectorAll('.voc-dot').forEach(el =>
       el.classList.toggle('voc-dot-active', +el.dataset.num === num))
-
-    // Word list
     document.querySelectorAll('.voc-word-row').forEach(el =>
       el.classList.toggle('voc-word-active', +el.dataset.num === num))
     document.querySelector(`.voc-word-row[data-num="${num}"]`)
       ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
 
-    // Detail card
     const sc = SECTIONS[word.s]
     document.getElementById('voc-detail').innerHTML = `
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -143,10 +144,7 @@ export default function vocabBodyPage(app) {
       </div>`
   }
 
-  window.vocabSpeak = (num) => {
-    const word = WORDS.find(w => w.num === num)
-    if (word) speak(word.en)
-  }
+  window.vocabSpeak = (num) => playWord(num)
 
   // ── Build word list by section ─────────────────────────────────────────────
   function buildWordList() {
