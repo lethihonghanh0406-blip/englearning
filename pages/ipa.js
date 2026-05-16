@@ -258,12 +258,12 @@ export default function ipaPage(app) {
       : null
 
     const videoPanel = ytSrc
-      ? `<div style="flex:0 0 460px;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9">
+      ? `<div style="flex:0 0 580px;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9">
            <iframe src="${ytSrc}" style="width:100%;height:100%;border:none"
              allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
              allowfullscreen loading="lazy"></iframe>
          </div>`
-      : `<div style="flex:0 0 460px;background:#0f172a;border-radius:12px;aspect-ratio:16/9;
+      : `<div style="flex:0 0 580px;background:#0f172a;border-radius:12px;aspect-ratio:16/9;
                      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
            <div style="font-size:40px;opacity:.3">▶</div>
            <div style="font-size:12px;color:#475569;text-align:center;padding:0 16px">Chưa có video<br>cho âm này</div>
@@ -291,7 +291,7 @@ export default function ipaPage(app) {
     return `
       <div onclick="if(event.target===this)ipaClose()"
         style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px">
-        <div style="background:white;border-radius:20px;padding:24px;width:100%;max-width:900px;box-shadow:0 24px 60px rgba(0,0,0,.25);position:relative;display:flex;flex-direction:column;gap:16px"
+        <div style="background:white;border-radius:20px;padding:24px;width:100%;max-width:1050px;box-shadow:0 24px 60px rgba(0,0,0,.25);position:relative;display:flex;flex-direction:column;gap:16px"
              onclick="event.stopPropagation()">
 
           <button onclick="ipaClose()"
