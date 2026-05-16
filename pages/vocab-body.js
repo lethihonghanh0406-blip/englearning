@@ -1,4 +1,5 @@
-const IMG = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/image/vocab_image/body.jpg'
+const IMG1 = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/image/vocab_image/body.jpg'
+const IMG2 = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/image/vocab_image/body_2.png'
 
 const WORDS = [
   // A – The Body
@@ -53,13 +54,41 @@ const WORDS = [
   { num:46, en:'eyelashes',     ph:'/ˈaɪlæʃɪz/',          vi:'lông mi',           s:'D' },
   { num:47, en:'iris',          ph:'/ˈaɪrɪs/',            vi:'mống mắt',          s:'D' },
   { num:48, en:'pupil',         ph:'/ˈpjuːpəl/',          vi:'con ngươi',         s:'D' },
+  // E – The Foot
+  { num:49, en:'ankle',         ph:'/ˈæŋkəl/',            vi:'mắt cá chân',       s:'E' },
+  { num:50, en:'heel',          ph:'/hiːl/',              vi:'gót chân',          s:'E' },
+  { num:51, en:'instep',        ph:'/ˈɪnstɛp/',           vi:'mu bàn chân',       s:'E' },
+  { num:52, en:'ball',          ph:'/bɔːl/',              vi:'lòng bàn chân trước', s:'E' },
+  { num:53, en:'big toe',       ph:'/bɪɡ toʊ/',           vi:'ngón chân cái',     s:'E' },
+  { num:54, en:'toe',           ph:'/toʊ/',               vi:'ngón chân',         s:'E' },
+  { num:55, en:'little toe',    ph:'/ˈlɪtəl toʊ/',        vi:'ngón chân út',      s:'E' },
+  { num:56, en:'toenail',       ph:'/ˈtoʊneɪl/',          vi:'móng chân',         s:'E' },
+  // F – The Internal Organs
+  { num:57, en:'brain',         ph:'/breɪn/',             vi:'não',               s:'F' },
+  { num:58, en:'spinal cord',   ph:'/ˈspaɪnəl kɔːrd/',    vi:'tủy sống',          s:'F' },
+  { num:59, en:'throat',        ph:'/θroʊt/',             vi:'họng',              s:'F' },
+  { num:60, en:'windpipe',      ph:'/ˈwɪndpaɪp/',         vi:'khí quản',          s:'F' },
+  { num:61, en:'esophagus',     ph:'/ɪˈsɒfəɡəs/',         vi:'thực quản',         s:'F' },
+  { num:62, en:'muscle',        ph:'/ˈmʌsəl/',            vi:'cơ bắp',            s:'F' },
+  { num:63, en:'lung',          ph:'/lʌŋ/',               vi:'phổi',              s:'F' },
+  { num:64, en:'heart',         ph:'/hɑːrt/',             vi:'tim',               s:'F' },
+  { num:65, en:'liver',         ph:'/ˈlɪvər/',            vi:'gan',               s:'F' },
+  { num:66, en:'stomach',       ph:'/ˈstʌmək/',           vi:'dạ dày',            s:'F' },
+  { num:67, en:'intestines',    ph:'/ɪnˈtɛstɪnz/',        vi:'ruột',              s:'F' },
+  { num:68, en:'vein',          ph:'/veɪn/',              vi:'tĩnh mạch',         s:'F' },
+  { num:69, en:'artery',        ph:'/ˈɑːrtəri/',          vi:'động mạch',         s:'F' },
+  { num:70, en:'kidney',        ph:'/ˈkɪdni/',            vi:'thận',              s:'F' },
+  { num:71, en:'pancreas',      ph:'/ˈpæŋkriəs/',         vi:'tụy',               s:'F' },
+  { num:72, en:'bladder',       ph:'/ˈblædər/',           vi:'bàng quang',        s:'F' },
 ]
 
 const SECTIONS = {
-  A: { label: 'A. The Body', color: '#2563eb', bg: '#dbeafe' },
-  B: { label: 'B. The Hand', color: '#16a34a', bg: '#dcfce7' },
-  C: { label: 'C. The Head', color: '#d97706', bg: '#fef3c7' },
-  D: { label: 'D. The Eye',  color: '#7c3aed', bg: '#f5f3ff' },
+  A: { label: 'A. The Body',            color: '#2563eb', bg: '#dbeafe' },
+  B: { label: 'B. The Hand',            color: '#16a34a', bg: '#dcfce7' },
+  C: { label: 'C. The Head',            color: '#d97706', bg: '#fef3c7' },
+  D: { label: 'D. The Eye',             color: '#7c3aed', bg: '#f5f3ff' },
+  E: { label: 'E. The Foot',            color: '#0891b2', bg: '#cffafe' },
+  F: { label: 'F. The Internal Organs', color: '#be185d', bg: '#fce7f3' },
 }
 
 export default function vocabBodyPage(app) {
@@ -96,6 +125,12 @@ export default function vocabBodyPage(app) {
     document.querySelectorAll('.voc-section-head').forEach(el => {
       el.style.display = (sec === 'All' || el.dataset.s === sec) ? '' : 'none'
     })
+    const img1 = document.getElementById('vb-img1')
+    const img2 = document.getElementById('vb-img2')
+    const isImg2 = sec === 'E' || sec === 'F'
+    const isImg1 = sec === 'A' || sec === 'B' || sec === 'C' || sec === 'D'
+    img1.style.display = (sec === 'All' || isImg1) ? 'block' : 'none'
+    img2.style.display = (sec === 'All' || isImg2) ? 'block' : 'none'
   }
 
   window.vocabSpeak = (num) => {
@@ -127,8 +162,8 @@ export default function vocabBodyPage(app) {
     `).join('')
   }
 
-  const filters = ['All', 'A', 'B', 'C', 'D']
-  const filterLabels = { All: 'Tất cả', A: 'Body', B: 'Hand', C: 'Head', D: 'Eye' }
+  const filters = ['All', 'A', 'B', 'C', 'D', 'E', 'F']
+  const filterLabels = { All: 'Tất cả', A: 'Body', B: 'Hand', C: 'Head', D: 'Eye', E: 'Foot', F: 'Organs' }
 
   app.innerHTML = `
     <style>
@@ -161,9 +196,11 @@ export default function vocabBodyPage(app) {
       <!-- Body -->
       <div style="display:flex;flex:1;min-height:0;overflow:hidden">
 
-        <!-- Image (static, no dots) -->
-        <div style="flex:1;overflow-y:auto;padding:20px;display:flex;align-items:flex-start;justify-content:center">
-          <img src="${IMG}" style="max-width:980px;width:100%;display:block;border-radius:12px;
+        <!-- Images (stacked, filterable) -->
+        <div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;align-items:center;gap:20px">
+          <img id="vb-img1" src="${IMG1}" style="max-width:980px;width:100%;display:block;border-radius:12px;
+            box-shadow:0 8px 32px rgba(0,0,0,.4)" draggable="false">
+          <img id="vb-img2" src="${IMG2}" style="max-width:980px;width:100%;display:block;border-radius:12px;
             box-shadow:0 8px 32px rgba(0,0,0,.4)" draggable="false">
         </div>
 
