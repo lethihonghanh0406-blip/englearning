@@ -58,9 +58,21 @@ export default function vocabCampingPage(app) {
 
   function speak(text) {
     speechSynthesis.cancel()
-    const utt = new SpeechSynthesisUtterance(text)
-    utt.lang = 'en-US'; utt.rate = 0.85
-    speechSynthesis.speak(utt)
+    const doSpeak = () => {
+      const utt = new SpeechSynthesisUtterance(text)
+      utt.lang = 'en-US'
+      utt.rate = 0.82
+      const voices = speechSynthesis.getVoices()
+      utt.voice =
+        voices.find(v => v.name === 'Google US English') ||
+        voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) ||
+        voices.find(v => v.lang === 'en-US' && v.localService === false) ||
+        voices.find(v => v.lang === 'en-US') || null
+      speechSynthesis.speak(utt)
+    }
+    const voices = speechSynthesis.getVoices()
+    if (voices.length) doSpeak()
+    else { speechSynthesis.onvoiceschanged = doSpeak }
   }
 
   window.campingFilter = (sec) => {
