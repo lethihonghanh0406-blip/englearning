@@ -3,13 +3,13 @@ const IMG2 = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/
 
 const WORDS = [
   // A – Leafy Greens
-  { num:1,  en:'cauliflower',    ph:'/ˈkɒliflaʊər/',       vi:'súp lơ trắng',      s:'A' },
-  { num:2,  en:'broccoli',       ph:'/ˈbrɒkəli/',           vi:'súp lơ xanh',       s:'A' },
+  { num:1,  en:'cauliflower',    ph:'/ˈkɑːliflaʊər/',       vi:'súp lơ trắng',      s:'A' },
+  { num:2,  en:'broccoli',       ph:'/ˈbrɑːkəli/',           vi:'súp lơ xanh',       s:'A' },
   { num:3,  en:'cabbage',        ph:'/ˈkæbɪdʒ/',            vi:'bắp cải',           s:'A' },
   { num:4,  en:'brussels sprouts', ph:'/ˈbrʌsəlz spraʊts/', vi:'cải Brussels',      s:'A' },
   { num:5,  en:'watercress',     ph:'/ˈwɔːtərkrɛs/',        vi:'cải xoong',         s:'A' },
   { num:6,  en:'lettuce',        ph:'/ˈlɛtɪs/',             vi:'xà lách',           s:'A' },
-  { num:7,  en:'escarole',       ph:'/ˈɛskərəʊl/',          vi:'xà lách lá xoăn',   s:'A' },
+  { num:7,  en:'escarole',       ph:'/ˈɛskəroʊl/',          vi:'xà lách lá xoăn',   s:'A' },
   { num:8,  en:'spinach',        ph:'/ˈspɪnɪtʃ/',           vi:'rau bina',          s:'A' },
   { num:9,  en:'herbs',          ph:'/hɜːrbz/',             vi:'rau thơm',          s:'A' },
   { num:10, en:'celery',         ph:'/ˈsɛləri/',            vi:'cần tây',           s:'A' },
@@ -32,7 +32,7 @@ const WORDS = [
   { num:25, en:'garlic',         ph:'/ˈɡɑːrlɪk/',           vi:'tỏi',               s:'C' },
   { num:26, en:'pumpkin',        ph:'/ˈpʌmpkɪn/',           vi:'bí ngô',            s:'C' },
   { num:27, en:'zucchini',       ph:'/zuːˈkiːni/',          vi:'bí xanh',           s:'C' },
-  { num:28, en:'acorn squash',   ph:'/ˈeɪkɔːrn skwɒʃ/',    vi:'bí đào',            s:'C' },
+  { num:28, en:'acorn squash',   ph:'/ˈeɪkɔːrn skwɑːʃ/',    vi:'bí đào',            s:'C' },
   // D – Root Vegetables
   { num:29, en:'radishes',       ph:'/ˈrædɪʃɪz/',           vi:'củ cải đỏ',         s:'D' },
   { num:30, en:'mushrooms',      ph:'/ˈmʌʃruːmz/',          vi:'nấm',               s:'D' },

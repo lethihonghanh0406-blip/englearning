@@ -41,7 +41,7 @@ const WORDS = [
   { num:34, en:'ear',           ph:'/ɪr/',                vi:'tai',               s:'C' },
   { num:35, en:'cheek',         ph:'/tʃiːk/',             vi:'má',                s:'C' },
   { num:36, en:'nose',          ph:'/noʊz/',              vi:'mũi',               s:'C' },
-  { num:37, en:'nostril',       ph:'/ˈnɒstrəl/',          vi:'lỗ mũi',            s:'C' },
+  { num:37, en:'nostril',       ph:'/ˈnɑːstrəl/',          vi:'lỗ mũi',            s:'C' },
   { num:38, en:'jaw',           ph:'/dʒɔː/',              vi:'hàm',               s:'C' },
   { num:39, en:'beard',         ph:'/bɪrd/',              vi:'râu cằm',           s:'C' },
   { num:40, en:'mustache',      ph:'/ˈmʌstæʃ/',           vi:'râu mép',           s:'C' },
