@@ -80,7 +80,7 @@ export default async function moviesPage(app) {
   function getMovie() { return customMovie?.id === selId ? customMovie : (movies.find(m => m.id === selId) || null) }
   function getSubs()  { return getMovie()?.subtitles || [] }
 
-  // Split raw subs into individual sentences for cleaner display & sync
+  // Split raw subs into individual sentences — keep parent timestamp so audio sync stays correct
   function splitSubsBySentence(subs) {
     const result = []
     for (const s of subs) {
@@ -90,13 +90,9 @@ export default async function moviesPage(app) {
         .map(p => p.trim())
         .filter(p => p.length > 0)
       if (parts.length <= 1) { result.push({ ...s }); continue }
-      const totalChars = parts.reduce((sum, p) => sum + p.length, 0)
-      let t = s.t
+      // All sub-sentences share the parent's t so clicking any seeks to the correct audio point
       for (const part of parts) {
-        const ratio = part.length / totalChars
-        const dur   = Math.round((s.dur || 2) * ratio * 100) / 100
-        result.push({ t: Math.round(t * 100) / 100, dur, en: part, vi: '' })
-        t += dur
+        result.push({ t: s.t, dur: s.dur, en: part, vi: '' })
       }
     }
     return result
@@ -215,7 +211,10 @@ export default async function moviesPage(app) {
       if (subs[mid].t <= t) lo = mid
       else hi = mid - 1
     }
-    return subs[lo].t <= t ? lo : -1
+    if (subs[lo].t > t) return -1
+    // Walk back to first entry sharing the same timestamp (split-sentence groups)
+    while (lo > 0 && subs[lo - 1].t === subs[lo].t) lo--
+    return lo
   }
 
   // ── YouTube IFrame API ─────────────────────────────────────────────────────
