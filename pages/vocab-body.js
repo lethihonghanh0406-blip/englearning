@@ -3,7 +3,7 @@ const IMG = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/i
 // 48 words — x/y calibrated to the numbered circles in humanbody.png
 const WORDS = [
   // A – The Body  (side-view man, left ~33% of image)
-  { num:1,  en:'face',          vi:'khuôn mặt',         s:'A', x:12,   y:8   },
+  { num:1,  en:'face',          vi:'khuôn mặt',         s:'A', x:25,   y:12  },
   { num:2,  en:'mouth',         vi:'miệng',             s:'A', x:10,   y:11  },
   { num:3,  en:'chin',          vi:'cằm',               s:'A', x:11,   y:13  },
   { num:4,  en:'neck',          vi:'cổ',                s:'A', x:14,   y:17  },
