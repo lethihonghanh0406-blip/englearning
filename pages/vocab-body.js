@@ -136,7 +136,7 @@ export default function vocabBodyPage(app) {
       .voc-row:hover span:last-child { color: #2563eb !important; }
     </style>
 
-    <div style="min-height:100vh;background:#0f172a;display:flex;flex-direction:column">
+    <div style="height:100vh;background:#0f172a;display:flex;flex-direction:column">
 
       <!-- Header -->
       <div style="background:#1e293b;border-bottom:1px solid #334155;padding:14px 24px;
