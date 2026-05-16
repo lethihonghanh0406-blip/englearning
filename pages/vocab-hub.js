@@ -34,7 +34,7 @@ const CATEGORIES = [
     bg: '#dcfce7',
     topics: [
       { en: 'Fruits',           vi: 'Trái cây',        emoji: '🍎', route: null },
-      { en: 'Vegetables',       vi: 'Rau củ',          emoji: '🥦', route: null },
+      { en: 'Vegetables',       vi: 'Rau củ',          emoji: '🥦', route: '/english/vocab/vegetables' },
       { en: 'Food',             vi: 'Thức ăn',         emoji: '🍔', route: null },
       { en: 'Food II',          vi: 'Thức ăn II',      emoji: '🍜', route: null },
       { en: 'Breakfast',        vi: 'Bữa sáng',        emoji: '🍳', route: null },
