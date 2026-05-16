@@ -26,6 +26,7 @@ export default async function moviesPage(app) {
   const ipaCache    = new Map()   // word → /ipa/
   const viCache     = new Map()   // en text → vi translation
   let _translateCtrl = null
+  const _subsCache   = new Map()   // movieId → split subs
 
   app.innerHTML = `<div style="min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center"><div style="color:#64748b;font-size:14px">Đang tải...</div></div>`
 
@@ -78,6 +79,37 @@ export default async function moviesPage(app) {
 
   function getMovie() { return customMovie?.id === selId ? customMovie : (movies.find(m => m.id === selId) || null) }
   function getSubs()  { return getMovie()?.subtitles || [] }
+
+  // Split raw subs into individual sentences for cleaner display & sync
+  function splitSubsBySentence(subs) {
+    const result = []
+    for (const s of subs) {
+      const parts = s.en
+        .replace(/([.!?])\s+(?=[A-Z"])/g, '$1\n')
+        .split('\n')
+        .map(p => p.trim())
+        .filter(p => p.length > 0)
+      if (parts.length <= 1) { result.push({ ...s }); continue }
+      const totalChars = parts.reduce((sum, p) => sum + p.length, 0)
+      let t = s.t
+      for (const part of parts) {
+        const ratio = part.length / totalChars
+        const dur   = Math.round((s.dur || 2) * ratio * 100) / 100
+        result.push({ t: Math.round(t * 100) / 100, dur, en: part, vi: '' })
+        t += dur
+      }
+    }
+    return result
+  }
+
+  function getProcessedSubs() {
+    const movie = getMovie()
+    if (!movie) return []
+    if (_subsCache.has(movie.id)) return _subsCache.get(movie.id)
+    const processed = splitSubsBySentence(getSubs())
+    _subsCache.set(movie.id, processed)
+    return processed
+  }
   function getVid(movie) {
     if (!movie?.youtube_id) return null
     const m = movie.youtube_id.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/)
@@ -220,7 +252,7 @@ export default async function moviesPage(app) {
   // ── Subtitle sync ──────────────────────────────────────────────────────────
   function startSync() {
     if (subtitleTimer) clearInterval(subtitleTimer)
-    const subs = getSubs()
+    const subs = getProcessedSubs()
     subtitleTimer = setInterval(() => {
       if (!ytPlayer || !ytReady) return
       try {
@@ -340,8 +372,6 @@ export default async function moviesPage(app) {
       renderLayout(movie, vid)
       layoutMovieId = selId
       if (vid) initYTPlayer(vid)
-    } else {
-      updateSidebar()
     }
   }
 
@@ -356,10 +386,6 @@ export default async function moviesPage(app) {
   }
 
   function renderLayout(movie, vid) {
-    const lc = { beginner:'#dcfce7', intermediate:'#fef3c7', advanced:'#fee2e2' }
-    const lt = { beginner:'#166534', intermediate:'#92400e', advanced:'#dc2626' }
-    const ll = { beginner:'Cơ bản',  intermediate:'Trung cấp', advanced:'Nâng cao' }
-    const subs = getSubs()
 
     // Measure navbar bottom to fill exactly the remaining viewport space
     const navbarEl = document.getElementById('navbar')
@@ -409,18 +435,13 @@ export default async function moviesPage(app) {
         </div>
 
         <div style="display:flex;flex:1;min-height:0;overflow:hidden">
-          <!-- Movie list sidebar -->
-          <div id="mv-sidebar" style="width:200px;min-width:200px;background:#1e293b;border-right:1px solid #334155;overflow-y:auto">
-            ${buildSidebarContent(lc, lt, ll)}
-          </div>
-
           ${movie ? `
           <!-- Subtitle panel (left) -->
           <div id="mv-sub-panel" style="width:340px;min-width:340px;background:#0f172a;border-right:1px solid #1e293b;overflow-y:auto;padding:8px;user-select:text">
             <div style="padding:8px 6px 6px;font-size:10px;font-weight:700;color:#475569;letter-spacing:.8px;margin-bottom:4px">
-              SUBTITLES — ${subs.length} đoạn
+              SUBTITLES — ${getProcessedSubs().length} câu
             </div>
-            ${buildSubList(subs)}
+            ${buildSubList(getProcessedSubs())}
           </div>
 
           <!-- Video panel (right): no scroll -->
@@ -483,38 +504,6 @@ export default async function moviesPage(app) {
       </div>`
   }
 
-  function updateSidebar() {
-    const lc = { beginner:'#dcfce7', intermediate:'#fef3c7', advanced:'#fee2e2' }
-    const lt = { beginner:'#166534', intermediate:'#92400e', advanced:'#dc2626' }
-    const ll = { beginner:'Cơ bản',  intermediate:'Trung cấp', advanced:'Nâng cao' }
-    const el = document.getElementById('mv-sidebar')
-    if (el) el.innerHTML = buildSidebarContent(lc, lt, ll)
-  }
-
-  function buildSidebarContent(lc, lt, ll) {
-    return `
-      <div style="padding:14px 16px;border-bottom:1px solid #334155">
-        <div style="font-size:13px;font-weight:700;color:#f1f5f9">Xem phim</div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px">Học tiếng Anh qua phim</div>
-      </div>
-      <div style="padding:8px">
-        ${!movies.length
-          ? `<div style="padding:20px;text-align:center;color:#64748b;font-size:13px">Chưa có video</div>`
-          : movies.map(m => {
-              const active = m.id === selId
-              const lv = m.level || 'beginner'
-              return `<div onclick="mvSelect('${m.id}')"
-                style="padding:12px;border-radius:10px;cursor:pointer;margin-bottom:4px;
-                  background:${active?'#1d3461':'transparent'};border:1px solid ${active?'#2563eb':'transparent'}">
-                <div style="font-size:13px;font-weight:${active?600:400};color:${active?'#93c5fd':'#cbd5e1'};margin-bottom:5px;line-height:1.4">${m.title}</div>
-                <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;
-                  background:${lc[lv]||'#334155'};color:${lt[lv]||'#94a3b8'}">${ll[lv]||lv}</span>
-              </div>`
-            }).join('')}
-      </div>`
-  }
-
-  window.mvSelect  = id => { selId = id; render() }
   window.mvSeek    = t  => { if (ytPlayer && ytReady) { ytPlayer.seekTo(t, true); ytPlayer.playVideo() } }
 
   window.mvToggleLoop = () => {
@@ -541,13 +530,13 @@ export default async function moviesPage(app) {
   window.mvToggleRec = () => mvToggleRecording()
 
   window.mvPrevSub = () => {
-    const subs = getSubs()
+    const subs = getProcessedSubs()
     const idx  = Math.max(0, currentSubIdx - 1)
     if (subs[idx]) { lastResult = null; loopIdx = loopMode ? idx : -1; window.mvSeek(subs[idx].t) }
   }
 
   window.mvNextSub = () => {
-    const subs = getSubs()
+    const subs = getProcessedSubs()
     const idx  = Math.min(subs.length - 1, currentSubIdx + 1)
     if (subs[idx]) { lastResult = null; loopIdx = loopMode ? idx : -1; window.mvSeek(subs[idx].t) }
   }
@@ -703,13 +692,13 @@ export default async function moviesPage(app) {
       btn.style.background = showVI ? '#2563eb' : '#334155'
       btn.style.color = showVI ? 'white' : '#94a3b8'
     }
-    const subs = getSubs()
+    const subs = getProcessedSubs()
     // Rebuild subtitle list with/without VI
     const panel = document.getElementById('mv-sub-panel')
     if (panel) {
       panel.innerHTML = `
         <div style="padding:8px 6px 6px;font-size:10px;font-weight:700;color:#475569;letter-spacing:.8px;margin-bottom:4px">
-          SUBTITLES — ${subs.length} đoạn
+          SUBTITLES — ${subs.length} câu
         </div>
         ${buildSubList(subs)}`
       if (currentSubIdx >= 0) {
