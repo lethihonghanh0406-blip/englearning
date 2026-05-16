@@ -1,75 +1,74 @@
-const IMG = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/image/vocab_image/body.png'
-const AUDIO_URL = 'https://www.languageguide.org/snd/en/body.m4a'
+const IMG = 'https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/image/vocab_image/humanbody.png'
 
+// 48 words — positions match numbered circles in the image
 const WORDS = [
-  // A – Front Body
-  { num:1,  en:'arm',            vi:'cánh tay',            s:'A', t:1.56,  x:10,   y:36  },
-  { num:2,  en:'leg',            vi:'chân',                s:'A', t:2.57,  x:32,   y:80  },
-  { num:3,  en:'armpit',         vi:'nách',                s:'A', t:3.62,  x:36,   y:24  },
-  { num:4,  en:'nipple',         vi:'núm vú',              s:'A', t:4.73,  x:28,   y:31  },
-  { num:5,  en:'navel',          vi:'rốn',                 s:'A', t:5.7,   x:36,   y:49  },
-  { num:6,  en:'chest',          vi:'ngực',                s:'A', t:8.01,  x:37,   y:29  },
-  { num:7,  en:'abdomen',        vi:'bụng',                s:'A', t:9.13,  x:39,   y:42  },
-  { num:8,  en:'thigh',          vi:'đùi',                 s:'A', t:14.91, x:23,   y:62  },
-  { num:9,  en:'knee',           vi:'đầu gối',             s:'A', t:16.04, x:12,   y:65  },
-  { num:10, en:'head',           vi:'đầu',                 s:'A', t:17.35, x:24,   y:7   },
-  { num:11, en:'neck',           vi:'cổ',                  s:'A', t:18.26, x:24,   y:16  },
-  { num:12, en:'shoulder',       vi:'vai',                 s:'A', t:40.47, x:20,   y:21  },
-  { num:13, en:'elbow',          vi:'khuỷu tay',           s:'A', t:41.64, x:11,   y:43  },
-  { num:14, en:'hip',            vi:'hông',                s:'A', t:51.23, x:26,   y:53  },
-  // B – The Hand
-  { num:15, en:'wrist',          vi:'cổ tay',              s:'B', t:13.76, x:52,   y:52  },
-  { num:16, en:'hand',           vi:'bàn tay',             s:'B', t:19.42, x:53,   y:42  },
-  { num:17, en:'thumb',          vi:'ngón cái',            s:'B', t:20.61, x:47,   y:38  },
-  { num:18, en:'index finger',   vi:'ngón trỏ',            s:'B', t:21.58, x:50,   y:29  },
-  { num:19, en:'middle finger',  vi:'ngón giữa',           s:'B', t:23.34, x:53,   y:27  },
-  { num:20, en:'ring finger',    vi:'ngón đeo nhẫn',       s:'B', t:24.97, x:56,   y:29  },
-  { num:21, en:'little finger',  vi:'ngón út',             s:'B', t:26.67, x:59,   y:33  },
-  { num:22, en:'palm',           vi:'lòng bàn tay',        s:'B', t:29.07, x:53,   y:45  },
-  { num:23, en:'finger',         vi:'ngón tay',            s:'B', t:30.05, x:54,   y:33  },
-  { num:24, en:'fingernail',     vi:'móng tay',            s:'B', t:31.14, x:52,   y:24  },
-  { num:25, en:'knuckle',        vi:'đốt ngón tay',        s:'B', t:32.45, x:52,   y:40  },
-  // C – The Foot
-  { num:26, en:'foot',           vi:'bàn chân',            s:'C', t:33.52, x:52,   y:69  },
-  { num:27, en:'heel',           vi:'gót chân',            s:'C', t:34.6,  x:58,   y:78  },
-  { num:28, en:'arch',           vi:'lòng cung bàn chân',  s:'C', t:35.7,  x:55,   y:74  },
-  { num:29, en:'toes',           vi:'các ngón chân',       s:'C', t:36.81, x:51,   y:87  },
-  { num:30, en:'big toe',        vi:'ngón chân cái',       s:'C', t:38.14, x:49,   y:85  },
-  { num:31, en:'ankle',          vi:'mắt cá chân',         s:'C', t:39.41, x:52,   y:63  },
-  { num:32, en:'bottom of foot', vi:'lòng bàn chân',       s:'C', t:-1,    x:56,   y:83  },
-  // D – Back Body
-  { num:33, en:'buttocks',       vi:'mông',                s:'D', t:43.09, x:77,   y:54  },
-  { num:34, en:'hamstring',      vi:'gân kheo',            s:'D', t:44.23, x:77,   y:62  },
-  { num:35, en:'calf',           vi:'bắp chân',            s:'D', t:45.49, x:90,   y:74  },
-  { num:36, en:'behind',         vi:'mông sau',            s:'D', t:46.63, x:90,   y:52  },
-  { num:37, en:'back',           vi:'lưng',                s:'D', t:48.78, x:77,   y:30  },
-  { num:38, en:'shoulder blade', vi:'xương bả vai',        s:'D', t:49.93, x:75,   y:22  },
+  // A – The Body  (side-view man, left ~35% of image)
+  { num:1,  en:'face',          vi:'khuôn mặt',         s:'A', x:15,   y:7   },
+  { num:2,  en:'mouth',         vi:'miệng',             s:'A', x:14,   y:11  },
+  { num:3,  en:'chin',          vi:'cằm',               s:'A', x:15,   y:13  },
+  { num:4,  en:'neck',          vi:'cổ',                s:'A', x:18,   y:17  },
+  { num:5,  en:'shoulder',      vi:'vai',               s:'A', x:20,   y:20  },
+  { num:6,  en:'arm',           vi:'cánh tay',          s:'A', x:7,    y:33  },
+  { num:7,  en:'upper arm',     vi:'cánh tay trên',     s:'A', x:13,   y:26  },
+  { num:8,  en:'elbow',         vi:'khuỷu tay',         s:'A', x:12,   y:37  },
+  { num:9,  en:'forearm',       vi:'cẳng tay',          s:'A', x:13,   y:45  },
+  { num:10, en:'armpit',        vi:'nách',              s:'A', x:22,   y:27  },
+  { num:11, en:'back',          vi:'lưng',              s:'A', x:26,   y:35  },
+  { num:12, en:'chest',         vi:'ngực',              s:'A', x:20,   y:28  },
+  { num:13, en:'waist',         vi:'eo',                s:'A', x:25,   y:47  },
+  { num:14, en:'abdomen',       vi:'bụng',              s:'A', x:22,   y:54  },
+  { num:15, en:'buttocks',      vi:'mông',              s:'A', x:28,   y:63  },
+  { num:16, en:'hip',           vi:'hông',              s:'A', x:26,   y:57  },
+  { num:17, en:'leg',           vi:'chân',              s:'A', x:30,   y:74  },
+  { num:18, en:'thigh',         vi:'đùi',               s:'A', x:21,   y:67  },
+  { num:19, en:'knee',          vi:'đầu gối',           s:'A', x:21,   y:75  },
+  { num:20, en:'calf',          vi:'bắp chân',          s:'A', x:20,   y:84  },
+  // B – The Hand  (back-of-hand x:36-65% · palm x:62-100%, top half)
+  { num:21, en:'wrist',         vi:'cổ tay',            s:'B', x:43,   y:38  },
+  { num:22, en:'knuckle',       vi:'đốt ngón tay',      s:'B', x:51,   y:22  },
+  { num:23, en:'fingernail',    vi:'móng tay',          s:'B', x:58,   y:8   },
+  { num:24, en:'thumb',         vi:'ngón cái',          s:'B', x:71,   y:18  },
+  { num:25, en:'index finger',  vi:'ngón trỏ',          s:'B', x:76,   y:9   },
+  { num:26, en:'middle finger', vi:'ngón giữa',         s:'B', x:80,   y:7   },
+  { num:27, en:'ring finger',   vi:'ngón đeo nhẫn',     s:'B', x:84,   y:11  },
+  { num:28, en:'little finger', vi:'ngón út',           s:'B', x:88,   y:18  },
+  { num:29, en:'palm',          vi:'lòng bàn tay',      s:'B', x:82,   y:33  },
+  // C – The Head  (face close-up, lower center x:26-73%)
+  { num:30, en:'hair',          vi:'tóc',               s:'C', x:48,   y:49  },
+  { num:31, en:'part',          vi:'ngôi tóc',          s:'C', x:43,   y:53  },
+  { num:32, en:'forehead',      vi:'trán',              s:'C', x:57,   y:55  },
+  { num:33, en:'sideburn',      vi:'tóc mai',           s:'C', x:37,   y:63  },
+  { num:34, en:'ear',           vi:'tai',               s:'C', x:32,   y:69  },
+  { num:35, en:'cheek',         vi:'má',                s:'C', x:46,   y:74  },
+  { num:36, en:'nose',          vi:'mũi',               s:'C', x:54,   y:68  },
+  { num:37, en:'nostril',       vi:'lỗ mũi',            s:'C', x:57,   y:73  },
+  { num:38, en:'jaw',           vi:'hàm',               s:'C', x:37,   y:85  },
+  { num:39, en:'beard',         vi:'râu cằm',           s:'C', x:47,   y:88  },
+  { num:40, en:'mustache',      vi:'râu mép',           s:'C', x:51,   y:80  },
+  { num:41, en:'tongue',        vi:'lưỡi',              s:'C', x:53,   y:86  },
+  { num:42, en:'tooth',         vi:'răng',              s:'C', x:56,   y:87  },
+  { num:43, en:'lip',           vi:'môi',               s:'C', x:59,   y:82  },
+  // D – The Eye  (close-up circle, lower right x:73-100%)
+  { num:44, en:'eyebrow',       vi:'lông mày',          s:'D', x:84,   y:59  },
+  { num:45, en:'eyelid',        vi:'mí mắt',            s:'D', x:92,   y:63  },
+  { num:46, en:'eyelashes',     vi:'lông mi',           s:'D', x:83,   y:71  },
+  { num:47, en:'iris',          vi:'mống mắt',          s:'D', x:87,   y:68  },
+  { num:48, en:'pupil',         vi:'con ngươi',         s:'D', x:89,   y:69  },
 ]
 
 const SECTIONS = {
-  A: { label: 'A. Front Body', color: '#2563eb', bg: '#dbeafe' },
-  B: { label: 'B. The Hand',   color: '#16a34a', bg: '#dcfce7' },
-  C: { label: 'C. The Foot',   color: '#d97706', bg: '#fef3c7' },
-  D: { label: 'D. Back Body',  color: '#7c3aed', bg: '#f5f3ff' },
+  A: { label: 'A. The Body', color: '#2563eb', bg: '#dbeafe' },
+  B: { label: 'B. The Hand', color: '#16a34a', bg: '#dcfce7' },
+  C: { label: 'C. The Head', color: '#d97706', bg: '#fef3c7' },
+  D: { label: 'D. The Eye',  color: '#7c3aed', bg: '#f5f3ff' },
 }
 
 export default function vocabBodyPage(app) {
   let activeSection = 'All'
   let hovered = null
-  let _audio = null
 
-  // ── Audio ──────────────────────────────────────────────────────────────────
-  function playWord(num) {
-    const word = WORDS.find(w => w.num === num)
-    if (!word) return
-    if (word.t < 0) { speakTTS(word.en); return }
-    if (!_audio) _audio = new Audio(AUDIO_URL)
-    _audio.pause()
-    _audio.currentTime = word.t
-    _audio.play().catch(() => speakTTS(word.en))
-  }
-
-  function speakTTS(text) {
+  // ── Speak ──────────────────────────────────────────────────────────────────
+  function speak(text) {
     speechSynthesis.cancel()
     const doSpeak = () => {
       const utt = new SpeechSynthesisUtterance(text)
@@ -101,8 +100,7 @@ export default function vocabBodyPage(app) {
       el.style.pointerEvents = (sec === 'All' || s === sec) ? 'auto' : 'none'
     })
     document.querySelectorAll('.voc-word-row').forEach(el => {
-      const s = el.dataset.s
-      el.style.display = (sec === 'All' || s === sec) ? '' : 'none'
+      el.style.display = (sec === 'All' || el.dataset.s === sec) ? '' : 'none'
     })
   }
 
@@ -121,12 +119,12 @@ export default function vocabBodyPage(app) {
 
     const sc = SECTIONS[word.s]
     document.getElementById('voc-detail').innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="margin-bottom:8px">
         <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;
           background:${sc.bg};color:${sc.color}">${sc.label}</span>
       </div>
-      <div style="font-size:42px;font-weight:800;color:#f1f5f9;line-height:1;margin-bottom:6px">${word.en}</div>
-      <div style="font-size:20px;color:#93c5fd;margin-bottom:14px">${word.vi}</div>
+      <div style="font-size:38px;font-weight:800;color:#f1f5f9;line-height:1.1;margin-bottom:6px">${word.en}</div>
+      <div style="font-size:19px;color:#93c5fd;margin-bottom:14px">${word.vi}</div>
       <button onclick="vocabSpeak(${num})"
         style="padding:8px 20px;border-radius:8px;border:none;cursor:pointer;
           background:#2563eb;color:white;font-size:13px;font-weight:600">
@@ -144,9 +142,12 @@ export default function vocabBodyPage(app) {
       </div>`
   }
 
-  window.vocabSpeak = (num) => playWord(num)
+  window.vocabSpeak = (num) => {
+    const word = WORDS.find(w => w.num === num)
+    if (word) speak(word.en)
+  }
 
-  // ── Build word list by section ─────────────────────────────────────────────
+  // ── Word list ──────────────────────────────────────────────────────────────
   function buildWordList() {
     return Object.entries(SECTIONS).map(([sec, info]) => `
       <div style="margin-bottom:16px">
@@ -167,7 +168,7 @@ export default function vocabBodyPage(app) {
       </div>`).join('')
   }
 
-  // ── Build hotspots ─────────────────────────────────────────────────────────
+  // ── Hotspots ───────────────────────────────────────────────────────────────
   function buildDots() {
     return WORDS.map(w => {
       const sc = SECTIONS[w.s]
@@ -176,11 +177,11 @@ export default function vocabBodyPage(app) {
           onmouseenter="vocabHover(${w.num})" onmouseleave="vocabLeave()"
           onclick="vocabSpeak(${w.num})"
           style="position:absolute;left:${w.x}%;top:${w.y}%;transform:translate(-50%,-50%);
-            width:20px;height:20px;border-radius:50%;border:2px solid white;
-            background:${sc.color};color:white;font-size:9px;font-weight:700;
+            width:22px;height:22px;border-radius:50%;border:2px solid white;
+            background:${sc.color};color:white;font-size:8px;font-weight:700;
             display:flex;align-items:center;justify-content:center;
             cursor:pointer;transition:.15s;z-index:10;
-            box-shadow:0 1px 4px rgba(0,0,0,.4)">
+            box-shadow:0 1px 4px rgba(0,0,0,.5)">
           ${w.num}
         </div>`
     }).join('')
@@ -188,18 +189,16 @@ export default function vocabBodyPage(app) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   const filters = ['All', 'A', 'B', 'C', 'D']
-  const filterLabels = { All: 'Tất cả', A: 'Front Body', B: 'Hand', C: 'Foot', D: 'Back Body' }
+  const filterLabels = { All: 'Tất cả', A: 'Body', B: 'Hand', C: 'Head', D: 'Eye' }
 
   app.innerHTML = `
     <style>
       .voc-dot:hover, .voc-dot-active {
-        transform: translate(-50%,-50%) scale(1.35) !important;
-        box-shadow: 0 0 0 4px rgba(255,255,255,.4), 0 2px 8px rgba(0,0,0,.5) !important;
+        transform: translate(-50%,-50%) scale(1.4) !important;
+        box-shadow: 0 0 0 4px rgba(255,255,255,.5), 0 2px 8px rgba(0,0,0,.6) !important;
         z-index: 20 !important;
       }
-      .voc-word-row:hover, .voc-word-active {
-        background: #1e293b !important;
-      }
+      .voc-word-row:hover { background: #1e293b !important; }
       .voc-word-active { background: #1d3461 !important; }
       .voc-word-active span { color: #f1f5f9 !important; }
     </style>
@@ -231,18 +230,17 @@ export default function vocabBodyPage(app) {
 
         <!-- Image with hotspots -->
         <div style="flex:1;overflow-y:auto;padding:20px;display:flex;align-items:flex-start;justify-content:center">
-          <div style="position:relative;max-width:860px;width:100%">
+          <div style="position:relative;max-width:980px;width:100%">
             <img src="${IMG}" style="width:100%;display:block;border-radius:12px;
               box-shadow:0 8px 32px rgba(0,0,0,.4)" draggable="false">
             ${buildDots()}
           </div>
         </div>
 
-        <!-- Right: detail + word list -->
+        <!-- Right panel -->
         <div style="width:260px;min-width:260px;background:#1e293b;border-left:1px solid #334155;
           display:flex;flex-direction:column;overflow:hidden">
 
-          <!-- Active word card -->
           <div id="voc-detail"
             style="padding:20px 16px;border-bottom:1px solid #334155;min-height:130px;flex-shrink:0">
             <div style="color:#475569;font-size:13px;text-align:center;padding-top:20px">
@@ -250,7 +248,6 @@ export default function vocabBodyPage(app) {
             </div>
           </div>
 
-          <!-- Word list -->
           <div style="flex:1;overflow-y:auto;padding:12px 10px">
             ${buildWordList()}
           </div>
