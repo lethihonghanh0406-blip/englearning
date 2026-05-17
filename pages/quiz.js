@@ -959,9 +959,17 @@ export default async function quizPage(app, params) {
               if (view === 'vi' && vi && !isHTML) {
                 body = `<div style="white-space:pre-wrap">${escapeHtml(vi)}</div>`
               } else if (view === 'bilingual' && vi && !isHTML) {
-                const enAll = en.split('\n').map(s => s.trim()).filter(Boolean)
-                const viAll = vi.split('\n').map(s => s.trim()).filter(Boolean)
-                const pairs = enAll.map((eL, i) => ({ en: eL, vi: viAll[i] || '' }))
+                const splitSents = t =>
+                  t.replace(/([.!?])\s+(?=[A-ZĐ])/g, '$1\x00')
+                   .split('\x00').map(s => s.trim()).filter(Boolean)
+                const enParas = en.split('\n').map(s => s.trim()).filter(Boolean)
+                const viParas = vi.split('\n').map(s => s.trim()).filter(Boolean)
+                const pairs = []
+                for (let pi = 0; pi < enParas.length; pi++) {
+                  const eS = splitSents(enParas[pi])
+                  const vS = splitSents(viParas[pi] || '')
+                  eS.forEach((eL, si) => pairs.push({ en: eL, vi: vS[si] || '' }))
+                }
                 const isChatSpk = s => /^[A-Z][\w\s,\.]*[\(\[]\d{1,2}:\d{2}/.test(s)
                 const hasChatTurns = pairs.some(p => isChatSpk(p.en))
                 const viCard = (eL, vL) => vL && !isSpeakerLine(vL) && eL.length >= 50 ? `<div style="padding:8px 14px;background:#eff6ff;border-top:1px solid #dde8fa;display:flex;gap:8px;align-items:flex-start"><span style="flex-shrink:0;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.4px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;line-height:16px">VI</span><div style="font-size:13px;color:#1d4ed8;line-height:1.7">${escapeHtml(vL)}</div></div>` : ''
