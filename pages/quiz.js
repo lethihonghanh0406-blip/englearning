@@ -964,7 +964,7 @@ export default async function quizPage(app, params) {
                 const pairs = enAll.map((eL, i) => ({ en: eL, vi: viAll[i] || '' }))
                 const isChatSpk = s => /^[A-Z][\w\s,\.]*[\(\[]\d{1,2}:\d{2}/.test(s)
                 const hasChatTurns = pairs.some(p => isChatSpk(p.en))
-                const viCard = (vL) => vL && !isSpeakerLine(vL) ? `<div style="padding:8px 14px;background:#eff6ff;border-top:1px solid #dde8fa;display:flex;gap:8px;align-items:flex-start"><span style="flex-shrink:0;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.4px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;line-height:16px">VI</span><div style="font-size:13px;color:#1d4ed8;line-height:1.7">${escapeHtml(vL)}</div></div>` : ''
+                const viCard = (eL, vL) => vL && !isSpeakerLine(vL) && eL.length >= 50 ? `<div style="padding:8px 14px;background:#eff6ff;border-top:1px solid #dde8fa;display:flex;gap:8px;align-items:flex-start"><span style="flex-shrink:0;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.4px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;line-height:16px">VI</span><div style="font-size:13px;color:#1d4ed8;line-height:1.7">${escapeHtml(vL)}</div></div>` : ''
                 const wrap = (inner) => `<div style="border-radius:10px;overflow:hidden;margin-bottom:8px;border:1px solid #dde8fa;box-shadow:0 1px 3px rgba(37,99,235,.06)">${inner}</div>`
                 let html = ''
                 if (hasChatTurns) {
@@ -981,12 +981,12 @@ export default async function quizPage(app, params) {
                       html += wrap(`<div style="padding:5px 14px 4px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:700;color:#475569">${escapeHtml(spk)}</div>${enH ? `<div style="padding:10px 14px;background:white;font-size:13px;color:#1e293b;line-height:1.75">${enH}</div>` : ''}${viH ? `<div style="padding:8px 14px;background:#eff6ff;border-top:1px solid #dde8fa;display:flex;gap:8px;align-items:flex-start"><span style="flex-shrink:0;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.4px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;line-height:16px">VI</span><div style="font-size:13px;color:#1d4ed8;line-height:1.7">${escapeHtml(viH)}</div></div>` : ''}`)
                     } else {
                       const { en: eL, vi: vL } = pairs[ci++]
-                      html += wrap(`<div style="padding:10px 14px;background:white;font-size:13px;color:#1e293b;line-height:1.75">${groupDone ? highlightText(eL, g.highlights) : escapeHtml(eL)}</div>${viCard(vL)}`)
+                      html += wrap(`<div style="padding:10px 14px;background:white;font-size:13px;color:#1e293b;line-height:1.75">${groupDone ? highlightText(eL, g.highlights) : escapeHtml(eL)}</div>${viCard(eL, vL)}`)
                     }
                   }
                 } else {
                   for (const { en: eL, vi: vL } of pairs) {
-                    html += wrap(`<div style="padding:10px 14px;background:white;font-size:13px;color:#1e293b;line-height:1.75">${groupDone ? highlightText(eL, g.highlights) : escapeHtml(eL)}</div>${viCard(vL)}`)
+                    html += wrap(`<div style="padding:10px 14px;background:white;font-size:13px;color:#1e293b;line-height:1.75">${groupDone ? highlightText(eL, g.highlights) : escapeHtml(eL)}</div>${viCard(eL, vL)}`)
                   }
                 }
                 body = html
