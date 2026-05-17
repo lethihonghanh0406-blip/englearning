@@ -1,7 +1,8 @@
 import vocabHubPage     from './pages/vocab-hub.js'
 import vocabBodyPage    from './pages/vocab-body.js'
 import vocabCampingPage    from './pages/vocab-camping.js'
-import vocabVegetablesPage from './pages/vocab-vegetables.js'
+import vocabVegetablesPage  from './pages/vocab-vegetables.js'
+import chineseWritingPage  from './pages/chinese-writing.js'
 import pinyinPage      from './pages/pinyin.js'
 import shadowingPage   from './pages/shadowing.js'
 import ipaPage        from './pages/ipa.js'
@@ -47,6 +48,7 @@ function router() {
   else if (path === '/vocab/review')     requireAuth(() => showPage(vocabSrsPage))
   else if (path === '/chinese/pinyin')    showPage(pinyinPage)
   else if (path === '/chinese/shadowing') showPage(shadowingPage)
+  else if (path === '/chinese/writing')   showPage(chineseWritingPage)
   else if (path === '/english/ipa')       showPage(ipaPage)
   else if (path === '/english/movies')    showPage(moviesPage)
   else if (path === '/english/practice')  showPage(practicePage)
