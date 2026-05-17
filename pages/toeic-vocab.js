@@ -1,6 +1,27 @@
 import { supabase }     from '../supabase/client.js'
 import { requireAuth } from '../utils/auth.js'
 
+function sm2(quality, { interval, ease_factor, repetitions }) {
+  const q = [0, 2, 4, 5][quality]
+  let newInterval, newEF = ease_factor, newReps
+  if (q < 3) { newInterval = 1; newReps = 0 }
+  else {
+    newReps = repetitions + 1
+    if (repetitions === 0)      newInterval = 1
+    else if (repetitions === 1) newInterval = 6
+    else                        newInterval = Math.round(interval * ease_factor)
+    newEF = Math.max(1.3, ease_factor + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
+  }
+  const due = new Date(); due.setDate(due.getDate() + newInterval)
+  return {
+    interval:         newInterval,
+    ease_factor:      Math.round(newEF * 100) / 100,
+    repetitions:      newReps,
+    due_date:         due.toISOString().split('T')[0],
+    last_reviewed_at: new Date().toISOString(),
+  }
+}
+
 export default async function toeicVocab(app) {
   let allTests = []
   let vocab    = []
@@ -377,13 +398,25 @@ export default async function toeicVocab(app) {
           `}
         </div>
 
-        <!-- Card actions -->
-        <div style="display:flex;gap:10px;margin-top:16px;justify-content:center">
+        <!-- SRS rating — only after flip -->
+        <div style="margin-top:16px">
           ${flipped ? `
-            <button onclick="vocabToggleLearned('${v.id}')"
-              style="padding:10px 24px;border-radius:12px;border:1.5px solid ${isLearned?'#86efac':'#e2e8f0'};background:${isLearned?'#f0fdf4':'white'};cursor:pointer;font-size:14px;font-weight:600;color:${isLearned?'#16a34a':'#64748b'}">
-              ${isLearned ? '✓ Đã học' : '○ Đánh dấu đã học'}
-            </button>
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-align:center;margin-bottom:10px;letter-spacing:1px">BẠN NHỚ TỪ NÀY Ở MỨC NÀO?</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+              ${[
+                { q:0, ic:'❌', lb:'Quên', sub:'Ôn lại ngay', bg:'#fef2f2', tc:'#dc2626', border:'#fecaca' },
+                { q:1, ic:'😕', lb:'Khó',  sub:'Ngày mai',    bg:'#fffbeb', tc:'#d97706', border:'#fde68a' },
+                { q:2, ic:'🙂', lb:'OK',   sub:'Vài ngày',    bg:'#f0fdf4', tc:'#16a34a', border:'#bbf7d0' },
+                { q:3, ic:'✅', lb:'Dễ',   sub:'Lâu hơn',     bg:'#eff6ff', tc:'#2563eb', border:'#bfdbfe' },
+              ].map(r => `
+                <button onclick="vocabRate(${r.q},'${v.id}')"
+                  style="padding:14px 8px;border:2px solid ${r.border};border-radius:14px;background:${r.bg};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px"
+                  onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+                  <span style="font-size:20px">${r.ic}</span>
+                  <span style="font-size:13px;font-weight:700;color:${r.tc}">${r.lb}</span>
+                  <span style="font-size:11px;color:${r.tc};opacity:.75">${r.sub}</span>
+                </button>`).join('')}
+            </div>
           ` : ''}
         </div>
 
@@ -707,6 +740,32 @@ export default async function toeicVocab(app) {
     })
   }
 
+  window.vocabRate = async (quality, vocabId) => {
+    requireAuth(async () => {
+      if (!currentUserId) return
+      if (quality >= 2) {
+        learned.add(vocabId)
+        await supabase.from('user_vocab_learned').upsert({ user_id: currentUserId, vocab_id: vocabId })
+      } else {
+        learned.delete(vocabId)
+      }
+      const { data: existing } = await supabase
+        .from('user_vocab_srs')
+        .select('id, interval, ease_factor, repetitions')
+        .eq('user_id', currentUserId)
+        .eq('vocab_id', vocabId)
+        .maybeSingle()
+      const srsData = sm2(quality, existing || { interval: 1, ease_factor: 2.5, repetitions: 0 })
+      await supabase.from('user_vocab_srs').upsert(
+        { user_id: currentUserId, vocab_id: vocabId, ...srsData },
+        { onConflict: 'user_id,vocab_id' }
+      )
+      const filtered = search ? vocab.filter(v => v.word.toLowerCase().includes(search.toLowerCase()) || (v.meaning||'').toLowerCase().includes(search.toLowerCase())) : vocab
+      if (cardIdx < filtered.length - 1) { cardIdx++; flipped = false } else { flipped = false }
+      render()
+    })
+  }
+
   window.vocabResetLearned = async () => {
     requireAuth(async () => {
       learned = new Set()
@@ -741,7 +800,7 @@ export default async function toeicVocab(app) {
       if (e.key === 'Enter') {
         const filtered = search ? vocab.filter(v=>v.word.toLowerCase().includes(search.toLowerCase())||(v.meaning||'').toLowerCase().includes(search.toLowerCase())) : vocab
         const v = filtered[Math.min(cardIdx, filtered.length-1)]
-        if (v) window.vocabToggleLearned(v.id)
+        if (v) { if (!flipped) window.vocabFlipCard(); else window.vocabRate(3, v.id) }
         e.preventDefault()
       }
     }

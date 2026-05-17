@@ -1,5 +1,26 @@
 import { supabase } from '../supabase/client.js'
 
+function sm2(quality, { interval, ease_factor, repetitions }) {
+  const q = [0, 2, 4, 5][quality]
+  let newInterval, newEF = ease_factor, newReps
+  if (q < 3) { newInterval = 1; newReps = 0 }
+  else {
+    newReps = repetitions + 1
+    if (repetitions === 0)      newInterval = 1
+    else if (repetitions === 1) newInterval = 6
+    else                        newInterval = Math.round(interval * ease_factor)
+    newEF = Math.max(1.3, ease_factor + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
+  }
+  const due = new Date(); due.setDate(due.getDate() + newInterval)
+  return {
+    interval:         newInterval,
+    ease_factor:      Math.round(newEF * 100) / 100,
+    repetitions:      newReps,
+    due_date:         due.toISOString().split('T')[0],
+    last_reviewed_at: new Date().toISOString(),
+  }
+}
+
 const HANZI_CDN   = 'https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js'
 const KEY         = 'cw_mastered_v1'
 const SESSION_SIZE = 10
@@ -40,7 +61,7 @@ export default async function chineseWritingPage(app) {
     try {
       const { data, error } = await supabase
         .from('chinese_vocab')
-        .select('char,pinyin,vi,example,ex_pinyin,ex_vi')
+        .select('id,char,pinyin,vi,example,ex_pinyin,ex_vi')
         .eq('level', lvl)
         .order('id')
       if (error || !data?.length) throw new Error()
@@ -244,9 +265,26 @@ export default async function chineseWritingPage(app) {
         ${w.example ? `<div style="font-size:13px;color:#94a3b8;margin-top:10px;text-align:center">${w.example}<br><span style="font-size:11px">${w.ex_pinyin||''}</span><br><span style="font-size:11px;color:#3b82f6">${w.ex_vi||''}</span></div>` : ''}`
       document.getElementById('fc-btns').style.display = 'flex'
     }
-    window.fcAnswer = (rating) => {
-      if (rating >= 2) { mastered.add(words[idx].char); save() }
-      else { mastered.delete(words[idx].char); save() }
+    window.fcAnswer = async (rating) => {
+      const w = words[idx]
+      if (rating >= 2) { mastered.add(w.char); save() }
+      else { mastered.delete(w.char); save() }
+      if (w.id) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          const uid = session.user.id
+          const { data: existing } = await supabase
+            .from('chinese_srs')
+            .select('id,interval,ease_factor,repetitions')
+            .eq('user_id', uid)
+            .eq('chinese_vocab_id', w.id)
+            .maybeSingle()
+          await supabase.from('chinese_srs').upsert(
+            { user_id: uid, chinese_vocab_id: w.id, ...sm2(rating, existing || { interval:1, ease_factor:2.5, repetitions:0 }) },
+            { onConflict: 'user_id,chinese_vocab_id' }
+          )
+        }
+      }
       updateProgress(idx, words.length)
       if (idx + 1 < words.length) { idx++; show() }
       else { document.getElementById('cw-body').innerHTML = doneHTML(startFlash); updateProgress(words.length - 1, words.length) }

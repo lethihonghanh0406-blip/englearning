@@ -46,35 +46,47 @@ export default async function vocabSrsPage(app) {
 
   const today = new Date().toISOString().split('T')[0]
 
-  // Load cards due today
-  const { data: srsRows } = await supabase
-    .from('user_vocab_srs')
-    .select('id, interval, ease_factor, repetitions, due_date, vocab_id, word, meaning')
-    .eq('user_id', uid)
-    .lte('due_date', today)
-    .order('due_date')
+  // Load TOEIC + Chinese SRS cards in parallel
+  const [{ data: srsRows }, { data: chineseRows }] = await Promise.all([
+    supabase.from('user_vocab_srs')
+      .select('id, interval, ease_factor, repetitions, due_date, vocab_id, word, meaning')
+      .eq('user_id', uid).lte('due_date', today).order('due_date'),
+    supabase.from('chinese_srs')
+      .select('id, interval, ease_factor, repetitions, due_date, chinese_vocab_id')
+      .eq('user_id', uid).lte('due_date', today).order('due_date'),
+  ])
 
-  if (!srsRows?.length) { renderEmpty(app); return }
+  if (!srsRows?.length && !chineseRows?.length) { renderEmpty(app); return }
 
-  // Load question_vocab cho những row có vocab_id
-  const vocabIds = srsRows.filter(r => r.vocab_id).map(r => r.vocab_id)
+  // Build TOEIC cards
+  const vocabIds = (srsRows || []).filter(r => r.vocab_id).map(r => r.vocab_id)
   const vocabMap = {}
   if (vocabIds.length) {
     const { data: vocabRows } = await supabase
-      .from('question_vocab')
-      .select('id, word, meaning')
-      .in('id', vocabIds)
+      .from('question_vocab').select('id, word, meaning').in('id', vocabIds)
     for (const v of (vocabRows || [])) vocabMap[v.id] = v
   }
-
-  // Gộp: vocab_id → lấy từ question_vocab, không có → dùng word/meaning trực tiếp
-  const cards = srsRows
-    .map(r => ({
-      ...r,
-      vocab: r.vocab_id ? vocabMap[r.vocab_id] : (r.word ? { word: r.word, meaning: r.meaning } : null)
-    }))
+  const toeicCards = (srsRows || [])
+    .map(r => ({ ...r, source: 'toeic', vocab: r.vocab_id ? vocabMap[r.vocab_id] : (r.word ? { word: r.word, meaning: r.meaning } : null) }))
     .filter(r => r.vocab)
 
+  // Build Chinese cards
+  const cvIds = (chineseRows || []).map(r => r.chinese_vocab_id)
+  const cvMap = {}
+  if (cvIds.length) {
+    const { data: cvRows } = await supabase
+      .from('chinese_vocab').select('id, char, pinyin, vi').in('id', cvIds)
+    for (const v of (cvRows || [])) cvMap[v.id] = v
+  }
+  const chineseCards = (chineseRows || [])
+    .map(r => {
+      const cv = cvMap[r.chinese_vocab_id]
+      if (!cv) return null
+      return { ...r, source: 'chinese', vocab: { word: cv.char, pinyin: cv.pinyin, meaning: cv.vi } }
+    })
+    .filter(Boolean)
+
+  const cards = [...toeicCards, ...chineseCards].sort((a, b) => a.due_date.localeCompare(b.due_date))
   if (!cards.length) { renderEmpty(app); return }
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -116,8 +128,8 @@ export default async function vocabSrsPage(app) {
               ${flipped?'border-color:#2563eb;box-shadow:0 12px 40px rgba(37,99,235,.12)':''}">
 
             ${!flipped ? `
-              <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase">Từ vựng</div>
-              <div style="font-size:54px;font-weight:800;color:#0f172a;font-family:'Space Grotesk',sans-serif;line-height:1.05;letter-spacing:-1px">
+              <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase">${c.source === 'chinese' ? 'Tiếng Trung' : 'Từ vựng'}</div>
+              <div style="font-size:${c.source === 'chinese' ? 72 : 54}px;font-weight:800;color:#0f172a;font-family:'Space Grotesk',sans-serif;line-height:1.05;letter-spacing:-1px">
                 ${v.word}
               </div>
               <div style="display:flex;align-items:center;gap:6px;margin-top:6px;color:#94a3b8;font-size:14px;font-weight:500">
@@ -125,7 +137,8 @@ export default async function vocabSrsPage(app) {
                 <span style="font-size:17px">👆</span>
               </div>
             ` : `
-              <div style="font-size:36px;font-weight:800;color:#0f172a;font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px">${v.word}</div>
+              <div style="font-size:${c.source === 'chinese' ? 48 : 36}px;font-weight:800;color:#0f172a;font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px">${v.word}</div>
+              ${c.source === 'chinese' && v.pinyin ? `<div style="font-size:20px;color:#f97316;font-weight:700;margin:2px 0">${v.pinyin}</div>` : ''}
               <div style="width:48px;height:3px;background:#2563eb;border-radius:2px"></div>
               <div style="font-size:22px;font-weight:600;color:#1d4ed8;line-height:1.5;font-family:'Inter',sans-serif">${v.meaning || '(chưa có nghĩa)'}</div>
               ${c.interval > 1 ? `
@@ -177,7 +190,11 @@ export default async function vocabSrsPage(app) {
   window.srsRate = async (quality) => {
     const c = cards[idx]
     const updated = sm2(quality, c)
-    await supabase.from('user_vocab_srs').update(updated).eq('id', c.id)
+    if (c.source === 'chinese') {
+      await supabase.from('chinese_srs').update(updated).eq('id', c.id)
+    } else {
+      await supabase.from('user_vocab_srs').update(updated).eq('id', c.id)
+    }
     doneCount++
     idx++
     flipped = false

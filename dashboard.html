@@ -260,13 +260,14 @@ document.getElementById('sidebar-name').textContent = name
 
 // ── Fetch data in parallel ────────────────────────────────────────────────────
 const today = new Date().toISOString().split('T')[0]
-const [profileRes, testsRes, answersRes, devicesRes, vocabLearnedRes, vocabDueRes, vocabDatesRes] = await Promise.all([
+const [profileRes, testsRes, answersRes, devicesRes, vocabLearnedRes, vocabDueRes, chineseDueRes, vocabDatesRes] = await Promise.all([
   supabase.from('profiles').select('plan,plan_expires_at').eq('id', user.id).single(),
   supabase.from('user_tests').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }),
   supabase.from('user_answers').select('part,is_correct').eq('user_id', user.id),
   supabase.from('user_devices').select('*').eq('user_id', user.id).order('last_seen_at', { ascending: false }),
   supabase.from('user_vocab_learned').select('vocab_id', { count: 'exact', head: true }).eq('user_id', user.id),
   supabase.from('user_vocab_srs').select('id', { count: 'exact', head: true }).eq('user_id', user.id).lte('due_date', today),
+  supabase.from('chinese_srs').select('id', { count: 'exact', head: true }).eq('user_id', user.id).lte('due_date', today),
   supabase.from('user_vocab_learned').select('learned_at').eq('user_id', user.id),
 ])
 
@@ -276,6 +277,8 @@ const answers      = answersRes.data || []
 const devices      = devicesRes.data || []
 const vocabLearned = vocabLearnedRes.count || 0
 const vocabDue     = vocabDueRes.count || 0
+const chineseDue   = chineseDueRes.count || 0
+const totalDue     = vocabDue + chineseDue
 const vocabDates   = vocabDatesRes.data || []
 
 const isPro = profile?.plan === 'pro' && (!profile.plan_expires_at || new Date(profile.plan_expires_at) > new Date())
@@ -331,13 +334,16 @@ document.getElementById('stats-grid').innerHTML = STATS.map(s => `
 
 // ── Vocab SRS banner ──────────────────────────────────────────────────────────
 const srsBanner = document.getElementById('vocab-srs-banner')
-if (vocabLearned > 0) {
+if (vocabLearned > 0 || chineseDue > 0) {
   srsBanner.style.display = 'block'
   const subtitle = document.getElementById('vocab-srs-subtitle')
   const btn      = document.getElementById('vocab-srs-btn')
-  if (vocabDue > 0) {
-    subtitle.innerHTML = `<span style="color:#dc2626;font-weight:600">🔔 ${vocabDue} thẻ cần ôn hôm nay</span> · ${vocabLearned} từ đã học`
-    btn.textContent = `Ôn ${vocabDue} thẻ ngay →`
+  if (totalDue > 0) {
+    const parts = []
+    if (vocabDue > 0)   parts.push(`${vocabDue} tiếng Anh`)
+    if (chineseDue > 0) parts.push(`${chineseDue} tiếng Trung`)
+    subtitle.innerHTML = `<span style="color:#dc2626;font-weight:600">🔔 ${totalDue} thẻ cần ôn hôm nay</span> · ${parts.join(' · ')}`
+    btn.textContent = `Ôn ${totalDue} thẻ ngay →`
   } else {
     subtitle.innerHTML = `✅ Đã ôn tập xong hôm nay · <strong>${vocabLearned}</strong> từ trong kho`
     btn.textContent = 'Học thêm từ mới →'
