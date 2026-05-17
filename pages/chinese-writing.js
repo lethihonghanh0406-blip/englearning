@@ -205,12 +205,29 @@ export default async function chineseWritingPage(app) {
           </div>
           <div style="font-size:12px;color:#94a3b8;margin-top:10px">Bấm để xem nghĩa</div>
         </div>
-        <div id="fc-btns" style="display:none;flex-direction:column;align-items:center;gap:10px;width:100%">
-          <div style="display:flex;gap:10px;width:100%">
-            <button class="cw-btn" onclick="fcAnswer(false)"
-              style="flex:1;background:#fee2e2;border-color:#fca5a5;color:#dc2626;font-weight:700">✗ Chưa biết</button>
-            <button class="cw-btn" onclick="fcAnswer(true)"
-              style="flex:1;background:#dcfce7;border-color:#86efac;color:#15803d;font-weight:700">✓ Đã biết</button>
+        <div id="fc-btns" style="display:none;flex-direction:column;align-items:center;gap:12px;width:100%">
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1px">BẠN NHỚ TỪ NÀY Ở MỨC NÀO?</div>
+          <div style="display:flex;gap:8px;width:100%">
+            <button onclick="fcAnswer(0)" style="flex:1;border:2px solid #fca5a5;background:#fff0f0;border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">
+              <span style="font-size:20px;color:#dc2626">✗</span>
+              <span style="font-size:13px;font-weight:700;color:#dc2626">Quên</span>
+              <span style="font-size:11px;color:#94a3b8">Ôn lại ngay</span>
+            </button>
+            <button onclick="fcAnswer(1)" style="flex:1;border:2px solid #fde68a;background:#fffbeb;border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">
+              <span style="font-size:20px">😕</span>
+              <span style="font-size:13px;font-weight:700;color:#d97706">Khó</span>
+              <span style="font-size:11px;color:#94a3b8">Ngày mai</span>
+            </button>
+            <button onclick="fcAnswer(2)" style="flex:1;border:2px solid #86efac;background:#f0fdf4;border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">
+              <span style="font-size:20px">🙂</span>
+              <span style="font-size:13px;font-weight:700;color:#16a34a">OK</span>
+              <span style="font-size:11px;color:#94a3b8">Vài ngày</span>
+            </button>
+            <button onclick="fcAnswer(3)" style="flex:1;border:2px solid #6ee7b7;background:#ecfdf5;border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">
+              <span style="font-size:20px;color:#059669">✓</span>
+              <span style="font-size:13px;font-weight:700;color:#059669">Dễ</span>
+              <span style="font-size:11px;color:#94a3b8">Lâu hơn</span>
+            </button>
           </div>
         </div>`
     }
@@ -227,8 +244,9 @@ export default async function chineseWritingPage(app) {
         ${w.example ? `<div style="font-size:13px;color:#94a3b8;margin-top:10px;text-align:center">${w.example}<br><span style="font-size:11px">${w.ex_pinyin||''}</span><br><span style="font-size:11px;color:#3b82f6">${w.ex_vi||''}</span></div>` : ''}`
       document.getElementById('fc-btns').style.display = 'flex'
     }
-    window.fcAnswer = (knew) => {
-      if (knew) { mastered.add(words[idx].char); save() }
+    window.fcAnswer = (rating) => {
+      if (rating >= 2) { mastered.add(words[idx].char); save() }
+      else { mastered.delete(words[idx].char); save() }
       updateProgress(idx, words.length)
       if (idx + 1 < words.length) { idx++; show() }
       else { document.getElementById('cw-body').innerHTML = doneHTML(startFlash); updateProgress(words.length - 1, words.length) }
