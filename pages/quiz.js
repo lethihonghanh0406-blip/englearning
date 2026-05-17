@@ -960,7 +960,7 @@ export default async function quizPage(app, params) {
                 body = `<div style="white-space:pre-wrap">${escapeHtml(vi)}</div>`
               } else if (view === 'bilingual' && vi && !isHTML) {
                 const enAll = en.split('\n').map(s => s.trim()).filter(Boolean)
-                const viAll = vi.split('\n').map(s => s.trim())
+                const viAll = vi.split('\n').map(s => s.trim()).filter(Boolean)
                 const pairs = enAll.map((eL, i) => ({ en: eL, vi: viAll[i] || '' }))
                 const isChatSpk = s => /^[A-Z][\w\s,\.]*[\(\[]\d{1,2}:\d{2}/.test(s)
                 const hasChatTurns = pairs.some(p => isChatSpk(p.en))
