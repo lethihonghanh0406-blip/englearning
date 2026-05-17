@@ -1,4 +1,6 @@
 const HANZI_CDN = 'https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js'
+const KEY = 'cw_mastered_v1'
+const SESSION_SIZE = 10
 
 const WORDS = [
   { char:'爱', pinyin:'ài',    vi:'yêu' },
@@ -51,7 +53,6 @@ const WORDS = [
   { char:'买', pinyin:'mǎi',   vi:'mua' },
   { char:'猫', pinyin:'māo',   vi:'con mèo' },
   { char:'没', pinyin:'méi',   vi:'không có' },
-  { char:'米', pinyin:'mǐ',    vi:'gạo, mét' },
   { char:'明', pinyin:'míng',  vi:'sáng, ngày mai' },
   { char:'哪', pinyin:'nǎ',    vi:'nào, đâu' },
   { char:'那', pinyin:'nà',    vi:'kia, đó' },
@@ -111,38 +112,20 @@ const WORDS = [
   { char:'口', pinyin:'kǒu',   vi:'miệng, cửa' },
   { char:'手', pinyin:'shǒu',  vi:'tay' },
   { char:'心', pinyin:'xīn',   vi:'tim, lòng' },
-  { char:'目', pinyin:'mù',    vi:'mắt' },
-  { char:'耳', pinyin:'ěr',    vi:'tai' },
   { char:'山', pinyin:'shān',  vi:'núi' },
-  { char:'水', pinyin:'shuǐ',  vi:'nước' },
   { char:'火', pinyin:'huǒ',   vi:'lửa' },
   { char:'木', pinyin:'mù',    vi:'gỗ, cây' },
   { char:'土', pinyin:'tǔ',    vi:'đất' },
   { char:'金', pinyin:'jīn',   vi:'vàng, kim loại' },
-  { char:'月', pinyin:'yuè',   vi:'mặt trăng, tháng' },
-  { char:'日', pinyin:'rì',    vi:'mặt trời, ngày' },
 ]
 
-const SESSION_SIZE = 10
-const KEY = 'cw_mastered_v1'
-
 export default async function chineseWritingPage(app) {
-  if (!window.HanziWriter) {
-    await new Promise((res, rej) => {
-      const s = document.createElement('script')
-      s.src = HANZI_CDN
-      s.onload = res; s.onerror = rej
-      document.head.appendChild(s)
-    })
-  }
-
   const mastered = new Set(JSON.parse(localStorage.getItem(KEY) || '[]'))
+  let tab = 'write'   // 'flash' | 'write' | 'quiz'
   let srsMode = false
-  let sessionWords = buildSession()
-  let idx = 0
   let writer = null
-  let mistakes = 0
-  let done = false
+
+  function save() { localStorage.setItem(KEY, JSON.stringify([...mastered])) }
 
   function buildSession() {
     const pool = srsMode ? WORDS.filter(w => !mastered.has(w.char)) : WORDS
@@ -150,8 +133,7 @@ export default async function chineseWritingPage(app) {
     return (unmastered.length > 0 ? unmastered : pool).slice(0, SESSION_SIZE)
   }
 
-  function save() { localStorage.setItem(KEY, JSON.stringify([...mastered])) }
-
+  // ── shared shell ──────────────────────────────────────────────────────────
   app.innerHTML = `
     <style>
       .cw-tab { padding:8px 20px;border-radius:20px;border:2px solid #e5e7eb;cursor:pointer;font-size:14px;font-weight:600;background:white;color:#6b7280;transition:.12s }
@@ -160,16 +142,20 @@ export default async function chineseWritingPage(app) {
       .cw-tab.pink   { color:#f43f5e;border-color:#fecdd3 }
       .cw-btn { padding:10px 28px;border:1.5px solid #d1d5db;border-radius:10px;background:white;cursor:pointer;font-size:14px;font-weight:500;color:#374151;transition:.12s }
       .cw-btn:hover { border-color:#94a3b8;background:#f8fafc }
+      .cw-opt { width:100%;padding:12px 16px;border:2px solid #e5e7eb;border-radius:12px;background:white;cursor:pointer;font-size:15px;font-weight:500;color:#1e293b;text-align:left;transition:.15s }
+      .cw-opt:hover:not(:disabled) { border-color:#94a3b8;background:#f8fafc }
+      .cw-opt.correct  { border-color:#16a34a!important;background:#dcfce7!important;color:#15803d!important }
+      .cw-opt.wrong    { border-color:#dc2626!important;background:#fee2e2!important;color:#dc2626!important }
     </style>
 
     <div style="min-height:100vh;background:#fdf8f0;display:flex;flex-direction:column;align-items:center;padding:28px 16px">
 
       <!-- Tabs -->
-      <div style="display:flex;gap:8px;margin-bottom:28px">
-        <button class="cw-tab">Học thẻ</button>
-        <button class="cw-tab active">Luyện viết</button>
-        <button class="cw-tab orange">Luyện tập</button>
-        <button class="cw-tab pink">Sổ tay ❤</button>
+      <div style="display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap;justify-content:center">
+        <button id="tab-flash" class="cw-tab" onclick="cwTab('flash')">Học thẻ</button>
+        <button id="tab-write" class="cw-tab active" onclick="cwTab('write')">Luyện viết</button>
+        <button id="tab-quiz"  class="cw-tab orange" onclick="cwTab('quiz')">Luyện tập</button>
+        <button id="tab-note"  class="cw-tab pink" onclick="">Sổ tay ❤</button>
       </div>
 
       <!-- SRS -->
@@ -182,7 +168,7 @@ export default async function chineseWritingPage(app) {
       </label>
 
       <!-- Progress -->
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap;justify-content:center">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;flex-wrap:wrap;justify-content:center">
         <div style="background:#dcfce7;color:#15803d;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px">
           ✅ Đã thuộc: <span id="cw-mastered">${mastered.size}</span>
         </div>
@@ -194,108 +180,229 @@ export default async function chineseWritingPage(app) {
         </div>
       </div>
 
-      <!-- Pinyin + meaning -->
-      <div id="cw-pinyin" style="font-size:34px;font-weight:700;color:#f97316;letter-spacing:3px;margin-bottom:2px"></div>
-      <div id="cw-meaning" style="font-size:14px;color:#64748b;margin-bottom:16px;min-height:20px"></div>
+      <!-- Dynamic content area -->
+      <div id="cw-body" style="width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center"></div>
 
-      <!-- Canvas -->
-      <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 16px rgba(0,0,0,.08);margin-bottom:12px">
-        <div id="cw-canvas"></div>
-      </div>
-
-      <p id="cw-hint" style="color:#94a3b8;font-size:13px;margin:0 0 16px;text-align:center;min-height:20px">
-        Viết theo thứ tự nét. Viết đúng sẽ đổi màu xanh.
-      </p>
-
-      <!-- Buttons -->
-      <div style="display:flex;gap:12px">
-        <button class="cw-btn" onclick="cwReset()">Làm lại</button>
-        <button class="cw-btn" onclick="cwFree()">Tự do (không kiểm tra)</button>
-      </div>
     </div>`
 
   document.getElementById('cw-srs').addEventListener('change', e => {
     srsMode = e.target.checked
-    sessionWords = buildSession()
-    initWord(0)
+    startTab()
   })
 
-  function updateProgress() {
+  window.cwTab = (t) => {
+    tab = t
+    document.querySelectorAll('.cw-tab').forEach(b => b.classList.remove('active'))
+    const el = document.getElementById('tab-' + t)
+    if (el) el.classList.add('active')
+    startTab()
+  }
+
+  function updateProgress(i, total) {
     document.getElementById('cw-mastered').textContent = mastered.size
-    document.getElementById('cw-cur').textContent = idx + 1
-    document.getElementById('cw-total').textContent = sessionWords.length
+    document.getElementById('cw-cur').textContent = i + 1
+    document.getElementById('cw-total').textContent = total
     document.getElementById('cw-left').textContent = WORDS.length - mastered.size
   }
 
-  function initWord(i) {
-    if (!sessionWords[i]) return
-    idx = i; mistakes = 0; done = false
-    const w = sessionWords[i]
-    document.getElementById('cw-pinyin').textContent = w.pinyin
-    document.getElementById('cw-meaning').textContent = w.vi
-    document.getElementById('cw-hint').textContent = 'Viết theo thứ tự nét. Viết đúng sẽ đổi màu xanh.'
-    updateProgress()
+  // ── TAB: Học thẻ (Flashcard) ──────────────────────────────────────────────
+  function startFlash() {
+    const words = buildSession()
+    let idx = 0, flipped = false
 
-    document.getElementById('cw-canvas').innerHTML = ''
-    try {
-      writer = HanziWriter.create('cw-canvas', w.char, {
-        width: 300, height: 300, padding: 5,
-        showOutline: true,
-        strokeColor: '#2563eb',
-        outlineColor: '#d1d5db',
-        drawingColor: '#2563eb',
-        drawingWidth: 4,
-        showHintAfterMisses: 3,
-        highlightOnComplete: true,
-      })
-      writer.quiz({
-        onMistake: () => { mistakes++ },
-        onComplete: () => {
-          if (done) return
-          done = true
-          if (mistakes === 0) {
-            mastered.add(w.char); save()
-            document.getElementById('cw-hint').textContent = '✅ Hoàn hảo! Tiếp theo...'
-          } else {
-            document.getElementById('cw-hint').textContent = `Xong! ${mistakes} lỗi. Tiếp theo...`
-          }
-          updateProgress()
-          setTimeout(() => {
-            if (idx + 1 < sessionWords.length) initWord(idx + 1)
-            else showDone()
-          }, 1200)
-        }
-      })
-    } catch {
-      document.getElementById('cw-hint').textContent = 'Không có dữ liệu nét. Bấm Làm lại.'
+    function show() {
+      flipped = false
+      const w = words[idx]
+      updateProgress(idx, words.length)
+      document.getElementById('cw-body').innerHTML = `
+        <div id="fc-card" onclick="fcFlip()"
+          style="width:320px;height:220px;background:white;border-radius:20px;
+            box-shadow:0 4px 20px rgba(0,0,0,.1);cursor:pointer;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            margin-bottom:20px;user-select:none;transition:.2s">
+          <div style="font-size:80px;line-height:1;color:#1e293b">${w.char}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:12px">Bấm để xem nghĩa</div>
+        </div>
+        <div id="fc-btns" style="display:none;flex-direction:column;align-items:center;gap:10px;width:100%">
+          <div style="display:flex;gap:10px;width:100%">
+            <button class="cw-btn" onclick="fcAnswer(false)"
+              style="flex:1;background:#fee2e2;border-color:#fca5a5;color:#dc2626;font-weight:700">
+              ✗ Chưa biết
+            </button>
+            <button class="cw-btn" onclick="fcAnswer(true)"
+              style="flex:1;background:#dcfce7;border-color:#86efac;color:#15803d;font-weight:700">
+              ✓ Đã biết
+            </button>
+          </div>
+        </div>`
     }
+
+    window.fcFlip = () => {
+      if (flipped) return
+      flipped = true
+      const w = words[idx]
+      document.getElementById('fc-card').innerHTML = `
+        <div style="font-size:56px;line-height:1;color:#1e293b">${w.char}</div>
+        <div style="font-size:28px;color:#f97316;font-weight:700;margin-top:8px">${w.pinyin}</div>
+        <div style="font-size:18px;color:#475569;margin-top:4px">${w.vi}</div>`
+      document.getElementById('fc-btns').style.display = 'flex'
+    }
+
+    window.fcAnswer = (knew) => {
+      if (knew) { mastered.add(words[idx].char); save() }
+      updateProgress(idx, words.length)
+      if (idx + 1 < words.length) { idx++; show() }
+      else {
+        document.getElementById('cw-body').innerHTML = doneHTML(() => startFlash())
+        updateProgress(words.length - 1, words.length)
+      }
+    }
+
+    show()
   }
 
-  function showDone() {
-    document.getElementById('cw-canvas').innerHTML = `
-      <div style="width:300px;height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  // ── TAB: Luyện viết (Hanzi-writer) ────────────────────────────────────────
+  async function startWrite() {
+    if (!window.HanziWriter) {
+      document.getElementById('cw-body').innerHTML =
+        `<div style="color:#94a3b8;font-size:14px">Đang tải...</div>`
+      await new Promise((res, rej) => {
+        const s = document.createElement('script')
+        s.src = HANZI_CDN; s.onload = res; s.onerror = rej
+        document.head.appendChild(s)
+      })
+    }
+
+    const words = buildSession()
+    let idx = 0, mistakes = 0, done = false
+
+    function show(i) {
+      idx = i; mistakes = 0; done = false
+      const w = words[i]
+      updateProgress(i, words.length)
+      document.getElementById('cw-body').innerHTML = `
+        <div style="font-size:34px;font-weight:700;color:#f97316;letter-spacing:3px;margin-bottom:2px">${w.pinyin}</div>
+        <div style="font-size:14px;color:#64748b;margin-bottom:16px">${w.vi}</div>
+        <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 16px rgba(0,0,0,.08);margin-bottom:12px">
+          <div id="cw-canvas"></div>
+        </div>
+        <p id="cw-hint" style="color:#94a3b8;font-size:13px;margin:0 0 16px;text-align:center">
+          Viết theo thứ tự nét. Viết đúng sẽ đổi màu xanh.
+        </p>
+        <div style="display:flex;gap:12px">
+          <button class="cw-btn" onclick="cwReset()">Làm lại</button>
+          <button class="cw-btn" onclick="cwFree()">Tự do (không kiểm tra)</button>
+        </div>`
+
+      try {
+        writer = HanziWriter.create('cw-canvas', w.char, {
+          width: 300, height: 300, padding: 5,
+          showOutline: true,
+          strokeColor: '#2563eb', outlineColor: '#d1d5db',
+          drawingColor: '#2563eb', drawingWidth: 4,
+          showHintAfterMisses: 3, highlightOnComplete: true,
+        })
+        writer.quiz({
+          onMistake: () => { mistakes++ },
+          onComplete: () => {
+            if (done) return; done = true
+            if (mistakes === 0) { mastered.add(w.char); save() }
+            const hint = document.getElementById('cw-hint')
+            if (hint) hint.textContent = mistakes === 0 ? '✅ Hoàn hảo!' : `Xong! ${mistakes} lỗi.`
+            updateProgress(i, words.length)
+            setTimeout(() => {
+              if (i + 1 < words.length) show(i + 1)
+              else { document.getElementById('cw-body').innerHTML = doneHTML(() => startWrite()); updateProgress(words.length - 1, words.length) }
+            }, 1200)
+          }
+        })
+      } catch { document.getElementById('cw-hint').textContent = 'Không có dữ liệu nét cho chữ này.' }
+    }
+
+    window.cwReset = () => show(idx)
+    window.cwFree  = () => { if (writer) { writer.animateCharacter(); document.getElementById('cw-hint').textContent = 'Đang hiện thứ tự nét...' } }
+
+    show(0)
+  }
+
+  // ── TAB: Luyện tập (Multiple choice quiz) ─────────────────────────────────
+  function startQuiz() {
+    const words = buildSession()
+    let idx = 0, answered = false
+
+    function makeOptions(w) {
+      const wrong = WORDS.filter(x => x.char !== w.char)
+        .sort(() => Math.random() - 0.5).slice(0, 3)
+      return [...wrong, w].sort(() => Math.random() - 0.5)
+    }
+
+    function show(i) {
+      idx = i; answered = false
+      const w = words[i]
+      const opts = makeOptions(w)
+      updateProgress(i, words.length)
+      document.getElementById('cw-body').innerHTML = `
+        <div style="background:white;border-radius:20px;padding:28px 24px;box-shadow:0 2px 16px rgba(0,0,0,.08);
+          width:100%;text-align:center;margin-bottom:20px">
+          <div style="font-size:80px;line-height:1;margin-bottom:8px">${w.char}</div>
+          <div style="font-size:24px;color:#f97316;font-weight:700">${w.pinyin}</div>
+          <div style="font-size:13px;color:#94a3b8;margin-top:6px">Chọn nghĩa đúng</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;width:100%">
+          ${opts.map((o, oi) => `
+            <button class="cw-opt" id="opt-${oi}" onclick="qzPick(${oi}, '${o.char}', '${w.char}')">
+              ${o.vi}
+            </button>`).join('')}
+        </div>`
+    }
+
+    window.qzPick = (oi, picked, correct) => {
+      if (answered) return; answered = true
+      const isCorrect = picked === correct
+      if (isCorrect) { mastered.add(words[idx].char); save() }
+      document.querySelectorAll('.cw-opt').forEach((btn, i) => {
+        btn.disabled = true
+        const char = btn.textContent.trim()
+        // find which option this button is by re-matching
+      })
+      document.getElementById('opt-' + oi).classList.add(isCorrect ? 'correct' : 'wrong')
+      // highlight correct answer if wrong
+      if (!isCorrect) {
+        document.querySelectorAll('.cw-opt').forEach(btn => {
+          const w = WORDS.find(x => x.vi === btn.textContent.trim())
+          if (w && w.char === correct) btn.classList.add('correct')
+        })
+      }
+      updateProgress(idx, words.length)
+      setTimeout(() => {
+        if (idx + 1 < words.length) show(idx + 1)
+        else { document.getElementById('cw-body').innerHTML = doneHTML(() => startQuiz()); updateProgress(words.length - 1, words.length) }
+      }, isCorrect ? 700 : 1400)
+    }
+
+    show(0)
+  }
+
+  // ── Shared done screen ─────────────────────────────────────────────────────
+  function doneHTML(restart) {
+    window._cwRestart = restart
+    return `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:40px 0">
         <div style="font-size:56px">🎉</div>
         <div style="font-size:16px;font-weight:700;color:#1e293b">Xong buổi luyện!</div>
-        <button onclick="cwNew()" style="padding:10px 28px;border:none;border-radius:10px;background:#2563eb;color:white;font-size:14px;cursor:pointer;font-weight:600">Buổi mới</button>
+        <button onclick="window._cwRestart()"
+          style="padding:10px 28px;border:none;border-radius:10px;background:#2563eb;color:white;font-size:14px;cursor:pointer;font-weight:600">
+          Buổi mới
+        </button>
       </div>`
-    document.getElementById('cw-pinyin').textContent = ''
-    document.getElementById('cw-meaning').textContent = ''
-    document.getElementById('cw-hint').textContent = ''
-    updateProgress()
   }
 
-  window.cwReset = () => initWord(idx)
-
-  window.cwFree = () => {
-    if (!writer) return
-    writer.animateCharacter()
-    document.getElementById('cw-hint').textContent = 'Đang hiện thứ tự nét...'
+  // ── Start ──────────────────────────────────────────────────────────────────
+  function startTab() {
+    if (tab === 'flash') startFlash()
+    else if (tab === 'write') startWrite()
+    else if (tab === 'quiz') startQuiz()
   }
 
-  window.cwNew = () => {
-    sessionWords = buildSession()
-    initWord(0)
-  }
-
-  initWord(0)
+  startTab()
 }
