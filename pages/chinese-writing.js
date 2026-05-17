@@ -122,6 +122,25 @@ const WORDS = [
 export default async function chineseWritingPage(app) {
   const mastered = new Set(JSON.parse(localStorage.getItem(KEY) || '[]'))
   let tab = 'write'   // 'flash' | 'write' | 'quiz'
+
+  function speak(char) {
+    speechSynthesis.cancel()
+    const doSpeak = () => {
+      const utt = new SpeechSynthesisUtterance(char)
+      utt.lang = 'zh-CN'
+      utt.rate = 0.8
+      const voices = speechSynthesis.getVoices()
+      utt.voice =
+        voices.find(v => v.name.includes('Google') && v.lang.startsWith('zh')) ||
+        voices.find(v => v.lang === 'zh-CN') ||
+        voices.find(v => v.lang.startsWith('zh')) || null
+      speechSynthesis.speak(utt)
+    }
+    const voices = speechSynthesis.getVoices()
+    if (voices.length) doSpeak()
+    else speechSynthesis.onvoiceschanged = doSpeak
+  }
+  window.cwSpeak = speak
   let srsMode = false
   let writer = null
 
@@ -214,14 +233,20 @@ export default async function chineseWritingPage(app) {
       flipped = false
       const w = words[idx]
       updateProgress(idx, words.length)
+      speak(w.char)
       document.getElementById('cw-body').innerHTML = `
         <div id="fc-card" onclick="fcFlip()"
-          style="width:320px;height:220px;background:white;border-radius:20px;
+          style="width:320px;min-height:220px;background:white;border-radius:20px;
             box-shadow:0 4px 20px rgba(0,0,0,.1);cursor:pointer;
             display:flex;flex-direction:column;align-items:center;justify-content:center;
-            margin-bottom:20px;user-select:none;transition:.2s">
-          <div style="font-size:80px;line-height:1;color:#1e293b">${w.char}</div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:12px">Bấm để xem nghĩa</div>
+            padding:24px;margin-bottom:20px;user-select:none;transition:.2s">
+          <div style="font-size:80px;line-height:1;color:#1e293b;margin-bottom:10px">${w.char}</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:22px;color:#f97316;font-weight:700">${w.pinyin}</span>
+            <button onclick="event.stopPropagation();cwSpeak('${w.char}')"
+              style="background:none;border:none;cursor:pointer;font-size:18px;color:#94a3b8;padding:4px;border-radius:6px;line-height:1">🔊</button>
+          </div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:10px">Bấm để xem nghĩa</div>
         </div>
         <div id="fc-btns" style="display:none;flex-direction:column;align-items:center;gap:10px;width:100%">
           <div style="display:flex;gap:10px;width:100%">
@@ -242,9 +267,13 @@ export default async function chineseWritingPage(app) {
       flipped = true
       const w = words[idx]
       document.getElementById('fc-card').innerHTML = `
-        <div style="font-size:56px;line-height:1;color:#1e293b">${w.char}</div>
-        <div style="font-size:28px;color:#f97316;font-weight:700;margin-top:8px">${w.pinyin}</div>
-        <div style="font-size:18px;color:#475569;margin-top:4px">${w.vi}</div>`
+        <div style="font-size:56px;line-height:1;color:#1e293b;margin-bottom:8px">${w.char}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <span style="font-size:24px;color:#f97316;font-weight:700">${w.pinyin}</span>
+          <button onclick="event.stopPropagation();cwSpeak('${w.char}')"
+            style="background:none;border:none;cursor:pointer;font-size:18px;color:#94a3b8;padding:4px;border-radius:6px;line-height:1">🔊</button>
+        </div>
+        <div style="font-size:20px;color:#475569;font-weight:600">${w.vi}</div>`
       document.getElementById('fc-btns').style.display = 'flex'
     }
 
@@ -280,8 +309,13 @@ export default async function chineseWritingPage(app) {
       idx = i; mistakes = 0; done = false
       const w = words[i]
       updateProgress(i, words.length)
+      speak(w.char)
       document.getElementById('cw-body').innerHTML = `
-        <div style="font-size:34px;font-weight:700;color:#f97316;letter-spacing:3px;margin-bottom:2px">${w.pinyin}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px">
+          <span style="font-size:34px;font-weight:700;color:#f97316;letter-spacing:3px">${w.pinyin}</span>
+          <button onclick="cwSpeak('${w.char}')"
+            style="background:none;border:none;cursor:pointer;font-size:20px;color:#94a3b8;padding:4px;border-radius:6px;line-height:1">🔊</button>
+        </div>
         <div style="font-size:14px;color:#64748b;margin-bottom:16px">${w.vi}</div>
         <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 16px rgba(0,0,0,.08);margin-bottom:12px">
           <div id="cw-canvas"></div>
@@ -341,11 +375,16 @@ export default async function chineseWritingPage(app) {
       const w = words[i]
       const opts = makeOptions(w)
       updateProgress(i, words.length)
+      speak(w.char)
       document.getElementById('cw-body').innerHTML = `
         <div style="background:white;border-radius:20px;padding:28px 24px;box-shadow:0 2px 16px rgba(0,0,0,.08);
           width:100%;text-align:center;margin-bottom:20px">
           <div style="font-size:80px;line-height:1;margin-bottom:8px">${w.char}</div>
-          <div style="font-size:24px;color:#f97316;font-weight:700">${w.pinyin}</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+            <span style="font-size:24px;color:#f97316;font-weight:700">${w.pinyin}</span>
+            <button onclick="cwSpeak('${w.char}')"
+              style="background:none;border:none;cursor:pointer;font-size:18px;color:#94a3b8;padding:4px;border-radius:6px;line-height:1">🔊</button>
+          </div>
           <div style="font-size:13px;color:#94a3b8;margin-top:6px">Chọn nghĩa đúng</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;width:100%">
