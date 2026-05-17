@@ -257,42 +257,24 @@ export default async function chineseWritingPage(app) {
         document.head.appendChild(s)
       })
     }
-    const words = buildSession(); let wordIdx = 0
+    const words = buildSession(); let wordIdx = 0; const writers = []
 
     function showWord(wi) {
-      wordIdx = wi
+      wordIdx = wi; writers.length = 0
       const w = words[wi]
       const chars = [...w.char]
       const pinyins = splitPinyin(w.pinyin, chars.length)
-      updateProgress(wi, words.length)
-      speak(w.char)
-      showChar(wi, chars, pinyins, 0, 0)
-    }
+      const sz = chars.length === 1 ? 260 : chars.length === 2 ? 200 : 150
+      updateProgress(wi, words.length); speak(w.char)
 
-    function showChar(wi, chars, pinyins, ci, totalMistakes) {
-      const w = words[wi]
-      let mistakes = 0, done = false
-
-      const boxesHTML = chars.map((ch, bi) => {
-        if (bi < ci) return `
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-            <span style="font-size:12px;color:#f97316;font-weight:600">${pinyins[bi] || ''}</span>
-            <div style="width:72px;height:72px;border-radius:12px;background:#dcfce7;border:2px solid #16a34a;
-              display:flex;align-items:center;justify-content:center;font-size:36px">${ch}</div>
-          </div>`
-        if (bi === ci) return `
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-            <span style="font-size:12px;color:#f97316;font-weight:600">${pinyins[bi] || ''}</span>
-            <div style="width:72px;height:72px;border-radius:12px;background:white;border:2px solid #2563eb;
-              display:flex;align-items:center;justify-content:center"></div>
-          </div>`
-        return `
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-            <span style="font-size:12px;color:#cbd5e1">${pinyins[bi] || ''}</span>
-            <div style="width:72px;height:72px;border-radius:12px;background:#f1f5f9;border:2px solid #e2e8f0;
-              display:flex;align-items:center;justify-content:center;font-size:28px;color:#94a3b8">?</div>
-          </div>`
-      }).join('')
+      const canvasesHTML = chars.map((ch, ci) => `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div style="display:flex;align-items:center;gap:4px">
+            <span style="font-size:14px;color:#f97316;font-weight:600">${pinyins[ci] || ''}</span>
+            <span id="cw-check-${ci}" style="display:none;color:#16a34a;font-weight:700;font-size:16px">✓</span>
+          </div>
+          <div id="cw-canvas-${ci}"></div>
+        </div>`).join('')
 
       document.getElementById('cw-body').innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
@@ -300,10 +282,10 @@ export default async function chineseWritingPage(app) {
           <button onclick="cwSpeak('${w.char}')"
             style="background:none;border:none;cursor:pointer;font-size:18px;color:#94a3b8;padding:4px;line-height:1">🔊</button>
         </div>
-        <div style="font-size:14px;color:#64748b;margin-bottom:14px">${w.vi}</div>
-        <div style="display:flex;gap:16px;justify-content:center;margin-bottom:18px">${boxesHTML}</div>
-        <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 16px rgba(0,0,0,.08);margin-bottom:12px;display:flex;justify-content:center">
-          <div id="cw-canvas"></div>
+        <div style="font-size:14px;color:#64748b;margin-bottom:16px">${w.vi}</div>
+        <div style="display:flex;gap:20px;justify-content:center;flex-wrap:wrap;
+          background:white;border-radius:20px;padding:20px;box-shadow:0 2px 16px rgba(0,0,0,.08);margin-bottom:12px">
+          ${canvasesHTML}
         </div>
         <p id="cw-hint" style="color:#94a3b8;font-size:13px;margin:0 0 16px;text-align:center">
           Viết theo thứ tự nét. Viết đúng sẽ đổi màu xanh.
@@ -313,39 +295,46 @@ export default async function chineseWritingPage(app) {
           <button class="cw-btn" onclick="cwFree()">Tự do (không kiểm tra)</button>
         </div>`
 
-      try {
-        writer = HanziWriter.create('cw-canvas', chars[ci], {
-          width:260, height:260, padding:5, showOutline:true,
-          strokeColor:'#2563eb', outlineColor:'#d1d5db',
-          drawingColor:'#2563eb', drawingWidth:4,
-          showHintAfterMisses:3, highlightOnComplete:true,
-        })
-        writer.quiz({
-          onMistake: () => { mistakes++ },
-          onComplete: () => {
-            if (done) return; done = true
-            const allMistakes = totalMistakes + mistakes
-            const h = document.getElementById('cw-hint')
-            const nextCi = ci + 1
-            if (nextCi < chars.length) {
-              if (h) h.textContent = `✅ Chữ ${ci + 1}/${chars.length}! Tiếp tục...`
-              setTimeout(() => showChar(wi, chars, pinyins, nextCi, allMistakes), 900)
-            } else {
-              if (allMistakes === 0) { mastered.add(w.char); save() }
-              if (h) h.textContent = allMistakes === 0 ? '✅ Hoàn hảo!' : `Xong! ${allMistakes} lỗi.`
-              updateProgress(wi, words.length)
-              setTimeout(() => {
-                if (wi + 1 < words.length) showWord(wi + 1)
-                else { document.getElementById('cw-body').innerHTML = doneHTML(startWrite); updateProgress(words.length - 1, words.length) }
-              }, 1200)
+      const completed = new Array(chars.length).fill(false)
+      let totalMistakes = 0
+      chars.forEach((ch, ci) => {
+        try {
+          const hw = HanziWriter.create(`cw-canvas-${ci}`, ch, {
+            width: sz, height: sz, padding: 5, showOutline: true,
+            strokeColor: '#2563eb', outlineColor: '#d1d5db',
+            drawingColor: '#2563eb', drawingWidth: 4,
+            showHintAfterMisses: 3, highlightOnComplete: true,
+          })
+          writers.push(hw)
+          let charMistakes = 0
+          hw.quiz({
+            onMistake: () => { charMistakes++ },
+            onComplete: () => {
+              totalMistakes += charMistakes
+              completed[ci] = true
+              const chk = document.getElementById(`cw-check-${ci}`)
+              if (chk) chk.style.display = 'inline'
+              if (completed.every(Boolean)) {
+                if (totalMistakes === 0) { mastered.add(w.char); save() }
+                const h = document.getElementById('cw-hint')
+                if (h) h.textContent = totalMistakes === 0 ? '✅ Hoàn hảo!' : `Xong! ${totalMistakes} lỗi.`
+                updateProgress(wi, words.length)
+                setTimeout(() => {
+                  if (wi + 1 < words.length) showWord(wi + 1)
+                  else { document.getElementById('cw-body').innerHTML = doneHTML(startWrite); updateProgress(words.length - 1, words.length) }
+                }, 1200)
+              }
             }
-          }
-        })
-      } catch { document.getElementById('cw-hint').textContent = 'Không có dữ liệu nét cho chữ này.' }
+          })
+        } catch {
+          const h = document.getElementById('cw-hint')
+          if (h) h.textContent = `Không có dữ liệu nét cho '${ch}'.`
+        }
+      })
     }
 
-    window.cwReset = () => { const w = words[wordIdx]; const chars = [...w.char]; const pinyins = splitPinyin(w.pinyin, chars.length); showChar(wordIdx, chars, pinyins, 0, 0) }
-    window.cwFree  = () => { if (writer) { writer.animateCharacter(); document.getElementById('cw-hint').textContent = 'Đang hiện thứ tự nét...' } }
+    window.cwReset = () => showWord(wordIdx)
+    window.cwFree  = () => { writers.forEach(hw => hw.animateCharacter()); const h = document.getElementById('cw-hint'); if (h) h.textContent = 'Đang hiện thứ tự nét...' }
     showWord(0)
   }
 
