@@ -153,6 +153,16 @@ return ` <div class="nav">
       </div>
     </div>
 
+    <!-- CỘNG ĐỒNG DROPDOWN -->
+    <div class="menu-item toeic-menu">
+      Cộng đồng
+
+      <div class="toeic-dropdown">
+        <div onclick="window.open('https://www.facebook.com/groups/2065067230889617/','_blank')">👥 Nhóm Facebook</div>
+        <div onclick="window.open('https://www.facebook.com/groups/2065067230889617/','_blank')">📝 Bài viết</div>
+      </div>
+    </div>
+
   </div>
 
   <!-- RIGHT -->
