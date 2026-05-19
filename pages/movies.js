@@ -14,6 +14,7 @@ export default async function moviesPage(app) {
   let loopIdx       = -1
   let speed         = 1.0
   let isRecording   = false
+  let writeMode     = false
   let lastResult    = null
   let interimText   = ''
   let recognition   = null
@@ -281,6 +282,7 @@ export default async function moviesPage(app) {
   }
 
   function updateSubtitleDisplay(idx, subs) {
+    if (writeMode) lastResult = null  // reset write result for each new sentence
     // Unhighlight previous
     const prev = document.querySelector('.mv-sub-item.active')
     if (prev) prev.classList.remove('active')
@@ -348,18 +350,41 @@ export default async function moviesPage(app) {
           style="width:100%;max-width:500px;height:40px;display:block;margin:6px auto;border-radius:6px;background:#0f172a"></canvas>
         <div id="mv-interim" style="text-align:center;font-size:13px;color:#f97316;min-height:18px">${interimText}</div>` : ''}
 
+      ${writeMode && !lastResult ? `
+        <div style="display:flex;gap:8px;margin-top:8px;padding:0 8px">
+          <input id="mv-write-input" type="text" placeholder="Gõ lại câu tiếng Anh..."
+            onkeydown="if(event.key==='Enter')mvCheckWrite()"
+            style="flex:1;background:#0f172a;border:1px solid #475569;border-radius:8px;
+              padding:8px 12px;color:#f1f5f9;font-size:14px;outline:none;transition:border-color .15s"
+            onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#475569'" />
+          <button onclick="mvCheckWrite()"
+            style="padding:8px 16px;border-radius:8px;border:none;cursor:pointer;
+              background:#7c3aed;color:white;font-size:13px;font-weight:700;white-space:nowrap">
+            Kiểm tra ↵
+          </button>
+        </div>` : ''}
+
       ${lastResult ? `
-        <div style="display:flex;gap:10px;justify-content:center;margin-top:8px">
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:8px;align-items:center">
           <div style="text-align:center;background:#0f172a;border-radius:8px;padding:8px 16px">
-            <div style="font-size:10px;color:#475569;font-weight:700;letter-spacing:.7px">ĐIỂM</div>
-            <div style="font-size:24px;font-weight:700;color:${lastResult.score>=80?'#4ade80':lastResult.score>=60?'#fbbf24':'#f87171'}">${lastResult.score}</div>
+            <div style="font-size:10px;color:#475569;font-weight:700;letter-spacing:.7px">${writeMode ? 'ĐỘ CHÍNH XÁC' : 'ĐIỂM'}</div>
+            <div style="font-size:24px;font-weight:700;color:${lastResult.score>=80?'#4ade80':lastResult.score>=60?'#fbbf24':'#f87171'}">${writeMode ? lastResult.accuracy + '%' : lastResult.score}</div>
           </div>
+          ${!writeMode ? `
           <div style="text-align:center;background:#0f172a;border-radius:8px;padding:8px 16px">
             <div style="font-size:10px;color:#475569;font-weight:700;letter-spacing:.7px">CHÍNH XÁC</div>
             <div style="font-size:24px;font-weight:700;color:${lastResult.accuracy>=80?'#4ade80':lastResult.accuracy>=60?'#fbbf24':'#f87171'}">${lastResult.accuracy}%</div>
-          </div>
+          </div>` : ''}
+          ${writeMode ? `
+          <button onclick="mvClearWrite()"
+            style="padding:8px 14px;border-radius:8px;border:none;cursor:pointer;background:#334155;color:#94a3b8;font-size:12px;font-weight:600">
+            ↺ Thử lại
+          </button>` : ''}
         </div>` : ''}
     `
+    if (writeMode && !lastResult) {
+      setTimeout(() => { const inp = document.getElementById('mv-write-input'); if (inp) inp.focus() }, 0)
+    }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -452,7 +477,7 @@ export default async function moviesPage(app) {
 
             <!-- Current subtitle display -->
             <div id="mv-shadow-panel"
-              style="padding:10px 20px;height:90px;overflow:hidden;display:flex;align-items:center;justify-content:center;
+              style="padding:10px 20px;min-height:90px;overflow:hidden;display:flex;align-items:center;justify-content:center;
                 border-bottom:1px solid #1e293b;flex-shrink:0">
               <span style="color:#475569;font-size:14px">▶ Bấm play để bắt đầu</span>
             </div>
@@ -484,7 +509,14 @@ export default async function moviesPage(app) {
                 style="padding:6px 18px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;
                   background:${isRecording?'#ef4444':'#2563eb'};color:white;
                   box-shadow:0 2px 8px ${isRecording?'rgba(239,68,68,.4)':'rgba(37,99,235,.3)'}">
-                ${isRecording ? '■ Dừng' : '🎤 Kiểm tra'}
+                ${isRecording ? '■ Dừng' : '🎤 Nói'}
+              </button>
+
+              <!-- Write button -->
+              <button id="mv-write-btn" onclick="mvToggleWrite()"
+                style="padding:6px 18px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;
+                  background:${writeMode?'#7c3aed':'#334155'};color:white">
+                ✍️ Viết
               </button>
 
               <!-- Prev / Next segment -->
@@ -527,6 +559,34 @@ export default async function moviesPage(app) {
   }
 
   window.mvToggleRec = () => mvToggleRecording()
+
+  window.mvToggleWrite = () => {
+    writeMode = !writeMode
+    if (writeMode && isRecording) { recognition?.stop(); stopRec() }
+    lastResult = null
+    const btn = document.getElementById('mv-write-btn')
+    if (btn) { btn.style.background = writeMode ? '#7c3aed' : '#334155' }
+    updateShadowPanel(currentSubIdx, getProcessedSubs())
+  }
+
+  window.mvCheckWrite = () => {
+    const input = document.getElementById('mv-write-input')
+    if (!input) return
+    const typed = input.value.trim()
+    if (!typed) return
+    const subs = getProcessedSubs()
+    const sub  = subs[currentSubIdx]
+    if (!sub) return
+    const words    = compareEN(sub.en, typed)
+    const accuracy = calcAccuracy(words)
+    lastResult = { words, spoken: typed, score: accuracy, accuracy }
+    updateShadowPanel(currentSubIdx, subs)
+  }
+
+  window.mvClearWrite = () => {
+    lastResult = null
+    updateShadowPanel(currentSubIdx, getProcessedSubs())
+  }
 
   window.mvPrevSub = () => {
     const subs = getProcessedSubs()
