@@ -99,11 +99,14 @@ export default async function handler(req) {
     const enTrack = captionTracks.find(t => t.languageCode === 'en' && t.kind !== 'asr')
                  || captionTracks.find(t => t.languageCode === 'en')
                  || captionTracks.find(t => (t.languageCode || '').startsWith('en'))
+                 || captionTracks.find(t => ['zh-Hans','zh','zh-CN','zh-TW','zh-Hant'].includes(t.languageCode) && t.kind !== 'asr')
+                 || captionTracks.find(t => (t.languageCode || '').startsWith('zh'))
+                 || captionTracks[0]
     const viTrack = captionTracks.find(t => t.languageCode === 'vi')
 
     if (!enTrack?.baseUrl) {
       const langs = captionTracks.map(t => `${t.languageCode}${t.kind === 'asr' ? '(auto)' : ''}`).join(', ')
-      return json({ error: `Không có phụ đề tiếng Anh. Có sẵn: ${langs || 'không có'}` }, 404, corsHeaders)
+      return json({ error: `Không có phụ đề. Có sẵn: ${langs || 'không có'}` }, 404, corsHeaders)
     }
 
     const toJson3 = url => url.includes('fmt=') ? url : url + '&fmt=json3'
@@ -136,13 +139,17 @@ async function fetchViaSupadata(videoId, apiKey) {
   try {
     const url = `https://www.youtube.com/watch?v=${videoId}`
 
-    // Fetch EN transcript
-    const enRes = await fetch(
-      `https://api.supadata.ai/v1/youtube/transcript?url=${encodeURIComponent(url)}&lang=en`,
-      { headers: { 'x-api-key': apiKey } }
-    )
-    const enData = await enRes.json().catch(() => null)
-    if (!enRes.ok || !enData?.content?.length) return { result: null, raw: { status: enRes.status, body: enData } }
+    // Try English first, then Chinese fallbacks
+    let enData = null, enRes = null
+    for (const lang of ['en', 'zh-Hans', 'zh-CN', 'zh']) {
+      enRes = await fetch(
+        `https://api.supadata.ai/v1/youtube/transcript?url=${encodeURIComponent(url)}&lang=${lang}`,
+        { headers: { 'x-api-key': apiKey } }
+      )
+      enData = await enRes.json().catch(() => null)
+      if (enRes.ok && enData?.content?.length) break
+    }
+    if (!enData?.content?.length) return { result: null, raw: { status: enRes?.status, body: enData } }
 
     const enItems = enData.content.map(c => ({
       t:   c.offset / 1000,
@@ -249,6 +256,9 @@ async function fetchViaTimedtext(videoId) {
     `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&fmt=json3`,
     `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en-US&fmt=json3`,
     `https://www.youtube.com/api/timedtext?v=${videoId}&kind=asr&lang=en&fmt=json3`,
+    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=zh-Hans&fmt=json3`,
+    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=zh&fmt=json3`,
+    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=zh-CN&fmt=json3`,
   ]) {
     try {
       const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })

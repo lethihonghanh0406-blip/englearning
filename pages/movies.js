@@ -15,6 +15,7 @@ export default async function moviesPage(app) {
   let speed         = 1.0
   let isRecording   = false
   let writeMode     = false
+  let subsLang      = 'en'
   let lastResult    = null
   let interimText   = ''
   let recognition   = null
@@ -62,6 +63,7 @@ export default async function moviesPage(app) {
         selId         = customMovie.id
         currentSubIdx = -1
         lastResult    = null
+        subsLang      = detectLang(data2.subs)
         stopSync()
         renderLayout(customMovie, autoLoadId)
         layoutMovieId = selId
@@ -85,8 +87,10 @@ export default async function moviesPage(app) {
   function splitSubsBySentence(subs) {
     const result = []
     for (const s of subs) {
-      const parts = s.en
-        .replace(/([.!?])\s+(?=[A-Z"])/g, '$1\n')
+      const isZh = /[一-鿿]/.test(s.en)
+      const parts = (isZh
+        ? s.en.replace(/([。！？])/g, '$1\n')
+        : s.en.replace(/([.!?])\s+(?=[A-Z"])/g, '$1\n'))
         .split('\n')
         .map(p => p.trim())
         .filter(p => p.length > 0)
@@ -113,8 +117,18 @@ export default async function moviesPage(app) {
     return m ? m[1] : movie.youtube_id
   }
 
-  // ── English word comparison ────────────────────────────────────────────────
-  function compareEN(expected, spoken) {
+  function detectLang(subs) {
+    const sample = subs.slice(0, 5).map(s => s.en).join('')
+    return /[一-鿿]/.test(sample) ? 'zh' : 'en'
+  }
+
+  // ── Word/character comparison ──────────────────────────────────────────────
+  function compareSentence(expected, spoken) {
+    if (subsLang === 'zh') {
+      const strip = s => [...s.replace(/[\s。！？，、""''()（）]/g, '')]
+      const exp = strip(expected), spk = strip(spoken)
+      return exp.map((ch, i) => ({ word: ch, ok: spk[i] === ch }))
+    }
     const norm = s => s.toLowerCase().replace(/[^a-z\s']/g, '').trim()
     const exp  = norm(expected).split(/\s+/).filter(Boolean)
     const spk  = norm(spoken).split(/\s+/).filter(Boolean)
@@ -166,7 +180,7 @@ export default async function moviesPage(app) {
     if (ytPlayer && ytReady) ytPlayer.pauseVideo()
     updateShadowPanel(currentSubIdx, subs)
     recognition = new SR()
-    recognition.lang = 'en-US'; recognition.interimResults = true; recognition.maxAlternatives = 1
+    recognition.lang = subsLang === 'zh' ? 'zh-CN' : 'en-US'; recognition.interimResults = true; recognition.maxAlternatives = 1
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
       mediaStream = stream; startWaveform(stream)
     }).catch(() => {})
@@ -180,7 +194,7 @@ export default async function moviesPage(app) {
       const el = document.getElementById('mv-interim')
       if (el) el.textContent = interimText
       if (final) {
-        const words    = compareEN(subs[currentSubIdx].en, final)
+        const words    = compareSentence(subs[currentSubIdx].en, final)
         const accuracy = calcAccuracy(words)
         const score    = Math.round(((e.results[e.results.length-1][0].confidence || 0.5) * 50) + accuracy * 0.5)
         lastResult = { words, spoken: final, score, accuracy }
@@ -336,9 +350,9 @@ export default async function moviesPage(app) {
     // EN words — highlight correct/wrong after result
     const enHTML = lastResult
       ? lastResult.words.map(w =>
-          `<span style="display:inline-block;padding:1px 6px;border-radius:5px;margin:2px 1px;font-size:16px;font-weight:600;
+          `<span style="display:inline-block;padding:1px 6px;border-radius:5px;margin:2px 1px;font-size:${subsLang==='zh'?'22':'16'}px;font-weight:600;
             background:${w.ok?'#166534':'#7f1d1d'};color:${w.ok?'#bbf7d0':'#fca5a5'}">${w.word}</span>`
-        ).join(' ')
+        ).join(subsLang === 'zh' ? '' : ' ')
       : buildIpaWordDisplay(sub.en, idx)
 
     el.innerHTML = `
@@ -352,7 +366,7 @@ export default async function moviesPage(app) {
 
       ${writeMode && !lastResult ? `
         <div style="display:flex;gap:8px;margin-top:8px;padding:0 8px">
-          <input id="mv-write-input" type="text" placeholder="Gõ lại câu tiếng Anh..."
+          <input id="mv-write-input" type="text" placeholder="${subsLang === 'zh' ? '输入中文句子...' : 'Gõ lại câu tiếng Anh...'}"
             onkeydown="if(event.key==='Enter')mvCheckWrite()"
             style="flex:1;background:#0f172a;border:1px solid #475569;border-radius:8px;
               padding:8px 12px;color:#f1f5f9;font-size:14px;outline:none;transition:border-color .15s"
@@ -577,7 +591,7 @@ export default async function moviesPage(app) {
     const subs = getProcessedSubs()
     const sub  = subs[currentSubIdx]
     if (!sub) return
-    const words    = compareEN(sub.en, typed)
+    const words    = compareSentence(sub.en, typed)
     const accuracy = calcAccuracy(words)
     lastResult = { words, spoken: typed, score: accuracy, accuracy }
     updateShadowPanel(currentSubIdx, subs)
@@ -617,6 +631,9 @@ export default async function moviesPage(app) {
   const STOP = new Set(['a','an','the','of','in','on','at','for','to','and','or','is','it','i','be','as','up','by'])
 
   function buildIpaWordDisplay(sentence, subIdx) {
+    if (subsLang === 'zh') {
+      return `<div style="font-size:26px;font-weight:500;color:#f1f5f9;text-align:center;line-height:1.7;letter-spacing:3px">${sentence}</div>`
+    }
     const words = sentence.split(/\s+/).filter(Boolean)
     return `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px 10px;padding:4px 0" id="ipa-row-${subIdx}">
       ${words.map(w => {
@@ -633,8 +650,9 @@ export default async function moviesPage(app) {
   async function translateVI(text) {
     if (viCache.has(text)) return viCache.get(text)
     try {
+      const sl = subsLang === 'zh' ? 'zh-CN' : 'en'
       const r = await fetch(
-        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=vi&dt=t&q=${encodeURIComponent(text)}`
       )
       const d = await r.json()
       const result = d?.[0]?.map(x => x?.[0]).filter(Boolean).join('') || ''
@@ -678,6 +696,7 @@ export default async function moviesPage(app) {
   }
 
   async function loadSentenceIpa(sentence, subIdx) {
+    if (subsLang === 'zh') return
     const words = sentence.split(/\s+/).filter(Boolean)
     const fetches = words.map(async w => {
       const clean = w.replace(/[^a-zA-Z'-]/g, '').toLowerCase()
@@ -726,6 +745,7 @@ export default async function moviesPage(app) {
       selId         = customMovie.id
       currentSubIdx = -1
       lastResult    = null
+      subsLang      = detectLang(data.subs)
 
       stopSync()
       renderLayout(customMovie, videoId)
