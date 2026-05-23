@@ -19,6 +19,7 @@ import testPage       from './pages/test.js'
 import quizPage       from './pages/quiz.js'
 import pricingPage    from './pages/pricing.js'
 import vocabSrsPage   from './pages/vocab-srs.js'
+import blogPage       from './pages/blog.js'
 import { supabase }   from './supabase/client.js'
 import { requireAuth } from './utils/auth.js'
 
@@ -56,6 +57,7 @@ function router() {
   else if (path === '/english/vocab/body')     showPage(vocabBodyPage)
   else if (path === '/english/vocab/camping')    showPage(vocabCampingPage)
   else if (path === '/english/vocab/vegetables') showPage(vocabVegetablesPage)
+  else if (path === '/blog')                    showPage(blogPage, params)
   else {
     home.style.display = "block"
     app.style.display  = "none"
