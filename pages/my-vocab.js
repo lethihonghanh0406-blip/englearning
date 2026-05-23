@@ -16,22 +16,54 @@ export default async function myVocabPage(app) {
       <div style="color:#64748b;font-size:14px">Đang tải từ vựng...</div>
     </div>`
 
-  // Load TOEIC learned vocab
-  const { data: learnedRows } = await supabase
-    .from('user_vocab_learned')
-    .select('vocab_id, learned_at')
-    .eq('user_id', uid)
-    .order('learned_at', { ascending: false })
+  // Load English words from 3 sources: user_vocab_srs (scanner+flashcard), user_vocab_learned, vocab_deck_items
+  const [{ data: srsRows }, { data: learnedRows }, { data: deckItems }] = await Promise.all([
+    supabase.from('user_vocab_srs')
+      .select('vocab_id, word, meaning, last_reviewed_at')
+      .eq('user_id', uid).order('last_reviewed_at', { ascending: false }),
+    supabase.from('user_vocab_learned')
+      .select('vocab_id, learned_at').eq('user_id', uid),
+    supabase.from('vocab_deck_items')
+      .select('word, meaning, updated_at').eq('user_id', uid).order('updated_at', { ascending: false }),
+  ])
 
-  const toeicIds = (learnedRows || []).map(r => r.vocab_id).filter(Boolean)
-  if (toeicIds.length) {
+  // Fetch question_vocab details for all vocab_ids
+  const allVocabIds = [...new Set([
+    ...(srsRows || []).filter(r => r.vocab_id).map(r => r.vocab_id),
+    ...(learnedRows || []).filter(r => r.vocab_id).map(r => r.vocab_id),
+  ])]
+  const vocabMap = {}
+  if (allVocabIds.length) {
     const { data: vocabRows } = await supabase
-      .from('question_vocab').select('id, word, meaning').in('id', toeicIds)
-    const learnedMap = {}
-    for (const r of learnedRows) learnedMap[r.vocab_id] = r.learned_at
-    toeicWords = (vocabRows || []).map(v => ({ ...v, learned_at: learnedMap[v.id], source: 'toeic' }))
-      .sort((a, b) => new Date(b.learned_at) - new Date(a.learned_at))
+      .from('question_vocab').select('id, word, meaning').in('id', allVocabIds)
+    for (const v of (vocabRows || [])) vocabMap[v.id] = v
   }
+
+  // Merge all sources, dedup by lowercase word
+  const seen = new Set()
+  const addWord = (word, meaning, ts) => {
+    const key = (word || '').toLowerCase().trim()
+    if (!key || seen.has(key)) return
+    seen.add(key)
+    toeicWords.push({ word, meaning: meaning || '', learned_at: ts, source: 'toeic' })
+  }
+
+  // 1. SRS (scanner + flashcard)
+  for (const r of (srsRows || [])) {
+    const v = r.vocab_id ? vocabMap[r.vocab_id] : null
+    addWord(v?.word || r.word, v?.meaning || r.meaning, r.last_reviewed_at)
+  }
+  // 2. Learned (flashcard only — may not be in SRS yet)
+  for (const r of (learnedRows || [])) {
+    const v = r.vocab_id ? vocabMap[r.vocab_id] : null
+    if (v) addWord(v.word, v.meaning, r.learned_at)
+  }
+  // 3. Deck items (saved via scanner popup to a deck)
+  for (const r of (deckItems || [])) {
+    addWord(r.word, r.meaning, r.updated_at)
+  }
+
+  toeicWords.sort((a, b) => new Date(b.learned_at || 0) - new Date(a.learned_at || 0))
 
   // Load Chinese learned vocab
   const { data: chineseRows } = await supabase
@@ -73,10 +105,10 @@ export default async function myVocabPage(app) {
 
   function render() {
     const list = getFiltered()
-    const total   = toeicWords.length + chineseWords.length
+    const total = toeicWords.length + chineseWords.length
     const tabs = [
-      { id: 'all',     label: `Tất cả (${toeicWords.length + chineseWords.length})` },
-      { id: 'toeic',   label: `🇬🇧 TOEIC (${toeicWords.length})` },
+      { id: 'all',     label: `Tất cả (${total})` },
+      { id: 'toeic',   label: `🇬🇧 Tiếng Anh (${toeicWords.length})` },
       { id: 'chinese', label: `🇨🇳 Tiếng Trung (${chineseWords.length})` },
     ]
 
