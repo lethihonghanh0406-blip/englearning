@@ -108,6 +108,7 @@ body{font-family:'Inter',sans-serif;background:#f8faff;color:#0f172a}
       <div class="nav-item" onclick="goTo('/toeic-lr')">📝 Luyện đề TOEIC</div>
       <div class="nav-item" onclick="goTo('/toeic/vocabulary')">📚 Từ vựng</div>
       <div class="nav-item" onclick="goTo('/vocab/review')" id="nav-srs">🔁 Ôn tập SRS</div>
+      <div class="nav-item" onclick="goTo('/my-vocab')">📖 Kho từ vựng</div>
 
       <div class="nav-section">KHÓA HỌC</div>
       <div class="nav-item" onclick="goTo('/toeic')">📘 TOEIC</div>
@@ -318,7 +319,7 @@ const STATS = [
   { icon:'📋', bg:'#eff6ff', label:'Bài đã làm',    value: totalTests,          sub: 'tổng số bài thi' },
   { icon:'🎯', bg:'#f0fdf4', label:'Độ chính xác',  value: avgScore + '%',      sub: 'trung bình' },
   { icon:'🔥', bg:'#fff7ed', label:'Chuỗi ngày',    value: streak,              sub: `ngày liên tiếp` },
-  { icon:'📚', bg:'#f0fdf4', label:'Từ đã học',     value: vocabLearned,        sub: 'tổng số từ vựng', click: "/toeic/vocabulary" },
+  { icon:'📚', bg:'#f0fdf4', label:'Từ đã học',     value: vocabLearned,        sub: 'tổng số từ vựng', click: "/my-vocab" },
   { icon:'👑', bg:'#fefce8', label:'Gói hiện tại',  value: isPro ? 'Pro' : 'Miễn phí',  sub: isPro && profile.plan_expires_at ? `HSD ${new Date(profile.plan_expires_at).toLocaleDateString('vi-VN')}` : isPro ? 'Trọn đời' : 'Nâng cấp ngay', click: !isPro ? '/pricing' : null },
 ]
 
