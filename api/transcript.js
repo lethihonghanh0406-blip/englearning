@@ -17,6 +17,8 @@ export default async function handler(req) {
   const raw     = searchParams.get('v') || ''
   const videoId = raw.match(/[A-Za-z0-9_-]{11}/)?.[0]
   const debug   = searchParams.get('debug') === '1'
+  const lang    = searchParams.get('lang') || 'en'
+  const preferZh = lang === 'zh'
 
   if (!videoId) return json({ error: 'Invalid or missing video ID' }, 400, corsHeaders)
 
@@ -33,17 +35,20 @@ export default async function handler(req) {
         if (Array.isArray(cacheRows) && cacheRows.length > 0) {
           const cachedData = cacheRows[0]
           if (cachedData.subtitles && Array.isArray(cachedData.subtitles) && cachedData.subtitles.length > 0) {
-            // Fire-and-forget: increment views via RPC
-            fetch(
-              `${SUPA_URL}/rest/v1/rpc/increment_youtube_views`,
-              {
-                method: 'POST',
-                headers: { ...supaHeaders, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ vid: videoId })
-              }
-            ).catch(() => {})
             const subs = cachedData.subtitles
-            return json({ subs, hasVI: subs.some(s => s.vi), isAsr: false }, 200, corsHeaders)
+            const hasZhContent = subs.some(s => /[一-鿿]/.test(s.en || ''))
+            // Skip cache if language mismatch (e.g. cached English but requesting Chinese)
+            if (!preferZh || hasZhContent) {
+              fetch(
+                `${SUPA_URL}/rest/v1/rpc/increment_youtube_views`,
+                {
+                  method: 'POST',
+                  headers: { ...supaHeaders, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ vid: videoId })
+                }
+              ).catch(() => {})
+              return json({ subs, hasVI: subs.some(s => s.vi), isAsr: false }, 200, corsHeaders)
+            }
           }
         }
       }
@@ -53,7 +58,7 @@ export default async function handler(req) {
     const supaKey = process.env.SUPADATA_KEY
     if (debug && !supaKey) return json({ error: 'SUPADATA_KEY not set in env' }, 200, corsHeaders)
     if (supaKey) {
-      const { result, raw: supaRaw } = await fetchViaSupadata(videoId, supaKey)
+      const { result, raw: supaRaw } = await fetchViaSupadata(videoId, supaKey, preferZh)
       if (debug) return json({ method: 'SUPADATA', hasKey: !!supaKey, raw: supaRaw, subs: result?.subs?.slice(0, 3) }, 200, corsHeaders)
       if (result?.subs?.length) {
         await saveToCache(videoId, result.subs, supaHeaders).catch(() => {})
@@ -71,7 +76,7 @@ export default async function handler(req) {
 
     // ── 3. Direct timedtext URL ───────────────────────────────────────────
     if (!captionTracks) {
-      const td = await fetchViaTimedtext(videoId)
+      const td = await fetchViaTimedtext(videoId, preferZh)
       attempts.push({ client: 'TIMEDTEXT', found: td ? 1 : 0 })
       if (td) {
         const subs = parseEvents(td).map(e => ({ t: e.t, dur: e.dur, en: e.text, vi: '' }))
@@ -96,12 +101,18 @@ export default async function handler(req) {
       }, 404, corsHeaders)
     }
 
-    const enTrack = captionTracks.find(t => t.languageCode === 'en' && t.kind !== 'asr')
-                 || captionTracks.find(t => t.languageCode === 'en')
-                 || captionTracks.find(t => (t.languageCode || '').startsWith('en'))
-                 || captionTracks.find(t => ['zh-Hans','zh','zh-CN','zh-TW','zh-Hant'].includes(t.languageCode) && t.kind !== 'asr')
-                 || captionTracks.find(t => (t.languageCode || '').startsWith('zh'))
-                 || captionTracks[0]
+    const zhCodes = ['zh-Hans','zh','zh-CN','zh-TW','zh-Hant']
+    const enTrack = preferZh
+      ? (captionTracks.find(t => zhCodes.includes(t.languageCode) && t.kind !== 'asr')
+         || captionTracks.find(t => (t.languageCode || '').startsWith('zh'))
+         || captionTracks.find(t => t.languageCode === 'en' && t.kind !== 'asr')
+         || captionTracks[0])
+      : (captionTracks.find(t => t.languageCode === 'en' && t.kind !== 'asr')
+         || captionTracks.find(t => t.languageCode === 'en')
+         || captionTracks.find(t => (t.languageCode || '').startsWith('en'))
+         || captionTracks.find(t => zhCodes.includes(t.languageCode) && t.kind !== 'asr')
+         || captionTracks.find(t => (t.languageCode || '').startsWith('zh'))
+         || captionTracks[0])
     const viTrack = captionTracks.find(t => t.languageCode === 'vi')
 
     if (!enTrack?.baseUrl) {
@@ -135,13 +146,14 @@ export default async function handler(req) {
 }
 
 // ── Supadata API ──────────────────────────────────────────────────────────────
-async function fetchViaSupadata(videoId, apiKey) {
+async function fetchViaSupadata(videoId, apiKey, preferZh = false) {
   try {
     const url = `https://www.youtube.com/watch?v=${videoId}`
 
-    // Try English first, then Chinese fallbacks
+    // Try preferred language first
+    const langOrder = preferZh ? ['zh-Hans', 'zh-CN', 'zh', 'en'] : ['en', 'zh-Hans', 'zh-CN', 'zh']
     let enData = null, enRes = null
-    for (const lang of ['en', 'zh-Hans', 'zh-CN', 'zh']) {
+    for (const lang of langOrder) {
       enRes = await fetch(
         `https://api.supadata.ai/v1/youtube/transcript?url=${encodeURIComponent(url)}&lang=${lang}`,
         { headers: { 'x-api-key': apiKey } }
@@ -251,15 +263,18 @@ async function fetchTv(videoId) {
   return (await r.json())?.captions?.playerCaptionsTracklistRenderer?.captionTracks || null
 }
 
-async function fetchViaTimedtext(videoId) {
-  for (const url of [
+async function fetchViaTimedtext(videoId, preferZh = false) {
+  const enUrls = [
     `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&fmt=json3`,
     `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en-US&fmt=json3`,
     `https://www.youtube.com/api/timedtext?v=${videoId}&kind=asr&lang=en&fmt=json3`,
+  ]
+  const zhUrls = [
     `https://www.youtube.com/api/timedtext?v=${videoId}&lang=zh-Hans&fmt=json3`,
     `https://www.youtube.com/api/timedtext?v=${videoId}&lang=zh&fmt=json3`,
     `https://www.youtube.com/api/timedtext?v=${videoId}&lang=zh-CN&fmt=json3`,
-  ]) {
+  ]
+  for (const url of (preferZh ? [...zhUrls, ...enUrls] : [...enUrls, ...zhUrls])) {
     try {
       const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
       if (!r.ok) continue

@@ -15,6 +15,7 @@ export default async function moviesPage(app) {
   let speed         = 1.0
   let isRecording   = false
   let writeMode     = false
+  let targetLang    = 'en'   // user-selected: 'en' or 'zh'
   let subsLang      = 'en'
   let lastResult    = null
   let interimText   = ''
@@ -54,7 +55,7 @@ export default async function moviesPage(app) {
     const btn = document.getElementById('mv-load-btn')
     if (btn) { btn.textContent = '⏳ Đang tải...'; btn.disabled = true }
     try {
-      const res  = await fetch(`/api/transcript?v=${autoLoadId}`)
+      const res  = await fetch(`/api/transcript?v=${autoLoadId}&lang=${targetLang}`)
       const data2 = await res.json()
       if (!res.ok || data2.error) {
         alert('⚠️ ' + (data2.error || 'Không thể tải phụ đề'))
@@ -456,6 +457,18 @@ export default async function moviesPage(app) {
 
         <!-- YouTube URL input bar -->
         <div style="background:#0f172a;border-bottom:1px solid #1e293b;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-shrink:0">
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button id="mv-lang-en" onclick="mvSetLang('en')"
+              style="padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700;
+                background:${targetLang==='en'?'#2563eb':'#334155'};color:${targetLang==='en'?'white':'#94a3b8'}">
+              🇬🇧 EN
+            </button>
+            <button id="mv-lang-zh" onclick="mvSetLang('zh')"
+              style="padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700;
+                background:${targetLang==='zh'?'#dc2626':'#334155'};color:${targetLang==='zh'?'white':'#94a3b8'}">
+              🇨🇳 ZH
+            </button>
+          </div>
           <div style="flex:1;position:relative">
             <input id="mv-url-input" type="url"
               placeholder="🔗  Dán link YouTube vào đây (youtube.com/watch?v=... hoặc youtu.be/...)"
@@ -597,6 +610,14 @@ export default async function moviesPage(app) {
     updateShadowPanel(currentSubIdx, subs)
   }
 
+  window.mvSetLang = lang => {
+    targetLang = lang
+    const enBtn = document.getElementById('mv-lang-en')
+    const zhBtn = document.getElementById('mv-lang-zh')
+    if (enBtn) { enBtn.style.background = lang === 'en' ? '#2563eb' : '#334155'; enBtn.style.color = lang === 'en' ? 'white' : '#94a3b8' }
+    if (zhBtn) { zhBtn.style.background = lang === 'zh' ? '#dc2626' : '#334155'; zhBtn.style.color = lang === 'zh' ? 'white' : '#94a3b8' }
+  }
+
   window.mvClearWrite = () => {
     lastResult = null
     updateShadowPanel(currentSubIdx, getProcessedSubs())
@@ -733,7 +754,7 @@ export default async function moviesPage(app) {
     if (btn) { btn.textContent = '⏳ Đang tải...'; btn.disabled = true }
 
     try {
-      const res  = await fetch(`/api/transcript?v=${videoId}`)
+      const res  = await fetch(`/api/transcript?v=${videoId}&lang=${targetLang}`)
       const data = await res.json()
 
       if (!res.ok || data.error) {
