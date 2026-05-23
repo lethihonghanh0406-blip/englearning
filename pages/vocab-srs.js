@@ -181,9 +181,20 @@ export default async function vocabSrsPage(app) {
   }
 
   // ── Handlers ───────────────────────────────────────────────────────────────
+  function speak(text, lang) {
+    if (!window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance(text)
+    u.lang = lang || 'en-US'
+    u.rate = 0.9
+    window.speechSynthesis.speak(u)
+  }
+
   window.srsFlip = () => {
     if (flipped) return
     flipped = true
+    const c = cards[idx]
+    if (c?.vocab?.word) speak(c.vocab.word, c.source === 'chinese' ? 'zh-CN' : 'en-US')
     render()
   }
 
