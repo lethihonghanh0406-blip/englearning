@@ -17,6 +17,7 @@ export default async function myVocabPage(app) {
   let saving      = false
   const exMap      = {}     // word.lower → example string
   const meaningMap = {}     // word.lower → custom meaning
+  const imageMap   = {}     // word.lower → image url
   const deckIdMap  = {}     // word.lower → deck_id
   let defaultDeckId = null
 
@@ -33,20 +34,21 @@ export default async function myVocabPage(app) {
     supabase.from('user_vocab_learned')
       .select('vocab_id, learned_at').eq('user_id', uid),
     supabase.from('vocab_deck_items')
-      .select('word, meaning, example, deck_id, updated_at').eq('user_id', uid)
+      .select('word, meaning, example, image_url, deck_id, updated_at').eq('user_id', uid)
       .order('updated_at', { ascending: false }),
     supabase.from('vocab_decks').select('id, name').eq('user_id', uid).order('created_at').limit(1),
   ])
 
   defaultDeckId = decks?.[0]?.id || null
 
-  // Build example, meaning override, deck_id maps from deck items
+  // Build example, meaning override, image, deck_id maps from deck items
   for (const r of (deckItems || [])) {
     const key = (r.word || '').toLowerCase().trim()
     if (key) {
       exMap[key]      = r.example || ''
       deckIdMap[key]  = r.deck_id
       if (r.meaning)  meaningMap[key] = r.meaning
+      if (r.image_url) imageMap[key]  = r.image_url
     }
   }
 
@@ -154,6 +156,15 @@ export default async function myVocabPage(app) {
         .meaning-edit-btn { background:none; border:none; cursor:pointer; font-size:12px; padding:2px 6px;
           border-radius:6px; color:#cbd5e1; transition:all .15s; flex-shrink:0; line-height:1; }
         .meaning-edit-btn:hover { background:#f1f5f9; color:#2563eb; }
+        .img-btn { background:none; border:none; cursor:pointer; font-size:16px; padding:4px 8px;
+          border-radius:8px; color:#94a3b8; transition:all .15s; flex-shrink:0; }
+        .img-btn:hover { background:#f1f5f9; color:#2563eb; }
+        .vocab-img { width:100%; max-width:220px; border-radius:10px; object-fit:cover; height:140px;
+          margin-top:10px; box-shadow:0 2px 8px rgba(0,0,0,.1); display:block; }
+        .img-grid { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+        .img-choice { width:90px; height:70px; object-fit:cover; border-radius:8px; cursor:pointer;
+          border:2px solid transparent; transition:all .15s; }
+        .img-choice:hover { border-color:#2563eb; transform:scale(1.04); }
       </style>
       <div style="min-height:100vh;background:#f8faff;padding:32px 20px">
         <div style="max-width:860px;margin:0 auto">
@@ -193,6 +204,7 @@ export default async function myVocabPage(app) {
               ${list.map(w => {
                 const key = (w.word || '').toLowerCase().trim()
                 const ex  = exMap[key] || ''
+                const img = imageMap[key] || ''
                 const isEditing        = editingWord === key
                 const isMeaningEditing = editingMeaning === key
                 const displayMeaning   = meaningMap[key] || w.meaning || '—'
@@ -218,9 +230,25 @@ export default async function myVocabPage(app) {
                       ${w.source==='chinese'?'中文':'EN'}
                     </span>
                     <button class="speak-btn" onclick="mvSpeak('${escAttr(w.word)}','${w.source==='chinese'?'zh-CN':'en-US'}')" title="Nghe">🔊</button>
+                    <button class="img-btn" onclick="mvToggleImg('${escAttr(key)}','${escAttr(w.word)}')" title="${img ? 'Đổi ảnh' : 'Tìm ảnh'}">
+                      ${img ? '🖼️' : '📷'}
+                    </button>
                     <button class="edit-btn" onclick="mvEditEx('${escAttr(key)}')" title="${ex ? 'Sửa ví dụ' : 'Thêm ví dụ'}">
                       ${isEditing ? '✕' : (ex ? '📝' : '＋')}
                     </button>
+                  </div>
+
+                  ${img && !isEditing && !isMeaningEditing ? `
+                    <div style="margin-top:10px;position:relative;display:inline-block">
+                      <img src="${img}" class="vocab-img" onerror="this.style.display='none'">
+                      <button onclick="mvRemoveImg('${escAttr(key)}')"
+                        style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.5);border:none;
+                          color:white;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1">✕</button>
+                    </div>` : ''}
+
+                  <div id="imgpicker-${safeKey}" style="display:none">
+                    <div id="imgloading-${safeKey}" style="font-size:13px;color:#94a3b8;margin-top:8px">Đang tìm ảnh...</div>
+                    <div id="imggrid-${safeKey}" class="img-grid"></div>
                   </div>
 
                   ${isMeaningEditing ? `
@@ -392,6 +420,68 @@ export default async function myVocabPage(app) {
       .eq('deck_id', deckId).eq('user_id', uid).eq('word', key)
     exMap[key] = ''
     editingWord = null; editingEx = ''
+    render()
+  }
+
+  // ── Image handlers ─────────────────────────────────────────────────────────
+  const imgPickerOpen = {}  // key → bool
+
+  window.mvToggleImg = async (key, word) => {
+    const safeKey = key.replace(/\s+/g,'-')
+    const picker  = document.getElementById(`imgpicker-${safeKey}`)
+    if (!picker) return
+    const open = picker.style.display !== 'none' && picker.style.display !== ''
+    if (open) { picker.style.display = 'none'; return }
+    picker.style.display = 'block'
+
+    const grid    = document.getElementById(`imggrid-${safeKey}`)
+    const loading = document.getElementById(`imgloading-${safeKey}`)
+    grid.innerHTML = ''
+    loading.style.display = 'block'
+
+    try {
+      const res  = await fetch(`/api/images?q=${encodeURIComponent(word)}`)
+      const data = await res.json()
+      loading.style.display = 'none'
+      if (!data.hits?.length) { grid.innerHTML = '<span style="font-size:13px;color:#94a3b8">Không tìm thấy ảnh</span>'; return }
+      grid.innerHTML = data.hits.map(h =>
+        `<img src="${h.thumb}" class="img-choice" onclick="mvPickImg('${escAttr(key)}','${escAttr(h.url)}')" title="${escAttr(h.tags)}">`
+      ).join('')
+    } catch(e) {
+      loading.textContent = 'Lỗi tải ảnh'
+    }
+  }
+
+  window.mvPickImg = async (key, url) => {
+    let deckId = deckIdMap[key] || defaultDeckId
+    if (!deckId) {
+      const { data: nd } = await supabase.from('vocab_decks')
+        .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select().single()
+      if (nd) { defaultDeckId = nd.id; deckId = nd.id }
+    }
+    const allWords = [...toeicWords, ...chineseWords]
+    const w = allWords.find(x => (x.word || '').toLowerCase().trim() === key)
+    const displayWord = w?.word || key
+    if (deckId) {
+      await supabase.from('vocab_deck_items').upsert(
+        { deck_id: deckId, user_id: uid, word: displayWord,
+          meaning: meaningMap[key] || w?.meaning || '', example: exMap[key] || '', image_url: url },
+        { onConflict: 'deck_id,word' }
+      )
+      imageMap[key]  = url
+      deckIdMap[key] = deckId
+    }
+    render()
+  }
+
+  window.mvRemoveImg = async (key) => {
+    const deckId = deckIdMap[key]
+    if (!deckId) return
+    await supabase.from('vocab_deck_items')
+      .update({ image_url: '' })
+      .eq('deck_id', deckId).eq('user_id', uid)
+      .ilike('word', key)
+    imageMap[key] = ''
     render()
   }
 
