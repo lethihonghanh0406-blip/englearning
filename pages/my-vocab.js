@@ -18,8 +18,15 @@ export default async function myVocabPage(app) {
   const exMap      = {}
   const meaningMap = {}
   const deckIdMap  = {}
-  const deckWordMap = {}  // word.lower → exact word string stored in DB
+  const deckWordMap = {}
   let defaultDeckId = null
+
+  let showAddForm = false
+  let addLang     = 'en'
+  let addWord     = ''
+  let addPinyin   = ''
+  let addMeaning  = ''
+  let addSaving   = false
 
   app.innerHTML = `
     <div style="min-height:100vh;background:#f8faff;display:flex;align-items:center;justify-content:center">
@@ -157,11 +164,87 @@ export default async function myVocabPage(app) {
 
           <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap">
             <button onclick="history.back()" style="background:none;border:none;cursor:pointer;color:#64748b;font-size:14px;padding:0">← Quay lại</button>
-            <div>
+            <div style="flex:1">
               <h1 style="font-size:24px;font-weight:800;color:#0f172a;margin:0;font-family:'Space Grotesk',sans-serif">📖 Kho từ vựng của tôi</h1>
               <p style="font-size:13px;color:#64748b;margin:4px 0 0"><strong>${total}</strong> từ đã học</p>
             </div>
+            <button onclick="mvToggleAdd()"
+              style="padding:9px 18px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:700;
+                background:${showAddForm?'#f1f5f9':'#2563eb'};color:${showAddForm?'#64748b':'white'};transition:all .15s">
+              ${showAddForm ? '✕ Đóng' : '＋ Thêm từ mới'}
+            </button>
           </div>
+
+          ${showAddForm ? `
+          <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;padding:20px 24px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.05)">
+            <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.5px;margin-bottom:12px">THÊM TỪ MỚI</div>
+
+            <div style="display:flex;gap:8px;margin-bottom:16px">
+              <button onclick="mvAddLang('en')"
+                style="padding:8px 20px;border-radius:10px;border:2px solid ${addLang==='en'?'#2563eb':'#e2e8f0'};
+                  background:${addLang==='en'?'#eff6ff':'white'};color:${addLang==='en'?'#2563eb':'#64748b'};
+                  font-size:13px;font-weight:700;cursor:pointer">
+                🇬🇧 Tiếng Anh
+              </button>
+              <button onclick="mvAddLang('zh')"
+                style="padding:8px 20px;border-radius:10px;border:2px solid ${addLang==='zh'?'#f97316':'#e2e8f0'};
+                  background:${addLang==='zh'?'#fff7ed':'white'};color:${addLang==='zh'?'#f97316':'#64748b'};
+                  font-size:13px;font-weight:700;cursor:pointer">
+                🇨🇳 Tiếng Trung
+              </button>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <div style="flex:1;min-width:140px">
+                  <div style="font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:4px">
+                    ${addLang==='zh' ? 'CHỮ HÁN' : 'TỪ TIẾNG ANH'}
+                  </div>
+                  <input id="add-word" type="text" value="${addWord}"
+                    oninput="mvAddField('word',this.value)"
+                    placeholder="${addLang==='zh' ? 'VD: 你好' : 'VD: treasure'}"
+                    style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;
+                      border-radius:9px;font-size:${addLang==='zh'?'20px':'14px'};outline:none;
+                      font-family:${addLang==='zh'?'serif':'inherit'};color:#0f172a;background:#f8faff"
+                    onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                </div>
+                ${addLang==='zh' ? `
+                <div style="flex:1;min-width:120px">
+                  <div style="font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:4px">PINYIN</div>
+                  <input id="add-pinyin" type="text" value="${addPinyin}"
+                    oninput="mvAddField('pinyin',this.value)"
+                    placeholder="VD: nǐ hǎo"
+                    style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;
+                      border-radius:9px;font-size:14px;outline:none;color:#f97316;background:#f8faff"
+                    onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='#e2e8f0'">
+                </div>` : ''}
+                <div style="flex:2;min-width:160px">
+                  <div style="font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:4px">NGHĨA TIẾNG VIỆT</div>
+                  <input id="add-meaning" type="text" value="${addMeaning}"
+                    oninput="mvAddField('meaning',this.value)"
+                    onkeydown="if(event.key==='Enter')mvSaveAdd()"
+                    placeholder="VD: kho báu"
+                    style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;
+                      border-radius:9px;font-size:14px;outline:none;color:#0f172a;background:#f8faff"
+                    onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                </div>
+              </div>
+
+              <div style="display:flex;gap:8px;align-items:center">
+                <button onclick="mvSaveAdd()" ${addSaving?'disabled':''}
+                  style="padding:9px 24px;border-radius:9px;border:none;cursor:pointer;background:#2563eb;
+                    color:white;font-size:13px;font-weight:700;opacity:${addSaving?'.6':'1'}">
+                  ${addSaving ? '...' : '💾 Lưu từ'}
+                </button>
+                <button onclick="mvCancelAdd()"
+                  style="padding:9px 14px;border-radius:9px;border:none;cursor:pointer;background:#f1f5f9;
+                    color:#64748b;font-size:13px;font-weight:600">
+                  Huỷ
+                </button>
+                <span id="add-status" style="font-size:13px;color:#16a34a;margin-left:4px"></span>
+              </div>
+            </div>
+          </div>` : ''}
 
           <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
             <input id="mv-search" type="text" placeholder="🔍  Tìm từ, nghĩa, pinyin..."
@@ -291,6 +374,75 @@ export default async function myVocabPage(app) {
   window.mvTab    = t => { tab = t; render() }
   window.mvSearch = q => { search = q; render() }
   window.mvSpeak  = (text, lang) => speak(text, lang)
+
+  window.mvToggleAdd = () => { showAddForm = !showAddForm; render() }
+  window.mvCancelAdd = () => { showAddForm = false; addWord = ''; addPinyin = ''; addMeaning = ''; render() }
+  window.mvAddLang   = l => { addLang = l; render() }
+  window.mvAddField  = (f, v) => {
+    if (f === 'word')    addWord    = v
+    if (f === 'pinyin')  addPinyin  = v
+    if (f === 'meaning') addMeaning = v
+  }
+
+  window.mvSaveAdd = async () => {
+    const word    = addWord.trim()
+    const meaning = addMeaning.trim()
+    const pinyin  = addPinyin.trim()
+    if (!word || !meaning) {
+      document.getElementById('add-status').textContent = '⚠ Nhập đủ từ và nghĩa'
+      return
+    }
+    addSaving = true; render()
+
+    if (addLang === 'zh') {
+      // Thêm vào chinese_vocab + chinese_srs
+      const { data: cv, error: cvErr } = await supabase.from('chinese_vocab')
+        .insert({ char: word, pinyin, vi: meaning }).select('id').single()
+
+      if (!cvErr && cv) {
+        await supabase.from('chinese_srs').upsert(
+          { user_id: uid, chinese_vocab_id: cv.id, last_reviewed_at: new Date().toISOString() },
+          { onConflict: 'user_id,chinese_vocab_id' }
+        )
+        chineseWords.unshift({
+          id: cv.id, char: word, word, pinyin, meaning, vi: meaning,
+          source: 'chinese', last_reviewed_at: new Date().toISOString()
+        })
+      } else {
+        console.error('add chinese error:', cvErr)
+        // Fallback: lưu vào user_vocab_srs nếu chinese_vocab bị restrict
+        await supabase.from('user_vocab_srs')
+          .insert({ user_id: uid, word, meaning })
+        const key = word.toLowerCase().trim()
+        if (!toeicWords.find(x => x.word.toLowerCase() === key)) {
+          toeicWords.unshift({ word, meaning, source: 'toeic', learned_at: new Date().toISOString() })
+        }
+      }
+    } else {
+      // Thêm vào user_vocab_srs (English)
+      const { error } = await supabase.from('user_vocab_srs')
+        .insert({ user_id: uid, word, meaning })
+
+      if (!error) {
+        const key = word.toLowerCase().trim()
+        if (!toeicWords.find(x => (x.word || '').toLowerCase() === key)) {
+          toeicWords.unshift({ word, meaning, source: 'toeic', learned_at: new Date().toISOString() })
+        }
+      } else {
+        console.error('add english error:', error)
+      }
+    }
+
+    addSaving = false
+    addWord = ''; addPinyin = ''; addMeaning = ''
+    // Giữ form mở để thêm tiếp
+    render()
+    setTimeout(() => {
+      const el = document.getElementById('add-status')
+      if (el) { el.textContent = '✓ Đã lưu'; setTimeout(() => { if (el) el.textContent = '' }, 2000) }
+      document.getElementById('add-word')?.focus()
+    }, 0)
+  }
 
   window.mvEditEx = key => {
     if (editingWord === key) { editingWord = null; editingEx = ''; render(); return }
