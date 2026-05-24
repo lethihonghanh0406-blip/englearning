@@ -437,19 +437,62 @@ export default async function myVocabPage(app) {
     const grid    = document.getElementById(`imggrid-${safeKey}`)
     const loading = document.getElementById(`imgloading-${safeKey}`)
     grid.innerHTML = ''
+
+    const pixabayKey = localStorage.getItem('ll_pixabay_key') || ''
+    if (!pixabayKey) {
+      loading.style.display = 'none'
+      grid.innerHTML = `
+        <div style="padding:10px 0">
+          <div style="font-size:13px;color:#64748b;margin-bottom:8px">
+            Nhập <strong>Pixabay API key</strong> miễn phí để tìm ảnh.<br>
+            Đăng ký tại <a href="https://pixabay.com/api/docs/" target="_blank" style="color:#2563eb">pixabay.com/api/docs</a>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="pixabay-key-input" type="text" placeholder="Dán API key vào đây..."
+              style="flex:1;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none"
+              onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+            <button onclick="mvSavePixabayKey('${escAttr(key)}','${escAttr(word)}')"
+              style="padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:8px;
+                font-size:13px;font-weight:600;cursor:pointer">
+              Lưu & tìm
+            </button>
+          </div>
+        </div>`
+      return
+    }
+
     loading.style.display = 'block'
+    loading.textContent = 'Đang tìm ảnh...'
 
     try {
-      const res  = await fetch(`/api/images?q=${encodeURIComponent(word)}`)
+      const res  = await fetch(
+        `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(word)}&image_type=photo&per_page=6&safesearch=true&lang=en`
+      )
       const data = await res.json()
       loading.style.display = 'none'
-      if (!data.hits?.length) { grid.innerHTML = '<span style="font-size:13px;color:#94a3b8">Không tìm thấy ảnh</span>'; return }
+      if (!data.hits?.length) {
+        grid.innerHTML = `<span style="font-size:13px;color:#94a3b8">Không tìm thấy ảnh cho "${word}"</span>`
+        return
+      }
       grid.innerHTML = data.hits.map(h =>
-        `<img src="${h.thumb}" class="img-choice" onclick="mvPickImg('${escAttr(key)}','${escAttr(h.url)}')" title="${escAttr(h.tags)}">`
+        `<img src="${h.previewURL}" class="img-choice" onclick="mvPickImg('${escAttr(key)}','${escAttr(h.webformatURL)}')" title="${escAttr(h.tags)}">`
       ).join('')
     } catch(e) {
-      loading.textContent = 'Lỗi tải ảnh'
+      loading.style.display = 'none'
+      grid.innerHTML = `<span style="font-size:13px;color:#ef4444">Lỗi: ${e.message}. Kiểm tra lại API key.</span>
+        <button onclick="localStorage.removeItem('ll_pixabay_key');mvToggleImg('${escAttr(key)}','${escAttr(word)}')"
+          style="margin-left:8px;font-size:12px;color:#64748b;background:none;border:none;cursor:pointer;text-decoration:underline">
+          Đổi key
+        </button>`
     }
+  }
+
+  window.mvSavePixabayKey = async (key, word) => {
+    const inp = document.getElementById('pixabay-key-input')
+    const k   = (inp?.value || '').trim()
+    if (!k) return
+    localStorage.setItem('ll_pixabay_key', k)
+    await window.mvToggleImg(key, word)
   }
 
   window.mvPickImg = async (key, url) => {
