@@ -546,24 +546,21 @@ export default async function myVocabPage(app) {
           source: 'chinese', last_reviewed_at: new Date().toISOString(), fromDeck: true })
       }
     } else {
-      // Thêm vào user_vocab_srs
-      const { error } = await supabase.from('user_vocab_srs')
-        .upsert({ user_id: uid, word, meaning }, { onConflict: 'user_id,word' })
+      // Thêm vào vocab_deck_items (unique constraint deck_id,word đảm bảo lưu đúng)
+      const deckId = await ensureDeck()
+      if (!deckId) { addSaving = false; render(); return }
+
+      const { error } = await supabase.from('vocab_deck_items')
+        .upsert({ deck_id: deckId, user_id: uid, word, meaning, example },
+                { onConflict: 'deck_id,word' })
       if (error) {
         addSaving = false; render()
         setTimeout(() => setAddStatus(`Lỗi lưu: ${error.message}`, true), 0)
         return
       }
       const key = word.toLowerCase().trim()
-      if (example) {
-        const deckId = await ensureDeck()
-        if (deckId) {
-          await supabase.from('vocab_deck_items')
-            .upsert({ deck_id: deckId, user_id: uid, word, meaning, example },
-                    { onConflict: 'deck_id,word' })
-          exMap[key] = example; deckIdMap[key] = deckId; deckWordMap[key] = word
-        }
-      }
+      deckIdMap[key] = deckId; deckWordMap[key] = word
+      exMap[key] = example
       if (!toeicWords.find(x => (x.word || '').toLowerCase() === key)) {
         toeicWords.unshift({ word, meaning, source: 'toeic', learned_at: new Date().toISOString() })
         seen.add(key)

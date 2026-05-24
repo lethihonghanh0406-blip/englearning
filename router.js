@@ -21,6 +21,7 @@ import pricingPage    from './pages/pricing.js'
 import vocabSrsPage   from './pages/vocab-srs.js'
 import blogPage       from './pages/blog.js'
 import myVocabPage    from './pages/my-vocab.js'
+import chineseBooksPage from './pages/chinese-books.js'
 import { supabase }   from './supabase/client.js'
 import { requireAuth } from './utils/auth.js'
 
@@ -51,6 +52,7 @@ function router() {
   else if (path === '/chinese/pinyin')    showPage(pinyinPage)
   else if (path === '/chinese/shadowing') showPage(shadowingPage)
   else if (path === '/chinese/writing')   showPage(chineseWritingPage)
+  else if (path === '/chinese/books')     showPage(chineseBooksPage)
   else if (path === '/english/ipa')       showPage(ipaPage)
   else if (path === '/english/movies')    showPage(moviesPage)
   else if (path === '/english/practice')  showPage(practicePage)

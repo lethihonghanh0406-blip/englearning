@@ -140,6 +140,7 @@ return ` <div class="nav">
         <div onclick="navigate('/chinese/pinyin')">🔤 Bảng Pinyin</div>
         <div onclick="navigate('/chinese/shadowing')">🎤 Shadowing</div>
         <div onclick="navigate('/chinese/writing')">✍️ Luyện viết</div>
+        <div onclick="navigate('/chinese/books')">📚 Sách giáo khoa</div>
       </div>
     </div>
     <div class="menu-item toeic-menu">
