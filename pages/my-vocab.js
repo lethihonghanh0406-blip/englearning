@@ -28,6 +28,8 @@ export default async function myVocabPage(app) {
   let addMeaning  = ''
   let addSaving   = false
 
+  let confirmDeleteKey = null  // key đang chờ xác nhận xoá
+
   app.innerHTML = `
     <div style="min-height:100vh;background:#f8faff;display:flex;align-items:center;justify-content:center">
       <div style="color:#64748b;font-size:14px">Đang tải từ vựng...</div>
@@ -71,19 +73,19 @@ export default async function myVocabPage(app) {
   }
 
   const seen = new Set()
-  const pushWord = (word, meaning, ts) => {
+  const pushWord = (word, meaning, ts, vocabId = null) => {
     const key = (word || '').toLowerCase().trim()
     if (!key || seen.has(key)) return
     seen.add(key)
-    toeicWords.push({ word, meaning: meaning || '', learned_at: ts, source: 'toeic' })
+    toeicWords.push({ word, meaning: meaning || '', learned_at: ts, source: 'toeic', vocabId })
   }
   for (const r of (srsRows || [])) {
     const v = r.vocab_id ? vocabMap[r.vocab_id] : null
-    pushWord(v?.word || r.word, v?.meaning || r.meaning, r.last_reviewed_at)
+    pushWord(v?.word || r.word, v?.meaning || r.meaning, r.last_reviewed_at, r.vocab_id || null)
   }
   for (const r of (learnedRows || [])) {
     const v = r.vocab_id ? vocabMap[r.vocab_id] : null
-    if (v) pushWord(v.word, v.meaning, r.learned_at)
+    if (v) pushWord(v.word, v.meaning, r.learned_at, v.id)
   }
   for (const r of (deckItems || [])) pushWord(r.word, r.meaning, r.updated_at)
   toeicWords.sort((a, b) => new Date(b.learned_at || 0) - new Date(a.learned_at || 0))
@@ -275,6 +277,7 @@ export default async function myVocabPage(app) {
                 const ex  = exMap[key] || ''
                 const isEditing        = editingWord === key
                 const isMeaningEditing = editingMeaning === key
+                const isConfirmDelete  = confirmDeleteKey === key
                 const displayMeaning   = meaningMap[key] || w.meaning || '—'
                 const safeKey          = key.replace(/\s+/g,'-')
 
@@ -301,7 +304,25 @@ export default async function myVocabPage(app) {
                     <button class="edit-btn" onclick="mvEditEx('${escAttr(key)}')" title="${ex ? 'Sửa ví dụ' : 'Thêm ví dụ'}">
                       ${isEditing ? '✕' : (ex ? '📝' : '＋')}
                     </button>
+                    <button class="edit-btn" onclick="mvConfirmDelete('${escAttr(key)}')" title="Xoá từ"
+                      style="color:${isConfirmDelete?'#dc2626':'#cbd5e1'}">🗑</button>
                   </div>
+
+                  ${isConfirmDelete ? `
+                    <div style="margin-top:10px;display:flex;align-items:center;gap:10px;
+                      background:#fef2f2;border-radius:9px;padding:10px 14px">
+                      <span style="font-size:13px;color:#dc2626;flex:1">Xoá từ "<strong>${w.word}</strong>" khỏi kho từ vựng?</span>
+                      <button onclick="mvDeleteWord('${escAttr(key)}','${w.source}')"
+                        style="padding:6px 16px;border-radius:7px;border:none;cursor:pointer;
+                          background:#dc2626;color:white;font-size:13px;font-weight:700">
+                        Xoá
+                      </button>
+                      <button onclick="mvConfirmDelete('')"
+                        style="padding:6px 12px;border-radius:7px;border:none;cursor:pointer;
+                          background:#f1f5f9;color:#64748b;font-size:13px">
+                        Huỷ
+                      </button>
+                    </div>` : ''}
 
                   ${isMeaningEditing ? `
                     <div style="margin-top:8px">
@@ -374,6 +395,44 @@ export default async function myVocabPage(app) {
   window.mvTab    = t => { tab = t; render() }
   window.mvSearch = q => { search = q; render() }
   window.mvSpeak  = (text, lang) => speak(text, lang)
+
+  window.mvConfirmDelete = key => { confirmDeleteKey = key || null; render() }
+
+  window.mvDeleteWord = async (key, source) => {
+    const allWords    = [...toeicWords, ...chineseWords]
+    const w           = allWords.find(x => (x.word || '').toLowerCase().trim() === key)
+    if (!w) return
+
+    if (source === 'chinese') {
+      // Xoá khỏi chinese_srs (giữ lại chinese_vocab vì dùng chung)
+      await supabase.from('chinese_srs')
+        .delete().eq('user_id', uid).eq('chinese_vocab_id', w.id)
+      chineseWords = chineseWords.filter(x => x !== w)
+    } else {
+      const displayWord = w.word
+      // Xoá khỏi user_vocab_srs
+      await supabase.from('user_vocab_srs')
+        .delete().eq('user_id', uid).ilike('word', displayWord)
+      // Xoá khỏi user_vocab_learned nếu có vocab_id
+      if (w.vocabId) {
+        await supabase.from('user_vocab_learned')
+          .delete().eq('user_id', uid).eq('vocab_id', w.vocabId)
+      }
+      // Xoá khỏi vocab_deck_items nếu có
+      if (deckIdMap[key]) {
+        await supabase.from('vocab_deck_items')
+          .delete().eq('user_id', uid).eq('deck_id', deckIdMap[key])
+          .eq('word', deckWordMap[key] || displayWord)
+        delete deckIdMap[key]; delete deckWordMap[key]
+        delete exMap[key]; delete meaningMap[key]
+      }
+      toeicWords = toeicWords.filter(x => x !== w)
+      seen.delete(key)
+    }
+
+    confirmDeleteKey = null
+    render()
+  }
 
   window.mvToggleAdd = () => { showAddForm = !showAddForm; render() }
   window.mvCancelAdd = () => { showAddForm = false; addWord = ''; addPinyin = ''; addMeaning = ''; render() }
