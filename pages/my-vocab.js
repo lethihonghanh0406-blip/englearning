@@ -498,77 +498,83 @@ export default async function myVocabPage(app) {
     if (f === 'example') addExample = v
   }
 
+  const setAddStatus = (msg, isErr = false) => {
+    const el = document.getElementById('add-status')
+    if (!el) return
+    el.style.color = isErr ? '#dc2626' : '#16a34a'
+    el.textContent = msg
+    if (!isErr) setTimeout(() => { if (el) el.textContent = '' }, 2500)
+  }
+
+  const ensureDeck = async () => {
+    if (defaultDeckId) return defaultDeckId
+    const { data: nd, error } = await supabase.from('vocab_decks')
+      .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select('id').single()
+    if (error || !nd) { setAddStatus(`Lỗi tạo kho: ${error?.message || '?'}`, true); return null }
+    defaultDeckId = nd.id
+    return nd.id
+  }
+
   window.mvSaveAdd = async () => {
     const word    = addWord.trim()
     const meaning = addMeaning.trim()
     const pinyin  = addPinyin.trim()
-    if (!word || !meaning) {
-      document.getElementById('add-status').textContent = '⚠ Nhập đủ từ và nghĩa'
-      return
-    }
+    const example = addExample.trim()
+    if (!word || !meaning) { setAddStatus('⚠ Nhập đủ từ và nghĩa', true); return }
+
     addSaving = true; render()
 
     if (addLang === 'zh') {
-      // Lưu vào vocab_deck_items: word=chữ Hán, meaning=nghĩa, example=pinyin
-      let deckId = defaultDeckId
-      if (!deckId) {
-        const { data: nd } = await supabase.from('vocab_decks')
-          .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select('id').single()
-        if (nd) { defaultDeckId = nd.id; deckId = nd.id }
+      const deckId = await ensureDeck()
+      if (!deckId) { addSaving = false; render(); return }
+
+      const exData = JSON.stringify({ p: pinyin, e: example })
+      const { error } = await supabase.from('vocab_deck_items')
+        .upsert({ deck_id: deckId, user_id: uid, word, meaning, example: exData },
+                { onConflict: 'deck_id,word' })
+      if (error) {
+        addSaving = false; render()
+        setTimeout(() => setAddStatus(`Lỗi lưu: ${error.message}`, true), 0)
+        return
       }
-      if (deckId) {
-        const exData = JSON.stringify({ p: pinyin, e: addExample.trim() })
-        const { error } = await supabase.from('vocab_deck_items')
-          .insert({ deck_id: deckId, user_id: uid, word, meaning, example: exData })
-        if (!error) {
-          const key = word.toLowerCase().trim()
-          deckIdMap[key]   = deckId
-          deckWordMap[key] = word
-          if (addExample.trim()) exMap[key] = addExample.trim()
-          if (!seen.has(key)) {
-            seen.add(key)
-            chineseWords.unshift({
-              char: word, word, pinyin, meaning, vi: meaning,
-              source: 'chinese', last_reviewed_at: new Date().toISOString(), fromDeck: true,
-            })
-          }
-        } else console.error('add zh error:', error)
+      const key = word.toLowerCase().trim()
+      deckIdMap[key] = deckId; deckWordMap[key] = word
+      if (example) exMap[key] = example
+      if (!seen.has(key)) {
+        seen.add(key)
+        chineseWords.unshift({ char: word, word, pinyin, meaning, vi: meaning,
+          source: 'chinese', last_reviewed_at: new Date().toISOString(), fromDeck: true })
       }
     } else {
-      // Thêm vào user_vocab_srs (English)
+      // Thêm vào user_vocab_srs
       const { error } = await supabase.from('user_vocab_srs')
-        .insert({ user_id: uid, word, meaning })
-
-      if (!error) {
-        const key = word.toLowerCase().trim()
-        // Nếu có ví dụ → lưu thêm vào vocab_deck_items
-        if (addExample.trim()) {
-          let deckId = defaultDeckId
-          if (!deckId) {
-            const { data: nd } = await supabase.from('vocab_decks')
-              .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select('id').single()
-            if (nd) { defaultDeckId = nd.id; deckId = nd.id }
-          }
-          if (deckId) {
-            await supabase.from('vocab_deck_items')
-              .insert({ deck_id: deckId, user_id: uid, word, meaning, example: addExample.trim() })
-            exMap[key] = addExample.trim()
-            deckIdMap[key] = deckId; deckWordMap[key] = word
-          }
+        .upsert({ user_id: uid, word, meaning }, { onConflict: 'user_id,word' })
+      if (error) {
+        addSaving = false; render()
+        setTimeout(() => setAddStatus(`Lỗi lưu: ${error.message}`, true), 0)
+        return
+      }
+      const key = word.toLowerCase().trim()
+      if (example) {
+        const deckId = await ensureDeck()
+        if (deckId) {
+          await supabase.from('vocab_deck_items')
+            .upsert({ deck_id: deckId, user_id: uid, word, meaning, example },
+                    { onConflict: 'deck_id,word' })
+          exMap[key] = example; deckIdMap[key] = deckId; deckWordMap[key] = word
         }
-        if (!toeicWords.find(x => (x.word || '').toLowerCase() === key)) {
-          toeicWords.unshift({ word, meaning, source: 'toeic', learned_at: new Date().toISOString() })
-        }
-      } else console.error('add english error:', error)
+      }
+      if (!toeicWords.find(x => (x.word || '').toLowerCase() === key)) {
+        toeicWords.unshift({ word, meaning, source: 'toeic', learned_at: new Date().toISOString() })
+        seen.add(key)
+      }
     }
 
     addSaving = false
     addWord = ''; addPinyin = ''; addMeaning = ''; addExample = ''
-    // Giữ form mở để thêm tiếp
     render()
     setTimeout(() => {
-      const el = document.getElementById('add-status')
-      if (el) { el.textContent = '✓ Đã lưu'; setTimeout(() => { if (el) el.textContent = '' }, 2000) }
+      setAddStatus('✓ Đã lưu')
       document.getElementById('add-word')?.focus()
     }, 0)
   }
