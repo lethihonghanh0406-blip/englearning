@@ -26,6 +26,7 @@ export default async function myVocabPage(app) {
   let addWord     = ''
   let addPinyin   = ''
   let addMeaning  = ''
+  let addExample  = ''
   let addSaving   = false
 
   let confirmDeleteKey = null  // key đang chờ xác nhận xoá
@@ -92,16 +93,21 @@ export default async function myVocabPage(app) {
   }
   for (const r of (deckItems || [])) {
     if (isZhWord(r.word)) {
-      // Từ Trung lưu trong deck → thêm vào chineseWords
       const key = (r.word || '').toLowerCase().trim()
       if (key && !seen.has(key)) {
         seen.add(key)
+        // example field chứa JSON {p: pinyin, e: example} hoặc plain pinyin (cũ)
+        let pinyin = '', exSentence = ''
+        try {
+          const parsed = JSON.parse(r.example || 'null')
+          if (parsed && typeof parsed === 'object') { pinyin = parsed.p || ''; exSentence = parsed.e || '' }
+          else pinyin = r.example || ''
+        } catch { pinyin = r.example || '' }
+        if (exSentence) exMap[key] = exSentence
         chineseWords.push({
-          char: r.word, word: r.word,
-          pinyin: r.example || '',   // pinyin lưu trong example field
+          char: r.word, word: r.word, pinyin,
           meaning: r.meaning || '', vi: r.meaning || '',
-          source: 'chinese', last_reviewed_at: r.updated_at,
-          fromDeck: true,
+          source: 'chinese', last_reviewed_at: r.updated_at, fromDeck: true,
         })
       }
     } else {
@@ -250,12 +256,22 @@ export default async function myVocabPage(app) {
                   <div style="font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:4px">NGHĨA TIẾNG VIỆT</div>
                   <input id="add-meaning" type="text" value="${addMeaning}"
                     oninput="mvAddField('meaning',this.value)"
-                    onkeydown="if(event.key==='Enter')mvSaveAdd()"
-                    placeholder="VD: kho báu"
+                    placeholder="${addLang==='zh'?'VD: số tám':'VD: kho báu'}"
                     style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;
                       border-radius:9px;font-size:14px;outline:none;color:#0f172a;background:#f8faff"
                     onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
                 </div>
+              </div>
+
+              <div>
+                <div style="font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:4px">CÂU VÍ DỤ (tuỳ chọn)</div>
+                <input id="add-example" type="text" value="${addExample}"
+                  oninput="mvAddField('example',this.value)"
+                  onkeydown="if(event.key==='Enter')mvSaveAdd()"
+                  placeholder="${addLang==='zh'?'VD: 八是一个吉祥数字。':'VD: The treasure was hidden underground.'}"
+                  style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #e2e8f0;
+                    border-radius:9px;font-size:14px;outline:none;color:#0f172a;background:#f8faff"
+                  onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
               </div>
 
               <div style="display:flex;gap:8px;align-items:center">
@@ -473,12 +489,13 @@ export default async function myVocabPage(app) {
   }
 
   window.mvToggleAdd = () => { showAddForm = !showAddForm; render() }
-  window.mvCancelAdd = () => { showAddForm = false; addWord = ''; addPinyin = ''; addMeaning = ''; render() }
+  window.mvCancelAdd = () => { showAddForm = false; addWord = ''; addPinyin = ''; addMeaning = ''; addExample = ''; render() }
   window.mvAddLang   = l => { addLang = l; render() }
   window.mvAddField  = (f, v) => {
     if (f === 'word')    addWord    = v
     if (f === 'pinyin')  addPinyin  = v
     if (f === 'meaning') addMeaning = v
+    if (f === 'example') addExample = v
   }
 
   window.mvSaveAdd = async () => {
@@ -500,18 +517,19 @@ export default async function myVocabPage(app) {
         if (nd) { defaultDeckId = nd.id; deckId = nd.id }
       }
       if (deckId) {
+        const exData = JSON.stringify({ p: pinyin, e: addExample.trim() })
         const { error } = await supabase.from('vocab_deck_items')
-          .insert({ deck_id: deckId, user_id: uid, word, meaning, example: pinyin })
+          .insert({ deck_id: deckId, user_id: uid, word, meaning, example: exData })
         if (!error) {
           const key = word.toLowerCase().trim()
           deckIdMap[key]   = deckId
           deckWordMap[key] = word
+          if (addExample.trim()) exMap[key] = addExample.trim()
           if (!seen.has(key)) {
             seen.add(key)
             chineseWords.unshift({
               char: word, word, pinyin, meaning, vi: meaning,
-              source: 'chinese', last_reviewed_at: new Date().toISOString(),
-              fromDeck: true,
+              source: 'chinese', last_reviewed_at: new Date().toISOString(), fromDeck: true,
             })
           }
         } else console.error('add zh error:', error)
@@ -523,16 +541,29 @@ export default async function myVocabPage(app) {
 
       if (!error) {
         const key = word.toLowerCase().trim()
+        // Nếu có ví dụ → lưu thêm vào vocab_deck_items
+        if (addExample.trim()) {
+          let deckId = defaultDeckId
+          if (!deckId) {
+            const { data: nd } = await supabase.from('vocab_decks')
+              .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select('id').single()
+            if (nd) { defaultDeckId = nd.id; deckId = nd.id }
+          }
+          if (deckId) {
+            await supabase.from('vocab_deck_items')
+              .insert({ deck_id: deckId, user_id: uid, word, meaning, example: addExample.trim() })
+            exMap[key] = addExample.trim()
+            deckIdMap[key] = deckId; deckWordMap[key] = word
+          }
+        }
         if (!toeicWords.find(x => (x.word || '').toLowerCase() === key)) {
           toeicWords.unshift({ word, meaning, source: 'toeic', learned_at: new Date().toISOString() })
         }
-      } else {
-        console.error('add english error:', error)
-      }
+      } else console.error('add english error:', error)
     }
 
     addSaving = false
-    addWord = ''; addPinyin = ''; addMeaning = ''
+    addWord = ''; addPinyin = ''; addMeaning = ''; addExample = ''
     // Giữ form mở để thêm tiếp
     render()
     setTimeout(() => {
@@ -636,8 +667,12 @@ export default async function myVocabPage(app) {
     let saved = false
 
     if (deckIdMap[key]) {
+      // Từ Trung fromDeck: giữ pinyin trong JSON
+      const exVal = (w?.source === 'chinese' && w?.fromDeck)
+        ? JSON.stringify({ p: w.pinyin || '', e: val })
+        : val
       const { error } = await supabase.from('vocab_deck_items')
-        .update({ example: val })
+        .update({ example: exVal })
         .eq('user_id', uid).eq('deck_id', deckIdMap[key]).eq('word', deckWordMap[key] || displayWord)
       if (!error) saved = true
       else console.error('update example error:', error)
