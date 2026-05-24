@@ -84,8 +84,23 @@ export default async function myVocabPage(app) {
     toeicWords.push({ word, meaning: meaning || '', learned_at: ts, source: 'toeic', vocabId })
   }
   for (const r of (srsRows || [])) {
-    const v = r.vocab_id ? vocabMap[r.vocab_id] : null
-    pushWord(v?.word || r.word, v?.meaning || r.meaning, r.last_reviewed_at, r.vocab_id || null)
+    if (isZhWord(r.word)) {
+      // Từ Trung lưu tay vào user_vocab_srs (meaning = JSON {p,v})
+      const key = (r.word || '').toLowerCase().trim()
+      if (!key || seen.has(key)) continue
+      seen.add(key)
+      let pinyinVal = '', meanVal = r.meaning || ''
+      try {
+        const parsed = JSON.parse(r.meaning || 'null')
+        if (parsed && typeof parsed === 'object') { pinyinVal = parsed.p || ''; meanVal = parsed.v || '' }
+      } catch {}
+      chineseWords.push({ word: r.word, char: r.word, pinyin: pinyinVal,
+        meaning: meanVal, vi: meanVal, source: 'chinese',
+        last_reviewed_at: r.last_reviewed_at, fromSrs: true })
+    } else {
+      const v = r.vocab_id ? vocabMap[r.vocab_id] : null
+      pushWord(v?.word || r.word, v?.meaning || r.meaning, r.last_reviewed_at, r.vocab_id || null)
+    }
   }
   for (const r of (learnedRows || [])) {
     const v = r.vocab_id ? vocabMap[r.vocab_id] : null
@@ -446,7 +461,10 @@ export default async function myVocabPage(app) {
     if (!w) return
 
     if (source === 'chinese') {
-      if (w.fromDeck) {
+      if (w.fromSrs) {
+        // Từ Trung lưu tay qua user_vocab_srs
+        await supabase.from('user_vocab_srs').delete().eq('user_id', uid).eq('word', w.word)
+      } else if (w.fromDeck) {
         // Từ Trung thêm tay → xoá khỏi vocab_deck_items
         if (deckIdMap[key]) {
           await supabase.from('vocab_deck_items')
@@ -524,43 +542,42 @@ export default async function myVocabPage(app) {
 
     addSaving = true; render()
 
-    if (addLang === 'zh') {
-      const deckId = await ensureDeck()
-      if (!deckId) { addSaving = false; render(); return }
+    // Helper: INSERT vào user_vocab_srs, nếu trùng thì UPDATE
+    const srsInsert = async (payload) => {
+      const { error: insErr } = await supabase.from('user_vocab_srs').insert(payload)
+      if (!insErr) return null
+      if (insErr.code === '23505') {
+        const { error: updErr } = await supabase.from('user_vocab_srs')
+          .update({ meaning: payload.meaning }).eq('user_id', uid).eq('word', payload.word)
+        return updErr
+      }
+      return insErr
+    }
 
-      const exData = JSON.stringify({ p: pinyin, e: example })
-      const { error } = await supabase.from('vocab_deck_items')
-        .upsert({ deck_id: deckId, user_id: uid, word, meaning, example: exData },
-                { onConflict: 'deck_id,word' })
-      if (error) {
+    if (addLang === 'zh') {
+      // Lưu vào user_vocab_srs: meaning = JSON {p: pinyin, v: nghĩa}
+      const meaningData = JSON.stringify({ p: pinyin, v: meaning })
+      const err = await srsInsert({ user_id: uid, word, meaning: meaningData })
+      if (err) {
         addSaving = false; render()
-        setTimeout(() => setAddStatus(`Lỗi lưu: ${error.message}`, true), 0)
+        setTimeout(() => setAddStatus(`Lỗi lưu: ${err.message}`, true), 0)
         return
       }
       const key = word.toLowerCase().trim()
-      deckIdMap[key] = deckId; deckWordMap[key] = word
-      if (example) exMap[key] = example
       if (!seen.has(key)) {
         seen.add(key)
         chineseWords.unshift({ char: word, word, pinyin, meaning, vi: meaning,
-          source: 'chinese', last_reviewed_at: new Date().toISOString(), fromDeck: true })
+          source: 'chinese', last_reviewed_at: new Date().toISOString(), fromSrs: true })
       }
     } else {
-      // Thêm vào vocab_deck_items (unique constraint deck_id,word đảm bảo lưu đúng)
-      const deckId = await ensureDeck()
-      if (!deckId) { addSaving = false; render(); return }
-
-      const { error } = await supabase.from('vocab_deck_items')
-        .upsert({ deck_id: deckId, user_id: uid, word, meaning, example },
-                { onConflict: 'deck_id,word' })
-      if (error) {
+      const err = await srsInsert({ user_id: uid, word, meaning })
+      if (err) {
         addSaving = false; render()
-        setTimeout(() => setAddStatus(`Lỗi lưu: ${error.message}`, true), 0)
+        setTimeout(() => setAddStatus(`Lỗi lưu: ${err.message}`, true), 0)
         return
       }
       const key = word.toLowerCase().trim()
-      deckIdMap[key] = deckId; deckWordMap[key] = word
-      exMap[key] = example
+      meaningMap[key] = meaning
       if (!toeicWords.find(x => (x.word || '').toLowerCase() === key)) {
         toeicWords.unshift({ word, meaning, source: 'toeic', learned_at: new Date().toISOString() })
         seen.add(key)
