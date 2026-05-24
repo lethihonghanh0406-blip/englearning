@@ -10,11 +10,14 @@ export default async function myVocabPage(app) {
   let search      = ''
   let toeicWords  = []
   let chineseWords = []
-  let editingWord = null   // word string currently being edited
-  let editingEx   = ''     // textarea value while editing
+  let editingWord    = null  // key being edited (example)
+  let editingEx      = ''
+  let editingMeaning = null  // key being edited (meaning)
+  let editingMeaningVal = ''
   let saving      = false
-  const exMap     = {}     // word.lower → example string
-  const deckIdMap = {}     // word.lower → deck_id (for update)
+  const exMap      = {}     // word.lower → example string
+  const meaningMap = {}     // word.lower → custom meaning
+  const deckIdMap  = {}     // word.lower → deck_id
   let defaultDeckId = null
 
   app.innerHTML = `
@@ -37,12 +40,13 @@ export default async function myVocabPage(app) {
 
   defaultDeckId = decks?.[0]?.id || null
 
-  // Build example + deck_id maps from deck items
+  // Build example, meaning override, deck_id maps from deck items
   for (const r of (deckItems || [])) {
     const key = (r.word || '').toLowerCase().trim()
     if (key) {
-      exMap[key]     = r.example || ''
-      deckIdMap[key] = r.deck_id
+      exMap[key]      = r.example || ''
+      deckIdMap[key]  = r.deck_id
+      if (r.meaning)  meaningMap[key] = r.meaning
     }
   }
 
@@ -142,7 +146,14 @@ export default async function myVocabPage(app) {
           font-size:13px; color:#0f172a; resize:none; outline:none; transition:border-color .15s;
           font-family:'Inter',sans-serif; background:#f8faff; margin-top:10px; }
         .ex-area:focus { border-color:#2563eb; background:white; }
+        .meaning-input { border:1.5px solid #e2e8f0; border-radius:8px; padding:6px 10px;
+          font-size:14px; color:#0f172a; outline:none; transition:border-color .15s;
+          background:#f8faff; width:100%; box-sizing:border-box; margin-top:6px; }
+        .meaning-input:focus { border-color:#2563eb; background:white; }
         #mv-search:focus { border-color:#2563eb !important; outline:none; }
+        .meaning-edit-btn { background:none; border:none; cursor:pointer; font-size:12px; padding:2px 6px;
+          border-radius:6px; color:#cbd5e1; transition:all .15s; flex-shrink:0; line-height:1; }
+        .meaning-edit-btn:hover { background:#f1f5f9; color:#2563eb; }
       </style>
       <div style="min-height:100vh;background:#f8faff;padding:32px 20px">
         <div style="max-width:860px;margin:0 auto">
@@ -182,9 +193,12 @@ export default async function myVocabPage(app) {
               ${list.map(w => {
                 const key = (w.word || '').toLowerCase().trim()
                 const ex  = exMap[key] || ''
-                const isEditing = editingWord === key
+                const isEditing        = editingWord === key
+                const isMeaningEditing = editingMeaning === key
+                const displayMeaning   = meaningMap[key] || w.meaning || '—'
+                const safeKey          = key.replace(/\s+/g,'-')
 
-                return `<div class="vocab-row" id="vrow-${key.replace(/\s+/g,'-')}">
+                return `<div class="vocab-row" id="vrow-${safeKey}">
                   <div class="vocab-main">
                     ${w.source === 'chinese'
                       ? `<div style="font-size:28px;font-weight:800;color:#0f172a;min-width:44px;text-align:center;font-family:serif">${w.char || w.word}</div>`
@@ -192,8 +206,11 @@ export default async function myVocabPage(app) {
                     }
                     <div style="flex:1;min-width:0">
                       ${w.source === 'chinese' && w.pinyin ? `<div style="font-size:13px;color:#f97316;font-weight:600;margin-bottom:2px">${w.pinyin}</div>` : ''}
-                      <div style="font-size:14px;color:#475569;line-height:1.4">${w.meaning || '—'}</div>
-                      ${!isEditing && ex ? `<div style="font-size:13px;color:#64748b;font-style:italic;margin-top:4px;line-height:1.5">📝 ${ex}</div>` : ''}
+                      <div style="display:flex;align-items:center;gap:4px">
+                        <div style="font-size:14px;color:#475569;line-height:1.4">${displayMeaning}</div>
+                        <button class="meaning-edit-btn" onclick="mvEditMeaning('${escAttr(key)}')" title="Sửa nghĩa">✏</button>
+                      </div>
+                      ${!isEditing && !isMeaningEditing && ex ? `<div style="font-size:13px;color:#64748b;font-style:italic;margin-top:4px;line-height:1.5">📝 ${ex}</div>` : ''}
                     </div>
                     <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;flex-shrink:0;
                       background:${w.source==='chinese'?'#fff7ed':'#eff6ff'};
@@ -202,18 +219,42 @@ export default async function myVocabPage(app) {
                     </span>
                     <button class="speak-btn" onclick="mvSpeak('${escAttr(w.word)}','${w.source==='chinese'?'zh-CN':'en-US'}')" title="Nghe">🔊</button>
                     <button class="edit-btn" onclick="mvEditEx('${escAttr(key)}')" title="${ex ? 'Sửa ví dụ' : 'Thêm ví dụ'}">
-                      ${isEditing ? '✕' : (ex ? '✏️' : '＋')}
+                      ${isEditing ? '✕' : (ex ? '📝' : '＋')}
                     </button>
                   </div>
+
+                  ${isMeaningEditing ? `
+                    <div style="margin-top:8px">
+                      <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px;margin-bottom:4px">
+                        NGHĨA CỦA TỪ — Enter để lưu, Esc để huỷ
+                      </div>
+                      <input id="meaning-input-${safeKey}" class="meaning-input" type="text"
+                        value="${escAttr(editingMeaningVal)}"
+                        placeholder="Nhập nghĩa của từ..."
+                        onkeydown="if(event.key==='Enter'){event.preventDefault();mvSaveMeaning('${escAttr(key)}')}else if(event.key==='Escape'){mvCancelMeaning()}"
+                      />
+                      <div style="display:flex;gap:8px;margin-top:8px">
+                        <button onclick="mvSaveMeaning('${escAttr(key)}')" ${saving?'disabled':''}
+                          style="padding:7px 20px;border-radius:8px;border:none;cursor:pointer;background:#2563eb;
+                            color:white;font-size:13px;font-weight:700;opacity:${saving?'.6':'1'}">
+                          ${saving ? '...' : '💾 Lưu'}
+                        </button>
+                        <button onclick="mvCancelMeaning()"
+                          style="padding:7px 14px;border-radius:8px;border:none;cursor:pointer;background:#f1f5f9;
+                            color:#64748b;font-size:13px;font-weight:600">
+                          Huỷ
+                        </button>
+                      </div>
+                    </div>` : ''}
 
                   ${isEditing ? `
                     <div style="margin-top:10px">
                       <div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px;margin-bottom:4px">
                         CÂU VÍ DỤ — gõ xong nhấn Lưu hoặc Enter
                       </div>
-                      <textarea id="ex-input-${key.replace(/\s+/g,'-')}" class="ex-area" rows="2"
+                      <textarea id="ex-input-${safeKey}" class="ex-area" rows="2"
                         placeholder='Ví dụ: "The doctor gave me a prescription."'
-                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();mvSaveEx('${escAttr(key)}')}"
+                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();mvSaveEx('${escAttr(key)}')}else if(event.key==='Escape'){mvCancelEx()}"
                       >${editingEx}</textarea>
                       <div style="display:flex;gap:8px;margin-top:8px">
                         <button onclick="mvSaveEx('${escAttr(key)}')" ${saving?'disabled':''}
@@ -240,10 +281,13 @@ export default async function myVocabPage(app) {
         </div>
       </div>`
 
-    // Focus textarea if editing
     if (editingWord) {
       const ta = document.getElementById(`ex-input-${editingWord.replace(/\s+/g,'-')}`)
       if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length) }
+    }
+    if (editingMeaning) {
+      const inp = document.getElementById(`meaning-input-${editingMeaning.replace(/\s+/g,'-')}`)
+      if (inp) { inp.focus(); inp.select() }
     }
   }
 
@@ -254,12 +298,57 @@ export default async function myVocabPage(app) {
 
   window.mvEditEx = key => {
     if (editingWord === key) { editingWord = null; editingEx = ''; render(); return }
-    editingWord = key
-    editingEx   = exMap[key] || ''
+    editingWord    = key
+    editingEx      = exMap[key] || ''
+    editingMeaning = null; editingMeaningVal = ''
     render()
   }
 
   window.mvCancelEx = () => { editingWord = null; editingEx = ''; render() }
+
+  window.mvEditMeaning = key => {
+    if (editingMeaning === key) { editingMeaning = null; editingMeaningVal = ''; render(); return }
+    editingMeaning    = key
+    editingMeaningVal = meaningMap[key] || (() => {
+      const all = [...toeicWords, ...chineseWords]
+      return all.find(x => (x.word || '').toLowerCase().trim() === key)?.meaning || ''
+    })()
+    editingWord = null; editingEx = ''
+    render()
+  }
+
+  window.mvCancelMeaning = () => { editingMeaning = null; editingMeaningVal = ''; render() }
+
+  window.mvSaveMeaning = async (key) => {
+    const inp = document.getElementById(`meaning-input-${key.replace(/\s+/g,'-')}`)
+    const val = (inp?.value ?? editingMeaningVal).trim()
+    if (!val) { window.mvCancelMeaning(); return }
+    saving = true; render()
+
+    let deckId = deckIdMap[key] || defaultDeckId
+    if (!deckId) {
+      const { data: nd } = await supabase.from('vocab_decks')
+        .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select().single()
+      if (nd) { defaultDeckId = nd.id; deckId = nd.id }
+    }
+
+    const allWords = [...toeicWords, ...chineseWords]
+    const w = allWords.find(x => (x.word || '').toLowerCase().trim() === key)
+    const displayWord = w?.word || key
+
+    if (deckId) {
+      await supabase.from('vocab_deck_items').upsert(
+        { deck_id: deckId, user_id: uid, word: displayWord, meaning: val, example: exMap[key] || '' },
+        { onConflict: 'deck_id,word' }
+      )
+      meaningMap[key] = val
+      deckIdMap[key]  = deckId
+      if (w) w.meaning = val
+    }
+
+    saving = false; editingMeaning = null; editingMeaningVal = ''
+    render()
+  }
 
   window.mvSaveEx = async (key) => {
     const ta = document.getElementById(`ex-input-${key.replace(/\s+/g,'-')}`)
@@ -281,7 +370,8 @@ export default async function myVocabPage(app) {
 
     if (deckId) {
       await supabase.from('vocab_deck_items').upsert(
-        { deck_id: deckId, user_id: uid, word: displayWord, meaning: w?.meaning || '', example: val },
+        { deck_id: deckId, user_id: uid, word: displayWord,
+          meaning: meaningMap[key] || w?.meaning || '', example: val },
         { onConflict: 'deck_id,word' }
       )
       exMap[key]     = val
