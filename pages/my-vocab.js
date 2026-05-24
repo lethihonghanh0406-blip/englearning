@@ -10,15 +10,14 @@ export default async function myVocabPage(app) {
   let search      = ''
   let toeicWords  = []
   let chineseWords = []
-  let editingWord    = null  // key being edited (example)
+  let editingWord    = null
   let editingEx      = ''
-  let editingMeaning = null  // key being edited (meaning)
+  let editingMeaning = null
   let editingMeaningVal = ''
   let saving      = false
-  const exMap      = {}     // word.lower → example string
-  const meaningMap = {}     // word.lower → custom meaning
-  const imageMap   = {}     // word.lower → image url
-  const deckIdMap  = {}     // word.lower → deck_id
+  const exMap      = {}
+  const meaningMap = {}
+  const deckIdMap  = {}
   let defaultDeckId = null
 
   app.innerHTML = `
@@ -26,7 +25,6 @@ export default async function myVocabPage(app) {
       <div style="color:#64748b;font-size:14px">Đang tải từ vựng...</div>
     </div>`
 
-  // ── Load all sources in parallel ───────────────────────────────────────────
   const [{ data: srsRows }, { data: learnedRows }, { data: deckItems }, { data: decks }] = await Promise.all([
     supabase.from('user_vocab_srs')
       .select('vocab_id, word, meaning, last_reviewed_at').eq('user_id', uid)
@@ -34,25 +32,22 @@ export default async function myVocabPage(app) {
     supabase.from('user_vocab_learned')
       .select('vocab_id, learned_at').eq('user_id', uid),
     supabase.from('vocab_deck_items')
-      .select('word, meaning, example, image_url, deck_id, updated_at').eq('user_id', uid)
+      .select('word, meaning, example, deck_id, updated_at').eq('user_id', uid)
       .order('updated_at', { ascending: false }),
     supabase.from('vocab_decks').select('id, name').eq('user_id', uid).order('created_at').limit(1),
   ])
 
   defaultDeckId = decks?.[0]?.id || null
 
-  // Build example, meaning override, image, deck_id maps from deck items
   for (const r of (deckItems || [])) {
     const key = (r.word || '').toLowerCase().trim()
     if (key) {
       exMap[key]      = r.example || ''
       deckIdMap[key]  = r.deck_id
       if (r.meaning)  meaningMap[key] = r.meaning
-      if (r.image_url) imageMap[key]  = r.image_url
     }
   }
 
-  // Fetch question_vocab details for vocab_ids
   const allVocabIds = [...new Set([
     ...(srsRows || []).filter(r => r.vocab_id).map(r => r.vocab_id),
     ...(learnedRows || []).filter(r => r.vocab_id).map(r => r.vocab_id),
@@ -64,7 +59,6 @@ export default async function myVocabPage(app) {
     for (const v of (vocabRows || [])) vocabMap[v.id] = v
   }
 
-  // Merge sources, dedup by lowercase word
   const seen = new Set()
   const pushWord = (word, meaning, ts) => {
     const key = (word || '').toLowerCase().trim()
@@ -83,7 +77,6 @@ export default async function myVocabPage(app) {
   for (const r of (deckItems || [])) pushWord(r.word, r.meaning, r.updated_at)
   toeicWords.sort((a, b) => new Date(b.learned_at || 0) - new Date(a.learned_at || 0))
 
-  // Chinese
   const { data: chineseRows } = await supabase
     .from('chinese_srs').select('chinese_vocab_id, last_reviewed_at')
     .eq('user_id', uid).order('last_reviewed_at', { ascending: false })
@@ -98,7 +91,6 @@ export default async function myVocabPage(app) {
     })).sort((a, b) => new Date(b.last_reviewed_at) - new Date(a.last_reviewed_at))
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
   function getFiltered() {
     let list = tab === 'toeic' ? toeicWords : tab === 'chinese' ? chineseWords : [...toeicWords, ...chineseWords]
     if (search.trim()) {
@@ -122,7 +114,6 @@ export default async function myVocabPage(app) {
 
   function escAttr(s) { return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   function render() {
     const list  = getFiltered()
     const total = toeicWords.length + chineseWords.length
@@ -156,15 +147,6 @@ export default async function myVocabPage(app) {
         .meaning-edit-btn { background:none; border:none; cursor:pointer; font-size:12px; padding:2px 6px;
           border-radius:6px; color:#cbd5e1; transition:all .15s; flex-shrink:0; line-height:1; }
         .meaning-edit-btn:hover { background:#f1f5f9; color:#2563eb; }
-        .img-btn { background:none; border:none; cursor:pointer; font-size:16px; padding:4px 8px;
-          border-radius:8px; color:#94a3b8; transition:all .15s; flex-shrink:0; }
-        .img-btn:hover { background:#f1f5f9; color:#2563eb; }
-        .vocab-img { width:100%; max-width:220px; border-radius:10px; object-fit:cover; height:140px;
-          margin-top:10px; box-shadow:0 2px 8px rgba(0,0,0,.1); display:block; }
-        .img-grid { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-        .img-choice { width:90px; height:70px; object-fit:cover; border-radius:8px; cursor:pointer;
-          border:2px solid transparent; transition:all .15s; }
-        .img-choice:hover { border-color:#2563eb; transform:scale(1.04); }
       </style>
       <div style="min-height:100vh;background:#f8faff;padding:32px 20px">
         <div style="max-width:860px;margin:0 auto">
@@ -204,7 +186,6 @@ export default async function myVocabPage(app) {
               ${list.map(w => {
                 const key = (w.word || '').toLowerCase().trim()
                 const ex  = exMap[key] || ''
-                const img = imageMap[key] || ''
                 const isEditing        = editingWord === key
                 const isMeaningEditing = editingMeaning === key
                 const displayMeaning   = meaningMap[key] || w.meaning || '—'
@@ -230,25 +211,9 @@ export default async function myVocabPage(app) {
                       ${w.source==='chinese'?'中文':'EN'}
                     </span>
                     <button class="speak-btn" onclick="mvSpeak('${escAttr(w.word)}','${w.source==='chinese'?'zh-CN':'en-US'}')" title="Nghe">🔊</button>
-                    <button class="img-btn" onclick="mvToggleImg('${escAttr(key)}','${escAttr(w.word)}',${w.source==='chinese'})" title="${img ? 'Đổi ảnh' : 'Tìm ảnh'}">
-                      ${img ? '🖼️' : '📷'}
-                    </button>
                     <button class="edit-btn" onclick="mvEditEx('${escAttr(key)}')" title="${ex ? 'Sửa ví dụ' : 'Thêm ví dụ'}">
                       ${isEditing ? '✕' : (ex ? '📝' : '＋')}
                     </button>
-                  </div>
-
-                  ${img && !isEditing && !isMeaningEditing ? `
-                    <div style="margin-top:10px;position:relative;display:inline-block">
-                      <img src="${img}" class="vocab-img" onerror="this.style.display='none'">
-                      <button onclick="mvRemoveImg('${escAttr(key)}')"
-                        style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.5);border:none;
-                          color:white;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1">✕</button>
-                    </div>` : ''}
-
-                  <div id="imgpicker-${safeKey}" style="display:none">
-                    <div id="imgloading-${safeKey}" style="font-size:13px;color:#94a3b8;margin-top:8px">Đang tìm ảnh...</div>
-                    <div id="imggrid-${safeKey}" class="img-grid"></div>
                   </div>
 
                   ${isMeaningEditing ? `
@@ -319,7 +284,6 @@ export default async function myVocabPage(app) {
     }
   }
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
   window.mvTab    = t => { tab = t; render() }
   window.mvSearch = q => { search = q; render() }
   window.mvSpeak  = (text, lang) => speak(text, lang)
@@ -383,7 +347,6 @@ export default async function myVocabPage(app) {
     const val = (ta?.value || editingEx).trim()
     saving = true; render()
 
-    // Need a deck_id — use existing or create default deck
     let deckId = deckIdMap[key] || defaultDeckId
     if (!deckId) {
       const { data: nd } = await supabase.from('vocab_decks')
@@ -391,7 +354,6 @@ export default async function myVocabPage(app) {
       if (nd) { defaultDeckId = nd.id; deckId = nd.id }
     }
 
-    // Find the display word from toeicWords / chineseWords
     const allWords = [...toeicWords, ...chineseWords]
     const w = allWords.find(x => (x.word || '').toLowerCase().trim() === key)
     const displayWord = w?.word || key
@@ -406,9 +368,7 @@ export default async function myVocabPage(app) {
       deckIdMap[key] = deckId
     }
 
-    saving = false
-    editingWord = null
-    editingEx   = ''
+    saving = false; editingWord = null; editingEx = ''
     render()
   }
 
@@ -420,102 +380,6 @@ export default async function myVocabPage(app) {
       .eq('deck_id', deckId).eq('user_id', uid).eq('word', key)
     exMap[key] = ''
     editingWord = null; editingEx = ''
-    render()
-  }
-
-  // ── Image handlers ─────────────────────────────────────────────────────────
-  const imgPickerOpen = {}  // key → bool
-
-  window.mvToggleImg = async (key, word, isZh) => {
-    const safeKey = key.replace(/\s+/g,'-')
-    const picker  = document.getElementById(`imgpicker-${safeKey}`)
-    if (!picker) return
-    const isOpen = picker.style.display === 'block'
-    if (isOpen) { picker.style.display = 'none'; return }
-    picker.style.display = 'block'
-
-    const grid    = document.getElementById(`imggrid-${safeKey}`)
-    const loading = document.getElementById(`imgloading-${safeKey}`)
-    grid.innerHTML    = ''
-    loading.style.display = 'block'
-    loading.textContent   = 'Đang tìm ảnh...'
-
-    try {
-      const lang   = isZh ? 'zh' : 'en'
-      const apiUrl = `https://${lang}.wikipedia.org/w/api.php?` + new URLSearchParams({
-        action: 'query', titles: word, prop: 'pageimages|pageterms',
-        piprop: 'thumbnail', pithumbsize: 400, format: 'json', origin: '*',
-      })
-      const res   = await fetch(apiUrl)
-      const data  = await res.json()
-      const pages = Object.values(data.query?.pages || {})
-      const imgUrl = pages[0]?.thumbnail?.source
-
-      loading.style.display = 'none'
-      if (imgUrl) {
-        grid.innerHTML = `<img src="${imgUrl}" class="img-choice"
-          style="width:140px;height:110px"
-          onclick="mvPickImg('${escAttr(key)}','${escAttr(imgUrl)}')"
-          title="Wikipedia – ${escAttr(word)}">`
-      } else {
-        // fallback: Wikimedia Commons search
-        const commonsUrl = `https://commons.wikimedia.org/w/api.php?` + new URLSearchParams({
-          action: 'query', list: 'search', srsearch: word, srnamespace: 6,
-          srlimit: 6, format: 'json', origin: '*',
-        })
-        const cr   = await fetch(commonsUrl)
-        const cd   = await cr.json()
-        const files = (cd.query?.search || []).filter(f => /\.(jpg|jpeg|png|webp)/i.test(f.title))
-        if (files.length) {
-          grid.innerHTML = files.map(f => {
-            const fname = f.title.replace('File:', '')
-            const thumb = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fname)}?width=200`
-            const full  = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fname)}`
-            return `<img src="${thumb}" class="img-choice"
-              onclick="mvPickImg('${escAttr(key)}','${escAttr(full)}')"
-              title="${escAttr(f.title)}"
-              onerror="this.style.display='none'">`
-          }).join('')
-        } else {
-          grid.innerHTML = `<span style="font-size:13px;color:#94a3b8">Không tìm thấy ảnh cho từ "<strong>${word}</strong>"</span>`
-        }
-      }
-    } catch(e) {
-      loading.style.display = 'none'
-      grid.innerHTML = `<span style="font-size:13px;color:#ef4444">Lỗi kết nối: ${e.message}</span>`
-    }
-  }
-
-  window.mvPickImg = async (key, url) => {
-    let deckId = deckIdMap[key] || defaultDeckId
-    if (!deckId) {
-      const { data: nd } = await supabase.from('vocab_decks')
-        .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select().single()
-      if (nd) { defaultDeckId = nd.id; deckId = nd.id }
-    }
-    const allWords = [...toeicWords, ...chineseWords]
-    const w = allWords.find(x => (x.word || '').toLowerCase().trim() === key)
-    const displayWord = w?.word || key
-    if (deckId) {
-      await supabase.from('vocab_deck_items').upsert(
-        { deck_id: deckId, user_id: uid, word: displayWord,
-          meaning: meaningMap[key] || w?.meaning || '', example: exMap[key] || '', image_url: url },
-        { onConflict: 'deck_id,word' }
-      )
-      imageMap[key]  = url
-      deckIdMap[key] = deckId
-    }
-    render()
-  }
-
-  window.mvRemoveImg = async (key) => {
-    const deckId = deckIdMap[key]
-    if (!deckId) return
-    await supabase.from('vocab_deck_items')
-      .update({ image_url: '' })
-      .eq('deck_id', deckId).eq('user_id', uid)
-      .ilike('word', key)
-    imageMap[key] = ''
     render()
   }
 
