@@ -18,6 +18,7 @@ export default async function myVocabPage(app) {
   const exMap      = {}
   const meaningMap = {}
   const deckIdMap  = {}
+  const deckWordMap = {}  // word.lower → exact word string stored in DB
   let defaultDeckId = null
 
   app.innerHTML = `
@@ -41,10 +42,13 @@ export default async function myVocabPage(app) {
 
   for (const r of (deckItems || [])) {
     const key = (r.word || '').toLowerCase().trim()
-    if (key) {
-      exMap[key]      = r.example || ''
-      deckIdMap[key]  = r.deck_id
-      if (r.meaning)  meaningMap[key] = r.meaning
+    if (!key) continue
+    // Chỉ lấy row đầu tiên (mới nhất) cho mỗi key
+    if (!deckIdMap[key]) {
+      exMap[key]       = r.example || ''
+      deckIdMap[key]   = r.deck_id
+      deckWordMap[key] = r.word          // lưu chính xác chuỗi trong DB
+      if (r.meaning)   meaningMap[key]  = r.meaning
     }
   }
 
@@ -317,24 +321,51 @@ export default async function myVocabPage(app) {
     if (!val) { window.mvCancelMeaning(); return }
     saving = true; render()
 
-    let deckId = deckIdMap[key] || defaultDeckId
-    if (!deckId) {
-      const { data: nd } = await supabase.from('vocab_decks')
-        .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select().single()
-      if (nd) { defaultDeckId = nd.id; deckId = nd.id }
-    }
-
-    const allWords = [...toeicWords, ...chineseWords]
-    const w = allWords.find(x => (x.word || '').toLowerCase().trim() === key)
+    const allWords   = [...toeicWords, ...chineseWords]
+    const w          = allWords.find(x => (x.word || '').toLowerCase().trim() === key)
     const displayWord = w?.word || key
 
-    if (deckId) {
-      await supabase.from('vocab_deck_items').upsert(
-        { deck_id: deckId, user_id: uid, word: displayWord, meaning: val, example: exMap[key] || '' },
-        { onConflict: 'deck_id,word' }
-      )
+    let saved = false
+
+    if (deckIdMap[key]) {
+      // Row already exists — UPDATE bằng exact word trong DB
+      const { error } = await supabase.from('vocab_deck_items')
+        .update({ meaning: val })
+        .eq('user_id', uid).eq('deck_id', deckIdMap[key]).eq('word', deckWordMap[key] || displayWord)
+      if (!error) saved = true
+      else console.error('update meaning error:', error)
+    }
+
+    if (!saved) {
+      // Chưa có row — cần deck rồi INSERT
+      let deckId = defaultDeckId
+      if (!deckId) {
+        const { data: nd, error: de } = await supabase.from('vocab_decks')
+          .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select('id').single()
+        if (nd) { defaultDeckId = nd.id; deckId = nd.id }
+        else console.error('create deck error:', de)
+      }
+      if (deckId) {
+        const { error } = await supabase.from('vocab_deck_items')
+          .insert({ deck_id: deckId, user_id: uid, word: displayWord, meaning: val, example: exMap[key] || '' })
+        if (!error) {
+          deckIdMap[key]   = deckId
+          deckWordMap[key] = displayWord
+          saved = true
+        } else {
+          // Có thể row đã tồn tại (case khác) — thử upsert
+          const { error: e2 } = await supabase.from('vocab_deck_items').upsert(
+            { deck_id: deckId, user_id: uid, word: displayWord, meaning: val, example: exMap[key] || '' },
+            { onConflict: 'deck_id,word' }
+          )
+          if (!e2) { deckIdMap[key] = deckId; deckWordMap[key] = displayWord; saved = true }
+          else console.error('upsert meaning error:', e2)
+        }
+      }
+    }
+
+    if (saved) {
       meaningMap[key] = val
-      deckIdMap[key]  = deckId
       if (w) w.meaning = val
     }
 
@@ -343,31 +374,50 @@ export default async function myVocabPage(app) {
   }
 
   window.mvSaveEx = async (key) => {
-    const ta = document.getElementById(`ex-input-${key.replace(/\s+/g,'-')}`)
+    const ta  = document.getElementById(`ex-input-${key.replace(/\s+/g,'-')}`)
     const val = (ta?.value || editingEx).trim()
     saving = true; render()
 
-    let deckId = deckIdMap[key] || defaultDeckId
-    if (!deckId) {
-      const { data: nd } = await supabase.from('vocab_decks')
-        .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select().single()
-      if (nd) { defaultDeckId = nd.id; deckId = nd.id }
-    }
-
-    const allWords = [...toeicWords, ...chineseWords]
-    const w = allWords.find(x => (x.word || '').toLowerCase().trim() === key)
+    const allWords    = [...toeicWords, ...chineseWords]
+    const w           = allWords.find(x => (x.word || '').toLowerCase().trim() === key)
     const displayWord = w?.word || key
+    const curMeaning  = meaningMap[key] || w?.meaning || ''
 
-    if (deckId) {
-      await supabase.from('vocab_deck_items').upsert(
-        { deck_id: deckId, user_id: uid, word: displayWord,
-          meaning: meaningMap[key] || w?.meaning || '', example: val },
-        { onConflict: 'deck_id,word' }
-      )
-      exMap[key]     = val
-      deckIdMap[key] = deckId
+    let saved = false
+
+    if (deckIdMap[key]) {
+      const { error } = await supabase.from('vocab_deck_items')
+        .update({ example: val })
+        .eq('user_id', uid).eq('deck_id', deckIdMap[key]).eq('word', deckWordMap[key] || displayWord)
+      if (!error) saved = true
+      else console.error('update example error:', error)
     }
 
+    if (!saved) {
+      let deckId = defaultDeckId
+      if (!deckId) {
+        const { data: nd } = await supabase.from('vocab_decks')
+          .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select('id').single()
+        if (nd) { defaultDeckId = nd.id; deckId = nd.id }
+      }
+      if (deckId) {
+        const { error } = await supabase.from('vocab_deck_items')
+          .insert({ deck_id: deckId, user_id: uid, word: displayWord, meaning: curMeaning, example: val })
+        if (!error) {
+          deckIdMap[key]   = deckId
+          deckWordMap[key] = displayWord
+          saved = true
+        } else {
+          const { error: e2 } = await supabase.from('vocab_deck_items').upsert(
+            { deck_id: deckId, user_id: uid, word: displayWord, meaning: curMeaning, example: val },
+            { onConflict: 'deck_id,word' }
+          )
+          if (!e2) { deckIdMap[key] = deckId; deckWordMap[key] = displayWord; saved = true }
+        }
+      }
+    }
+
+    if (saved) exMap[key] = val
     saving = false; editingWord = null; editingEx = ''
     render()
   }
