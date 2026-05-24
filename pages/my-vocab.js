@@ -49,15 +49,18 @@ export default async function myVocabPage(app) {
 
   defaultDeckId = decks?.[0]?.id || null
 
+  const isZhWord = w => /[一-鿿]/.test(w || '')
+
   for (const r of (deckItems || [])) {
     const key = (r.word || '').toLowerCase().trim()
-    if (!key) continue
-    // Chỉ lấy row đầu tiên (mới nhất) cho mỗi key
-    if (!deckIdMap[key]) {
-      exMap[key]       = r.example || ''
-      deckIdMap[key]   = r.deck_id
-      deckWordMap[key] = r.word          // lưu chính xác chuỗi trong DB
-      if (r.meaning)   meaningMap[key]  = r.meaning
+    if (!key || deckIdMap[key]) continue
+    deckIdMap[key]   = r.deck_id
+    deckWordMap[key] = r.word
+    if (r.meaning) meaningMap[key] = r.meaning
+    if (isZhWord(r.word)) {
+      // example field dùng để lưu pinyin cho từ Trung thêm tay
+    } else {
+      exMap[key] = r.example || ''
     }
   }
 
@@ -87,7 +90,24 @@ export default async function myVocabPage(app) {
     const v = r.vocab_id ? vocabMap[r.vocab_id] : null
     if (v) pushWord(v.word, v.meaning, r.learned_at, v.id)
   }
-  for (const r of (deckItems || [])) pushWord(r.word, r.meaning, r.updated_at)
+  for (const r of (deckItems || [])) {
+    if (isZhWord(r.word)) {
+      // Từ Trung lưu trong deck → thêm vào chineseWords
+      const key = (r.word || '').toLowerCase().trim()
+      if (key && !seen.has(key)) {
+        seen.add(key)
+        chineseWords.push({
+          char: r.word, word: r.word,
+          pinyin: r.example || '',   // pinyin lưu trong example field
+          meaning: r.meaning || '', vi: r.meaning || '',
+          source: 'chinese', last_reviewed_at: r.updated_at,
+          fromDeck: true,
+        })
+      }
+    } else {
+      pushWord(r.word, r.meaning, r.updated_at)
+    }
+  }
   toeicWords.sort((a, b) => new Date(b.learned_at || 0) - new Date(a.learned_at || 0))
 
   const { data: chineseRows } = await supabase
@@ -99,10 +119,16 @@ export default async function myVocabPage(app) {
       .from('chinese_vocab').select('id, char, pinyin, vi').in('id', chineseIds)
     const srsMap = {}
     for (const r of chineseRows) srsMap[r.chinese_vocab_id] = r
-    chineseWords = (cvRows || []).map(v => ({
+    const srsWords = (cvRows || []).map(v => ({
       ...v, word: v.char, meaning: v.vi, ...srsMap[v.id], source: 'chinese'
-    })).sort((a, b) => new Date(b.last_reviewed_at) - new Date(a.last_reviewed_at))
+    }))
+    // Merge với từ Trung từ deck (tránh trùng)
+    for (const w of srsWords) {
+      const key = (w.word || '').toLowerCase().trim()
+      if (!seen.has(key)) { seen.add(key); chineseWords.push(w) }
+    }
   }
+  chineseWords.sort((a, b) => new Date(b.last_reviewed_at || 0) - new Date(a.last_reviewed_at || 0))
 
   function getFiltered() {
     let list = tab === 'toeic' ? toeicWords : tab === 'chinese' ? chineseWords : [...toeicWords, ...chineseWords]
@@ -404,10 +430,22 @@ export default async function myVocabPage(app) {
     if (!w) return
 
     if (source === 'chinese') {
-      // Xoá khỏi chinese_srs (giữ lại chinese_vocab vì dùng chung)
-      await supabase.from('chinese_srs')
-        .delete().eq('user_id', uid).eq('chinese_vocab_id', w.id)
+      if (w.fromDeck) {
+        // Từ Trung thêm tay → xoá khỏi vocab_deck_items
+        if (deckIdMap[key]) {
+          await supabase.from('vocab_deck_items')
+            .delete().eq('user_id', uid).eq('deck_id', deckIdMap[key])
+            .eq('word', deckWordMap[key] || w.word)
+          delete deckIdMap[key]; delete deckWordMap[key]
+          delete meaningMap[key]
+        }
+      } else {
+        // Từ Trung từ chinese_srs
+        await supabase.from('chinese_srs')
+          .delete().eq('user_id', uid).eq('chinese_vocab_id', w.id)
+      }
       chineseWords = chineseWords.filter(x => x !== w)
+      seen.delete(key)
     } else {
       const displayWord = w.word
       // Xoá khỏi user_vocab_srs
@@ -454,28 +492,29 @@ export default async function myVocabPage(app) {
     addSaving = true; render()
 
     if (addLang === 'zh') {
-      // Thêm vào chinese_vocab + chinese_srs
-      const { data: cv, error: cvErr } = await supabase.from('chinese_vocab')
-        .insert({ char: word, pinyin, vi: meaning }).select('id').single()
-
-      if (!cvErr && cv) {
-        await supabase.from('chinese_srs').upsert(
-          { user_id: uid, chinese_vocab_id: cv.id, last_reviewed_at: new Date().toISOString() },
-          { onConflict: 'user_id,chinese_vocab_id' }
-        )
-        chineseWords.unshift({
-          id: cv.id, char: word, word, pinyin, meaning, vi: meaning,
-          source: 'chinese', last_reviewed_at: new Date().toISOString()
-        })
-      } else {
-        console.error('add chinese error:', cvErr)
-        // Fallback: lưu vào user_vocab_srs nếu chinese_vocab bị restrict
-        await supabase.from('user_vocab_srs')
-          .insert({ user_id: uid, word, meaning })
-        const key = word.toLowerCase().trim()
-        if (!toeicWords.find(x => x.word.toLowerCase() === key)) {
-          toeicWords.unshift({ word, meaning, source: 'toeic', learned_at: new Date().toISOString() })
-        }
+      // Lưu vào vocab_deck_items: word=chữ Hán, meaning=nghĩa, example=pinyin
+      let deckId = defaultDeckId
+      if (!deckId) {
+        const { data: nd } = await supabase.from('vocab_decks')
+          .insert({ user_id: uid, name: '📚 Kho từ vựng' }).select('id').single()
+        if (nd) { defaultDeckId = nd.id; deckId = nd.id }
+      }
+      if (deckId) {
+        const { error } = await supabase.from('vocab_deck_items')
+          .insert({ deck_id: deckId, user_id: uid, word, meaning, example: pinyin })
+        if (!error) {
+          const key = word.toLowerCase().trim()
+          deckIdMap[key]   = deckId
+          deckWordMap[key] = word
+          if (!seen.has(key)) {
+            seen.add(key)
+            chineseWords.unshift({
+              char: word, word, pinyin, meaning, vi: meaning,
+              source: 'chinese', last_reviewed_at: new Date().toISOString(),
+              fromDeck: true,
+            })
+          }
+        } else console.error('add zh error:', error)
       }
     } else {
       // Thêm vào user_vocab_srs (English)
