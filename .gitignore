@@ -4,3 +4,4 @@ scripts/
 node_modules/
 *Tempsb.json
 sb_schema.json
+.supabase-token
