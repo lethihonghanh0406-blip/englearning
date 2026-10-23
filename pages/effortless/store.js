@@ -66,19 +66,23 @@ export function phraseItems(lesson) {
   return (lesson?.phrases || []).map(([en, vi]) => ({ en, vi, slug: lesson.slug, lesson }))
 }
 
-// Speaking patterns: "I'm curious about + N" → key "I'm curious about" must appear in the learner's sentence
+// Speaking patterns: "I'm curious about + N" → key "I'm curious about" must appear in the learner's sentence.
+// An optional 4th field lists the keys explicitly ("weigh|weighs|weighed" = any of them), for structures
+// like "Present perfect + since" where the text before "+" isn't a word the learner says.
 export function patternItems(lesson) {
-  return (lesson?.patterns || []).map(([structure, example, vi]) => ({
-    structure, example, vi, key: structure.split('+')[0].trim(),
-  }))
+  return (lesson?.patterns || []).map(([structure, example, vi, keys]) => {
+    const alts = (keys || structure.split('+')[0]).split('|').map(k => k.trim())
+    return { structure, example, vi, key: alts[0], keys: alts }
+  })
 }
 
 const normSpeech = s => ` ${s.toLowerCase().replace(/[’']/g, "'").replace(/\bi'm\b/g, 'i am').replace(/[^a-z' ]/g, ' ').replace(/\s+/g, ' ').trim()} `
 
 // Did the learner use the pattern, in a sentence of their own?
 export function checkPattern(pattern, sentence) {
-  const s = normSpeech(sentence), key = normSpeech(pattern.key)
-  if (!s.includes(key)) return { ok: false, msg: `Câu chưa có cấu trúc “${pattern.key}”.` }
+  const s = normSpeech(sentence)
+  const key = pattern.keys.map(normSpeech).find(k => s.includes(k))
+  if (!key) return { ok: false, msg: `Câu chưa có cấu trúc “${pattern.key}”.` }
   if (s.trim().split(' ').length < key.trim().split(' ').length + 1) return { ok: false, msg: 'Câu còn thiếu phần sau cấu trúc — hãy nói trọn câu.' }
   if (s === normSpeech(pattern.example)) return { ok: false, msg: 'Câu giống hệt ví dụ — thử đặt một câu của riêng bạn nhé!' }
   return { ok: true, msg: 'Tuyệt! Bạn đã dùng đúng cấu trúc.' }
