@@ -1,5 +1,6 @@
 import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, vocabItems, exampleFor, getState, update,
-         markActivity, setCompleted, lessonProgress, addTime, getSetting, setSetting } from './store.js'
+         markActivity, setCompleted, lessonProgress, addTime, getSetting, setSetting,
+         phraseItems, patternItems, checkPattern, lineForPhrase } from './store.js'
 import { shell, esc, fmt, scene, levelLabel, speak, matchScore, scoreColor, getSR } from './ui.js'
 
 const WAIT_OPTIONS = [0, 5, 10, 15]
@@ -8,7 +9,12 @@ const PLAYER_TEXT = {
   main:  ['Main Audio', 'Nghe trước, hiểu ý chính của câu chuyện.'],
   ms:    ['Mini-Story', 'Nghe câu hỏi và trả lời to thành tiếng.'],
   vocab: ['Vocabulary', 'Nghe giải thích các từ mới trong bài.'],
+  phrases:  ['Main Audio', 'Nghe lại câu chuyện để bắt các cụm từ hay.'],
+  patterns: ['Main Audio', 'Nghe mẫu câu, rồi tự đặt câu của riêng bạn.'],
 }
+const TABS = [['main', '📄 Transcript'], ['ms', '❓ Mini-Story'], ['vocab', '🔤 Từ vựng'], ['phrases', '💬 Cụm từ'], ['patterns', '🗣 Mẫu câu']]
+const AUDIO_FOR = { main: 'main_audio', ms: 'ms_audio', vocab: 'vocab_audio', phrases: 'main_audio', patterns: 'main_audio' }
+const AUDIO_ACT = { main: 'main', ms: 'ms', phrases: 'main', patterns: 'main' }   // activity completed by listening to the end
 
 export default function lessonView({ app, lessons, onLeave }, slug) {
   const lesson = lessons.find(l => l.slug === slug)
@@ -38,12 +44,15 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
   let audioDone = false                           // current tab's audio activity already recorded
 
   const lines = () => tab === 'main' ? mainLines(lesson) : tab === 'ms' ? msLines(lesson) : []
-  const srcFor = t => audioUrl({ main: lesson.main_audio, ms: lesson.ms_audio, vocab: lesson.vocab_audio }[t])
+  const srcFor = t => audioUrl(lesson[AUDIO_FOR[t]])
+  let patState = {}                               // per pattern index: { text, heard, listening, result }
+  let patRec   = null
   const $ = id => document.getElementById(id)
 
   // ── Page ───────────────────────────────────────────────────────────────────
   function render() {
     cancelWait()
+    stopPatRec()
     flushListen()
     cancelAnimationFrame(loopId)
     activeIdx = -1; handledQ = -1; audioOk = true
@@ -83,7 +92,7 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
               </div>
               <div style="display:flex;align-items:center;gap:12px;font-size:12px;font-variant-numeric:tabular-nums">
                 <span id="ee-cur">00:00</span>
-                <input id="ee-seek" type="range" min="0" max="100" step="0.1" value="0" style="flex:1;accent-color:#f97316">
+                <input id="ee-seek" type="range" min="0" max="100" step="0.1" value="0" style="flex:1;accent-color:#2563eb">
                 <span id="ee-dur">--:--</span>
               </div>
               <div id="ee-speeds" style="display:flex;gap:8px;justify-content:center;margin-top:12px">${buildSpeeds()}</div>
@@ -95,7 +104,7 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
           <!-- Content panel -->
           <div class="ee-card" style="padding:14px">
             <div style="display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px">
-              ${[['main', '📄 Transcript'], ['ms', '❓ Mini-Story'], ['vocab', '🔤 Từ vựng']].map(([k, l]) =>
+              ${TABS.map(([k, l]) =>
                 `<button class="ee-pill ${tab === k ? 'on' : ''}" onclick="eeTab('${k}')">${l}</button>`).join('')}
             </div>
             <div id="ee-tools" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:12px 4px 4px">${buildTools()}</div>
@@ -108,7 +117,9 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
           <div class="ee-card" style="padding:16px">
             <div class="ee-h" style="font-size:15px;margin-bottom:10px">Công cụ bài học</div>
             ${toolRow('📄', '#dbeafe', 'Transcript', 'Đọc và nghe theo', `eeTab('main')`)}
-            ${toolRow('🔤', '#ffedd5', 'Từ vựng', 'Học từ mới', `eeTab('vocab')`)}
+            ${toolRow('🔤', '#dbeafe', 'Từ vựng', 'Học từ mới', `eeTab('vocab')`)}
+            ${toolRow('💬', '#e0f2fe', 'Cụm từ hay', 'Cụm từ dùng trong bài', `eeTab('phrases')`)}
+            ${toolRow('🗣', '#fce7f3', 'Mẫu câu', 'Tự đặt câu & luyện nói', `eeTab('patterns')`)}
             ${toolRow('❓', '#dcfce7', 'Mini-Story', 'Luyện phản xạ nói', `eeTab('ms')`)}
             ${toolRow('🎯', '#fef3c7', 'Luyện tập', 'Nghe & trả lời, điền từ…', `navigate('${BASE}/practice?lesson=${encodeURIComponent(slug)}')`)}
             ${toolRow('📝', '#ede9fe', 'Ghi chú', 'Ghi chú của bạn', `document.getElementById('ee-note-text').focus()`)}
@@ -129,7 +140,7 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
           <div class="ee-card" style="padding:16px">
             <div class="ee-h" style="font-size:15px;margin-bottom:8px">Ghi chú</div>
             <textarea id="ee-note-text" rows="3" placeholder="Viết ghi chú cho bài này…"
-              style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:13px;resize:vertical;outline-color:#fdba74"></textarea>
+              style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:13px;resize:vertical;outline-color:#93c5fd"></textarea>
             <button class="ee-btn" style="width:100%;margin-top:8px;padding:8px" onclick="eeAddNote()">Lưu ghi chú</button>
             <div id="ee-notes" style="margin-top:10px">${buildNotes()}</div>
           </div>
@@ -137,23 +148,23 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
       </div>
 
       <div id="ee-wait" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:50;
-        width:min(560px, calc(100% - 32px));background:#fff;border:1px solid #fed7aa;border-radius:16px;padding:16px;
+        width:min(560px, calc(100% - 32px));background:#fff;border:1px solid #bfdbfe;border-radius:16px;padding:16px;
         box-shadow:0 12px 32px rgba(15,23,42,.18)"></div>`)
 
-    audioDone = !!getState().lessons[slug]?.done?.[tab]
-    if (tab === 'vocab') { markActivity(slug, 'vocab'); refreshProgress() }
+    audioDone = !AUDIO_ACT[tab] || !!getState().lessons[slug]?.done?.[AUDIO_ACT[tab]]
+    if (['vocab', 'phrases', 'patterns'].includes(tab)) { markActivity(slug, 'vocab'); refreshProgress() }
     bindAudio()
   }
 
   function buildSpeeds() {
     return SPEEDS.map(s => `<button onclick="eeSpeed(${s})" style="padding:5px 14px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-      background:${s === speed ? '#f97316' : 'rgba(255,255,255,.85)'};color:${s === speed ? '#fff' : '#1e293b'}">${s}×</button>`).join('')
+      background:${s === speed ? '#2563eb' : 'rgba(255,255,255,.85)'};color:${s === speed ? '#fff' : '#1e293b'}">${s}×</button>`).join('')
   }
 
   function roundBtn(size, primary) {
     return `width:${size}px;height:${size}px;border-radius:50%;border:${primary ? 'none' : '2px solid rgba(255,255,255,.8)'};cursor:pointer;
-      background:${primary ? '#f97316' : 'transparent'};color:#fff;font-size:${primary ? 26 : 16}px;display:inline-flex;align-items:center;justify-content:center;
-      ${primary ? 'box-shadow:0 0 0 8px rgba(249,115,22,.25)' : ''}`
+      background:${primary ? '#2563eb' : 'transparent'};color:#fff;font-size:${primary ? 26 : 16}px;display:inline-flex;align-items:center;justify-content:center;
+      ${primary ? 'box-shadow:0 0 0 8px rgba(37,99,235,.25)' : ''}`
   }
 
   function toolRow(icon, bg, title, sub, onclick) {
@@ -192,6 +203,8 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
     const btn = (on, call, label) => `<button class="ee-pill ${on ? 'on' : ''}" style="padding:5px 12px;font-size:12px" onclick="${call}">${label}</button>`
     if (tab === 'main')  return btn(showVI, 'eeToggleVI()', 'Dịch tiếng Việt')
     if (tab === 'vocab') return `<span class="ee-muted">Bấm vào từ để nghe phát âm • ☆ để lưu vào danh sách của bạn</span>`
+    if (tab === 'phrases') return `<span class="ee-muted">Bấm vào cụm từ để nghe • “Nghe trong bài” phát đúng câu có cụm từ đó</span>`
+    if (tab === 'patterns') return `<span class="ee-muted">Nghe câu mẫu, rồi nói hoặc gõ một câu <b>của riêng bạn</b> dùng cấu trúc đó</span>`
     return `
       <span style="font-size:12px;color:var(--ink2);font-weight:600">⏸ Dừng sau câu hỏi:</span>
       ${WAIT_OPTIONS.map(s => btn(waitSec === s, `eeWaitSec(${s})`, s ? `${s}s` : 'Tắt')).join('')}
@@ -202,6 +215,56 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
   }
 
   function buildList() {
+    if (tab === 'phrases') {
+      const saved = new Set(getState().saved)
+      const items = phraseItems(lesson)
+      if (!items.length) return `<div class="ee-muted" style="padding:16px">Bài này chưa có cụm từ.</div>`
+      return items.map((p, i) => {
+        const line = lineForPhrase(lesson, p.en)
+        return `
+          <div class="ee-line" style="align-items:center" onclick="eeSayPhrase(${i})">
+            <span class="ee-play-dot">🔊</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:15px;font-weight:600">${esc(p.en)}</div>
+              <div style="font-size:13px;color:var(--ink2)">${esc(p.vi)}</div>
+              ${line ? `<div style="font-size:12px;color:var(--mute);margin-top:2px"><i>“${esc(line.text)}”</i>
+                <span class="ee-link" style="font-size:12px;margin-left:6px" onclick="event.stopPropagation();eePhraseCtx(${i})">▶ Nghe trong bài (${fmt(line.t)})</span></div>` : ''}
+            </div>
+            <button onclick="event.stopPropagation();eeSavePhrase(${i})" title="Lưu cụm từ" style="border:none;background:none;cursor:pointer;font-size:18px;color:${saved.has(p.en) ? 'var(--o)' : 'var(--mute)'}">${saved.has(p.en) ? '★' : '☆'}</button>
+          </div>`
+      }).join('')
+    }
+    if (tab === 'patterns') {
+      const items = patternItems(lesson)
+      if (!items.length) return `<div class="ee-muted" style="padding:16px">Bài này chưa có mẫu câu.</div>`
+      return items.map((p, i) => {
+        const st = patState[i] || {}
+        return `
+          <div style="border:1px solid var(--line);border-radius:14px;padding:16px;margin:10px 4px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span class="ee-muted" style="font-weight:700">${i + 1}</span>
+              <span style="background:var(--o-soft);color:var(--o2);font-weight:700;padding:6px 12px;border-radius:8px;font-size:15px">${esc(p.structure)}</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+              <button onclick="eeSayPattern(${i})" title="Nghe câu mẫu" class="ee-play-dot" style="border:none;cursor:pointer;width:30px;height:30px;font-size:13px">🔊</button>
+              <div><div style="font-size:15px">${esc(p.example)}</div><div class="ee-muted" style="font-size:13px">${esc(p.vi)}</div></div>
+            </div>
+            <div style="margin-top:14px;border-top:1px dashed var(--line);padding-top:12px">
+              <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px">Đến lượt bạn: đặt một câu khác với “${esc(p.key)}”</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                ${getSR() ? `<button onclick="eePatMic(${i})" title="Nói câu của bạn" style="width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;color:#fff;font-size:16px;
+                  background:${st.listening ? '#dc2626' : 'var(--o)'}">${st.listening ? '■' : '🎤'}</button>` : ''}
+                <input id="ee-pat-${i}" value="${esc(st.text || '')}" placeholder="${getSR() ? '…hoặc gõ câu của bạn' : 'Gõ câu của bạn'}" autocomplete="off"
+                  onkeydown="if(event.key==='Enter')eePatCheck(${i})"
+                  style="flex:1;min-width:180px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;outline-color:#93c5fd">
+                <button class="ee-btn" style="padding:8px 16px" onclick="eePatCheck(${i})">Kiểm tra</button>
+              </div>
+              ${st.listening ? `<div style="font-size:13px;margin-top:8px;color:var(--o2)">${st.heard ? esc(st.heard) : 'Đang nghe…'}</div>` : ''}
+              ${st.result ? `<div style="font-size:13px;margin-top:8px;font-weight:600;color:${st.result.ok ? '#16a34a' : '#d97706'}">${st.result.ok ? '✓' : '•'} ${esc(st.result.msg)}</div>` : ''}
+            </div>
+          </div>`
+      }).join('')
+    }
     if (tab === 'vocab') {
       const saved = new Set(getState().saved)
       return vocabItems(lesson).map((v, i) => `
@@ -256,7 +319,7 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
     const notes = getState().notes.filter(n => n.slug === slug).sort((a, b) => b.at - a.at)
     if (!notes.length) return `<div class="ee-muted">Chưa có ghi chú.</div>`
     return notes.map(n => `
-      <div style="border-top:1px solid #f7efe8;padding:8px 0;font-size:13px;display:flex;gap:8px">
+      <div style="border-top:1px solid #f1f5f9;padding:8px 0;font-size:13px;display:flex;gap:8px">
         <div style="flex:1;min-width:0">
           ${n.t != null ? `<span class="ee-link" style="font-size:12px" onclick="eeGoNote('${n.id}')">${n.tab === 'ms' ? 'Mini-Story' : 'Main'} ${fmt(n.t)}</span> ` : ''}
           <span style="white-space:pre-wrap">${esc(n.text)}</span>
@@ -304,9 +367,9 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
   }
 
   function finishAudio() {
-    if (audioDone || (tab !== 'main' && tab !== 'ms')) return
+    if (audioDone) return
     audioDone = true
-    markActivity(slug, tab)
+    markActivity(slug, AUDIO_ACT[tab])
     refreshProgress()
   }
 
@@ -418,7 +481,7 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
     el.innerHTML = `
       <div style="display:flex;align-items:center;gap:14px">
         <div style="width:54px;height:54px;border-radius:50%;background:var(--o);color:#fff;display:flex;align-items:center;justify-content:center;
-          font-size:22px;font-weight:700;flex-shrink:0;box-shadow:0 0 0 6px #ffedd5">${wait.left}</div>
+          font-size:22px;font-weight:700;flex-shrink:0;box-shadow:0 0 0 6px #dbeafe">${wait.left}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--o2)">ĐẾN LƯỢT BẠN TRẢ LỜI ${useMic ? '🎤' : ''}</div>
           <div style="font-size:16px;font-weight:600;margin-top:2px">${esc(q?.text)}</div>
@@ -451,6 +514,40 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
     fbTimer = setTimeout(() => { if (!wait && $('ee-wait')) $('ee-wait').style.display = 'none' }, 5000)
   }
 
+  // ── Speaking patterns: say your own sentence ───────────────────────────────
+  function patListen(i) {
+    if (patRec) { const was = patRec.i; stopPatRec(); if (was === i) return }
+    const SR = getSR()
+    if (!SR) return
+    $('ee-audio')?.pause()
+    const rec = new SR()
+    rec.lang = 'en-US'; rec.interimResults = true; rec.maxAlternatives = 1
+    patRec = { i, rec, started: Date.now() }
+    patState[i] = { listening: true, heard: '' }
+    rec.onresult = e => {
+      let text = ''
+      for (let k = 0; k < e.results.length; k++) text += e.results[k][0].transcript
+      patState[i].heard = text
+      if (e.results[e.results.length - 1].isFinal) {
+        patState[i] = { text, result: checkPattern(patternItems(lesson)[i], text) }
+        stopPatRec()
+      }
+      updatePanel()
+    }
+    rec.onerror = () => { stopPatRec(); updatePanel() }
+    rec.onend = () => { if (patRec?.rec === rec) { stopPatRec(); updatePanel() } }
+    try { rec.start() } catch {}
+    updatePanel()
+  }
+
+  function stopPatRec() {
+    if (!patRec) return
+    try { patRec.rec.abort() } catch {}
+    addTime('speak', Math.round((Date.now() - patRec.started) / 1000))
+    if (patState[patRec.i]?.listening) patState[patRec.i].listening = false
+    patRec = null
+  }
+
   // ── Notes ──────────────────────────────────────────────────────────────────
   function addNote(text, withTime = true) {
     const audio = $('ee-audio')
@@ -475,6 +572,16 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
     eeReplayQ:   () => { if (!wait) return; const q = wait.q; cancelWait(); playLine(q) },
     eeMoreTime:  () => { if (wait) { wait.left += 5; wait.total += 5; renderWait() } },
     eeSayWord:   i  => speak(vocabItems(lesson)[i]?.word, 0.8),
+    eeSayPhrase: i  => speak(phraseItems(lesson)[i]?.en, 0.85),
+    eeSavePhrase:i  => { const w = phraseItems(lesson)[i].en
+                         update(s => { s.saved = s.saved.includes(w) ? s.saved.filter(x => x !== w) : [...s.saved, w] }); updatePanel() },
+    eePhraseCtx: i  => { const line = lineForPhrase(lesson, phraseItems(lesson)[i].en); const a = $('ee-audio')
+                         if (!line) return
+                         if (a && audioOk) { a.currentTime = line.t; a.play().catch(() => speak(line.text)) } else speak(line.text) },
+    eeSayPattern:i  => speak(patternItems(lesson)[i]?.example, 0.85),
+    eePatCheck:  i  => { const v = $(`ee-pat-${i}`)?.value.trim(); if (!v) return $(`ee-pat-${i}`)?.focus()
+                         patState[i] = { text: v, result: checkPattern(patternItems(lesson)[i], v) }; updatePanel() },
+    eePatMic:    i  => patListen(i),
     eeSave:      i  => { const w = vocabItems(lesson)[i].word
                          update(s => { s.saved = s.saved.includes(w) ? s.saved.filter(x => x !== w) : [...s.saved, w] }); updatePanel() },
     eeComplete:  () => { setCompleted(slug, !lessonProgress(slug).completed); refreshProgress() },
@@ -498,7 +605,7 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
   document.addEventListener('keydown', onKey)
   onLeave(() => {
     document.removeEventListener('keydown', onKey)
-    cancelWait(); flushListen(); cancelAnimationFrame(loopId); clearTimeout(fbTimer)
+    cancelWait(); stopPatRec(); flushListen(); cancelAnimationFrame(loopId); clearTimeout(fbTimer)
     $('ee-audio')?.pause(); speechSynthesis.cancel()
   })
 

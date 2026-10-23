@@ -2,8 +2,8 @@ import { BASE, getState, lessonProgress, nextLesson, streak, totalSeconds, today
 import { shell, esc, scene, thumb, fmtDuration } from './ui.js'
 
 const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
-const C_LISTEN = '#ea580c'
-const C_SPEAK  = '#3b82f6'
+const C_LISTEN = '#2563eb'
+const C_SPEAK  = '#ea580c'
 
 export default function progressView({ app, lessons }) {
   const s = getState()
@@ -31,7 +31,7 @@ export default function progressView({ app, lessons }) {
   shell(app, '/progress', `
     <style>
       .ee-col{position:relative;flex:1;display:flex;justify-content:center;align-items:flex-end;gap:2px;height:${H}px;cursor:default}
-      .ee-col:hover{background:#fbf3ec;border-radius:6px 6px 0 0}
+      .ee-col:hover{background:#f1f5f9;border-radius:6px 6px 0 0}
       .ee-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;
         font-size:12px;padding:8px 10px;border-radius:8px;white-space:nowrap;z-index:5;line-height:1.6}
       .ee-col:hover .ee-tip{display:block}
@@ -59,7 +59,7 @@ export default function progressView({ app, lessons }) {
         <div style="flex:1">
           <div style="position:relative">
             <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none">
-              <div style="border-top:1px dashed #efe6de"></div><div style="border-top:1px dashed #efe6de"></div><div style="border-top:1px solid #e7dbd0"></div>
+              <div style="border-top:1px dashed #e2e8f0"></div><div style="border-top:1px dashed #e2e8f0"></div><div style="border-top:1px solid #cbd5e1"></div>
             </div>
             <div style="display:flex;gap:6px;position:relative">
               ${days.map(d => `
@@ -78,7 +78,7 @@ export default function progressView({ app, lessons }) {
         <summary class="ee-link" style="cursor:pointer">Xem dạng bảng</summary>
         <table style="width:100%;border-collapse:collapse;margin-top:8px">
           <tr style="color:var(--mute);text-align:left"><th style="padding:6px">Ngày</th><th style="padding:6px">Nghe (phút)</th><th style="padding:6px">Nói (phút)</th></tr>
-          ${days.map(d => `<tr style="border-top:1px solid #f7efe8"><td style="padding:6px">${d.label} ${d.date}</td><td style="padding:6px">${d.listen}</td><td style="padding:6px">${d.speak}</td></tr>`).join('')}
+          ${days.map(d => `<tr style="border-top:1px solid #f1f5f9"><td style="padding:6px">${d.label} ${d.date}</td><td style="padding:6px">${d.listen}</td><td style="padding:6px">${d.speak}</td></tr>`).join('')}
         </table>
       </details>
     </div>

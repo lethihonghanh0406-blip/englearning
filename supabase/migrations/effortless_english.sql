@@ -5,6 +5,8 @@
 --   main_story : [[giây, "English", "Tiếng Việt"], ...]
 --   mini_story : [[giây, loại, "text"], ...]   loại: "s" = câu kể, "q" = câu hỏi, "a" = câu trả lời mẫu
 --   vocab      : [["từ", "IPA", "nghĩa"], ...]
+--   patterns   : [["cấu trúc", "ví dụ mới", "nghĩa ví dụ"], ...]   (mẫu câu luyện nói)
+--   phrases    : [["cụm từ tiếng Anh", "nghĩa"], ...]             (cụm từ hay trong bài)
 --   main_audio / ms_audio / vocab_audio : URL đầy đủ, hoặc "bucket/đường-dẫn" trong Supabase Storage (bucket public)
 
 create table if not exists public.effortless_lessons (
@@ -22,6 +24,9 @@ create table if not exists public.effortless_lessons (
   vocab       jsonb not null default '[]',
   created_at  timestamptz default now()
 );
+
+alter table public.effortless_lessons add column if not exists patterns jsonb not null default '[]';
+alter table public.effortless_lessons add column if not exists phrases  jsonb not null default '[]';
 
 alter table public.effortless_lessons enable row level security;
 drop policy if exists "effortless_lessons public read" on public.effortless_lessons;
@@ -445,3 +450,31 @@ on conflict (slug) do update set
   course = excluded.course, lesson_no = excluded.lesson_no, title = excluded.title, level = excluded.level,
   main_audio = excluded.main_audio, ms_audio = excluded.ms_audio, vocab_audio = excluded.vocab_audio,
   main_story = excluded.main_story, mini_story = excluded.mini_story, vocab = excluded.vocab;
+
+-- Bài 1: mẫu câu luyện nói + cụm từ hay
+update public.effortless_lessons set
+  patterns = $j$[
+    ["I'm curious about + N", "I'm curious about Chinese culture.", "Tôi tò mò về văn hóa Trung Quốc."],
+    ["The atmosphere is like + N", "The atmosphere is like a festival.", "Bầu không khí giống như một lễ hội."],
+    ["I find that I + V", "I find that I learn better by listening.", "Tôi nhận ra mình học tốt hơn bằng cách nghe."],
+    ["Instead of + V-ing", "Instead of watching TV, I study English.", "Thay vì xem TV, tôi học tiếng Anh."],
+    ["Appreciate + N", "I appreciate my family.", "Tôi trân trọng gia đình mình."]
+  ]$j$::jsonb,
+  phrases = $j$[
+    ["be curious about something", "Tò mò về điều gì"],
+    ["the atmosphere is like a party", "Bầu không khí giống như một bữa tiệc"],
+    ["sit around the graves", "Ngồi xung quanh các ngôi mộ"],
+    ["clean the graves", "Dọn dẹp mộ"],
+    ["add fresh flowers", "Thêm hoa tươi"],
+    ["admire the beauty of something", "Chiêm ngưỡng vẻ đẹp của điều gì"],
+    ["fly kites", "Thả diều"],
+    ["have a picnic", "Đi dã ngoại, ăn ngoài trời"],
+    ["laugh and smile", "Cười và mỉm cười"],
+    ["find that I prefer something", "Nhận ra rằng mình thích điều gì hơn"],
+    ["the Guatemalan approach", "Cách tiếp cận của người Guatemala"],
+    ["pass away", "Qua đời"],
+    ["acknowledge death", "Thừa nhận và nhìn nhận cái chết"],
+    ["instead of denying it", "Thay vì phủ nhận điều đó"],
+    ["appreciate life", "Trân trọng cuộc sống"]
+  ]$j$::jsonb
+where slug = 'day-of-the-dead';

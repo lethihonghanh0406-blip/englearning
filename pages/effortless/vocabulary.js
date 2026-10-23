@@ -1,11 +1,15 @@
-import { BASE, vocabItems, exampleFor, getState, update, lessonProgress } from './store.js'
+import { BASE, vocabItems, phraseItems, exampleFor, lineForPhrase, getState, update, lessonProgress } from './store.js'
 import { shell, esc, speak } from './ui.js'
 
 export default function vocabView({ app, lessons, params }) {
-  let filter = 'all'                        // all | new | saved
+  let filter = 'all'                        // all | words | phrases | new | saved
   let query  = params.get('q') || ''
   let lessonSlug = params.get('lesson') || ''
-  const all = lessons.flatMap(l => vocabItems(l).map(v => ({ ...v, example: exampleFor(l, v.word) })))
+  // Words and key phrases share one table; phrases have no IPA
+  const all = lessons.flatMap(l => [
+    ...vocabItems(l).map(v => ({ ...v, kind: 'word', example: exampleFor(l, v.word) })),
+    ...phraseItems(l).map(p => ({ word: p.en, ipa: '', vi: p.vi, slug: l.slug, lesson: l, kind: 'phrase', example: lineForPhrase(l, p.en)?.text || '' })),
+  ])
 
   function rows() {
     const s = getState()
@@ -13,6 +17,8 @@ export default function vocabView({ app, lessons, params }) {
     const q = query.trim().toLowerCase()
     return all.filter(v =>
       (!lessonSlug || v.slug === lessonSlug) &&
+      (filter !== 'words'   || v.kind === 'word') &&
+      (filter !== 'phrases' || v.kind === 'phrase') &&
       (filter !== 'saved' || saved.has(v.word)) &&
       (filter !== 'new' || (!saved.has(v.word) && !lessonProgress(v.slug, s).completed)) &&
       (!q || [v.word, v.vi, v.example].some(x => x.toLowerCase().includes(q))))
@@ -24,15 +30,15 @@ export default function vocabView({ app, lessons, params }) {
     if (!list.length) return `<div style="padding:30px;text-align:center" class="ee-muted">Không có từ nào phù hợp.</div>`
     return `
       <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="text-align:left;color:var(--mute);font-size:12px;background:#fbf6f1">
+        <thead><tr style="text-align:left;color:var(--mute);font-size:12px;background:#f8fafc">
           <th style="padding:10px 12px;width:36px">#</th><th style="padding:10px">Từ / Cụm từ</th><th style="padding:10px">IPA</th>
           <th style="padding:10px">Nghĩa</th><th style="padding:10px">Ví dụ</th><th style="padding:10px">Bài</th><th style="width:76px"></th>
         </tr></thead>
         <tbody>
           ${list.map((v, i) => `
-            <tr style="border-top:1px solid #f7efe8">
+            <tr style="border-top:1px solid #f1f5f9">
               <td style="padding:10px 12px;color:var(--mute)">${i + 1}</td>
-              <td style="padding:10px;font-weight:600">${esc(v.word)}</td>
+              <td style="padding:10px;font-weight:600">${esc(v.word)}${v.kind === 'phrase' ? ` <span style="font-size:10px;font-weight:600;color:var(--o2);background:var(--o-soft);padding:1px 6px;border-radius:6px;margin-left:4px">cụm từ</span>` : ''}</td>
               <td style="padding:10px;color:var(--ink2)">${esc(v.ipa)}</td>
               <td style="padding:10px">${esc(v.vi)}</td>
               <td style="padding:10px;color:var(--ink2);font-style:italic">${esc(v.example)}</td>
@@ -47,7 +53,7 @@ export default function vocabView({ app, lessons, params }) {
   }
 
   function buildFilters() {
-    return [['all', 'Tất cả'], ['new', 'Từ mới'], ['saved', `Đã lưu (${getState().saved.length})`]]
+    return [['all', 'Tất cả'], ['words', 'Từ vựng'], ['phrases', 'Cụm từ'], ['new', 'Chưa học'], ['saved', `Đã lưu (${getState().saved.length})`]]
       .map(([k, l]) => `<button class="ee-pill ${filter === k ? 'on' : ''}" onclick="eeVFilter('${k}')">${l}</button>`).join('')
   }
 
@@ -60,7 +66,7 @@ export default function vocabView({ app, lessons, params }) {
     <div class="ee-h" style="font-size:24px;margin-bottom:16px">Từ vựng</div>
     <div class="ee-card" style="padding:16px">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-        <div id="ee-vfilters" style="display:flex;gap:8px">${buildFilters()}</div>
+        <div id="ee-vfilters" style="display:flex;gap:8px;flex-wrap:wrap">${buildFilters()}</div>
         <div style="flex:1"></div>
         <select onchange="eeVLesson(this.value)" style="border:1px solid var(--line);border-radius:999px;padding:7px 12px;font:inherit;font-size:13px;background:#fff">
           <option value="">Tất cả bài</option>

@@ -37,10 +37,10 @@ export default function dashboardView({ app, lessons }) {
           <div style="display:flex;align-items:flex-start">
             ${LEVELS.map(([k, label], i) => `
               <div style="flex:1;text-align:center;position:relative">
-                ${i ? `<div style="position:absolute;top:16px;right:50%;width:100%;border-top:2px dashed #e7d8ca;z-index:0"></div>` : ''}
+                ${i ? `<div style="position:absolute;top:16px;right:50%;width:100%;border-top:2px dashed #cbd5e1;z-index:0"></div>` : ''}
                 <div style="position:relative;z-index:1;width:34px;height:34px;margin:auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;
-                  background:${i === levelIx ? 'var(--o)' : i < levelIx ? '#fed7aa' : '#f1f5f9'};color:${i === levelIx ? '#fff' : 'var(--ink2)'};
-                  ${i === levelIx ? 'box-shadow:0 0 0 5px #ffedd5' : ''}">${i + 1}</div>
+                  background:${i === levelIx ? 'var(--o)' : i < levelIx ? '#bfdbfe' : '#f1f5f9'};color:${i === levelIx ? '#fff' : 'var(--ink2)'};
+                  ${i === levelIx ? 'box-shadow:0 0 0 5px #dbeafe' : ''}">${i + 1}</div>
                 <div style="font-size:13px;margin-top:8px;font-weight:${i === levelIx ? 700 : 500};color:${i === levelIx ? 'var(--o2)' : 'var(--ink2)'}">${label}</div>
                 ${i === levelIx ? `<div class="ee-muted" style="color:var(--o2)">(Bạn đang ở đây)</div>` : ''}
               </div>`).join('')}
@@ -89,7 +89,7 @@ export default function dashboardView({ app, lessons }) {
           ${lessons.slice(0, 4).map(l => {
             const p = lessonProgress(l.slug, s)
             return `
-              <div onclick="${go(l)}" style="display:flex;gap:12px;align-items:center;padding:8px 0;cursor:pointer;border-bottom:1px solid #f7efe8">
+              <div onclick="${go(l)}" style="display:flex;gap:12px;align-items:center;padding:8px 0;cursor:pointer;border-bottom:1px solid #f1f5f9">
                 ${thumb(l, 52, 10)}
                 <div style="flex:1;min-width:0">
                   <div style="font-size:14px;font-weight:600">Bài ${l.lesson_no} · ${esc(l.title)}</div>

@@ -1,4 +1,4 @@
-import { BASE, audioUrl, mainLines, msLines, vocabItems, getState, markActivity, addTime } from './store.js'
+import { BASE, audioUrl, mainLines, msLines, vocabItems, patternItems, checkPattern, getState, markActivity, addTime } from './store.js'
 import { shell, esc, speak, matchScore, scoreColor, getSR } from './ui.js'
 
 const ROUND = 5
@@ -6,6 +6,7 @@ const MODES = [
   ['listen', '🎧 Nghe & trả lời'],
   ['fill',   '✏️ Điền từ'],
   ['mc',     '🔤 Trắc nghiệm'],
+  ['pattern','🗣 Mẫu câu'],
 ]
 
 function shuffle(arr) {
@@ -44,6 +45,7 @@ export default function practiceView({ app, lessons, params, onLeave }) {
       })
       return shuffle(pairs).slice(0, ROUND)
     }
+    if (mode === 'pattern') return shuffle(patternItems(l)).slice(0, ROUND)
     if (mode === 'fill') {
       const heads = vocabItems(l).map(v => v.word.split(' ')[0].toLowerCase().replace(/e$/, '')).filter(h => h.length > 2)
       const ls = mainLines(l).filter(x => x.t > 1)
@@ -122,7 +124,8 @@ export default function practiceView({ app, lessons, params, onLeave }) {
     rec = null
     addTime('speak', Math.round((Date.now() - recStart) / 1000))
     cur.listening = false
-    if (cur.heard) results[idx] = matchScore(cur.heard, items[idx].a.text)
+    if (cur.heard && mode === 'pattern') checkOwnSentence(cur.heard)
+    else if (cur.heard) results[idx] = matchScore(cur.heard, items[idx].a.text)
     renderItem()
   }
 
@@ -171,17 +174,36 @@ export default function practiceView({ app, lessons, params, onLeave }) {
         <div class="ee-muted" style="margin:8px 0 26px 66px;font-size:13px">Nghe câu hỏi và trả lời to thành tiếng.</div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
           <button onclick="eeMic()" style="width:76px;height:76px;border-radius:50%;border:none;cursor:pointer;font-size:30px;color:#fff;
-            background:${cur.listening ? '#dc2626' : 'var(--o)'};box-shadow:0 0 0 ${cur.listening ? 14 : 10}px ${cur.listening ? 'rgba(220,38,38,.18)' : 'rgba(249,115,22,.18)'}">${cur.listening ? '■' : '🎤'}</button>
+            background:${cur.listening ? '#dc2626' : 'var(--o)'};box-shadow:0 0 0 ${cur.listening ? 14 : 10}px ${cur.listening ? 'rgba(220,38,38,.18)' : 'rgba(37,99,235,.18)'}">${cur.listening ? '■' : '🎤'}</button>
           <div style="font-size:14px;min-height:22px;color:${cur.heard ? 'var(--o2)' : 'var(--mute)'}">${cur.heard ? esc(cur.heard) : cur.listening ? 'Đang nghe…' : 'Bấm mic rồi nói câu trả lời'}</div>
           ${score != null && cur.heard ? `<div style="font-weight:700;color:${scoreColor(score)}">${score}% khớp với câu mẫu</div>` : ''}
         </div>
-        <div style="margin-top:22px;border:1px dashed #fdba74;background:#fffaf5;border-radius:12px;padding:14px">
+        <div style="margin-top:22px;border:1px dashed #93c5fd;background:#f8fbff;border-radius:12px;padding:14px">
           ${cur.revealed || score != null
             ? `<div style="font-size:12px;color:var(--o2);font-weight:600">💡 Câu trả lời mẫu</div>
                <div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span style="font-size:15px">${esc(it.a.text)}</span>
                <span class="ee-link" onclick="eePlayA()">🔊 Nghe</span></div>`
             : `<span class="ee-link" onclick="eeHint()">💡 Xem gợi ý</span>`}
         </div>`
+    } else if (mode === 'pattern') {
+      card.innerHTML = `
+        ${head('🗣 Tự đặt câu với mẫu câu')}
+        <div style="display:inline-block;background:var(--o-soft);color:var(--o2);font-weight:700;padding:8px 16px;border-radius:10px;font-size:20px">${esc(it.structure)}</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:16px">
+          <button onclick="eeSayPat()" title="Nghe câu mẫu" style="width:40px;height:40px;border-radius:50%;border:none;background:var(--o-soft);color:var(--o2);font-size:16px;cursor:pointer">🔊</button>
+          <div><div style="font-size:15px"><span class="ee-muted">Ví dụ:</span> ${esc(it.example)}</div><div class="ee-muted" style="font-size:13px">${esc(it.vi)}</div></div>
+        </div>
+        <div style="font-size:14px;font-weight:600;margin:24px 0 10px">Nói hoặc gõ một câu <u>của riêng bạn</u> dùng “${esc(it.key)}”:</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          ${getSR() ? `<button onclick="eeMic()" style="width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;font-size:22px;color:#fff;
+            background:${cur.listening ? '#dc2626' : 'var(--o)'}">${cur.listening ? '■' : '🎤'}</button>` : ''}
+          <input id="ee-ptext" value="${esc(cur.typed || '')}" placeholder="Ví dụ: ${esc(it.key)} …" autocomplete="off"
+            onkeydown="if(event.key==='Enter')eePatSubmit()"
+            style="flex:1;min-width:200px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font:inherit;font-size:15px;outline-color:#93c5fd">
+          <button class="ee-btn" onclick="eePatSubmit()">Kiểm tra</button>
+        </div>
+        ${cur.listening ? `<div style="margin-top:10px;font-size:14px;color:var(--o2)">${cur.heard ? esc(cur.heard) : 'Đang nghe…'}</div>` : ''}
+        ${cur.result ? `<div style="margin-top:14px;font-weight:600;color:${cur.result.ok ? '#16a34a' : '#d97706'}">${cur.result.ok ? '✓' : '•'} ${esc(cur.result.msg)}</div>` : ''}`
     } else if (mode === 'fill') {
       const ok = cur.checked && norm(cur.typed || '') === norm(it.answer)
       const blanked = esc(it.line.text).replace(esc(it.answer), `<span style="display:inline-block;min-width:90px;border-bottom:2px solid var(--o);color:var(--o2);text-align:center">${cur.checked ? esc(it.answer) : '&nbsp;'}</span>`)
@@ -195,7 +217,7 @@ export default function practiceView({ app, lessons, params, onLeave }) {
         <div style="display:flex;gap:10px;margin-top:26px">
           <input id="ee-ftext" value="${esc(cur.typed || '')}" ${cur.checked ? 'disabled' : ''} placeholder="Nhập từ còn thiếu…" autocomplete="off"
             onkeydown="if(event.key==='Enter')eeCheck()"
-            style="flex:1;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font:inherit;font-size:15px;outline-color:#fdba74">
+            style="flex:1;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font:inherit;font-size:15px;outline-color:#93c5fd">
           ${cur.checked ? '' : `<button class="ee-btn" onclick="eeCheck()">Kiểm tra</button>`}
         </div>
         ${cur.checked ? `<div style="margin-top:14px;font-weight:600;color:${ok ? '#16a34a' : '#dc2626'}">${ok ? '✓ Chính xác!' : `✗ Đáp án đúng: ${esc(it.answer)}`}</div>` : ''}`
@@ -239,6 +261,13 @@ export default function practiceView({ app, lessons, params, onLeave }) {
       <button class="ee-btn" onclick="eeRestart()">Luyện lại</button>`
   }
 
+  // Pattern mode: retries allowed, the last attempt counts
+  function checkOwnSentence(text) {
+    cur.typed  = text
+    cur.result = checkPattern(items[idx], text)
+    results[idx] = cur.result.ok ? 100 : 0
+  }
+
   const advance = () => { stopListening(); stopSegment(); idx++; cur = {}; renderItem() }
 
   Object.assign(window, {
@@ -255,6 +284,8 @@ export default function practiceView({ app, lessons, params, onLeave }) {
     eeCheck:   () => { const it = items[idx]; cur.typed = $('ee-ftext').value; if (!cur.typed.trim()) return
                        cur.checked = true; results[idx] = norm(cur.typed) === norm(it.answer) ? 100 : 0; renderItem(); window.eePlayLine() },
     eeSayMc:   () => speak(items[idx].v.word, 0.8),
+    eeSayPat:  () => speak(items[idx].example, 0.85),
+    eePatSubmit: () => { const v = $('ee-ptext')?.value.trim(); if (v) { checkOwnSentence(v); renderItem() } else $('ee-ptext')?.focus() },
     eePick:    i => { cur.picked = i; results[idx] = items[idx].options[i] === items[idx].v.vi ? 100 : 0; renderItem() },
   })
   onLeave(() => { stopListening(); stopSegment() })

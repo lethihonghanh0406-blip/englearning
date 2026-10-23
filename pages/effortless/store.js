@@ -15,7 +15,7 @@ export const LEVELS = [
 export const ACTIVITIES = [
   ['main',     'Main Audio'],
   ['ms',       'Mini-Story'],
-  ['vocab',    'Từ vựng'],
+  ['vocab',    'Từ vựng & mẫu câu'],
   ['practice', 'Luyện tập'],
 ]
 
@@ -54,6 +54,36 @@ export function msLines(lesson) {
 }
 export function vocabItems(lesson) {
   return (lesson?.vocab || []).map(([word, ipa, vi]) => ({ word, ipa, vi, slug: lesson.slug, lesson }))
+}
+
+export function phraseItems(lesson) {
+  return (lesson?.phrases || []).map(([en, vi]) => ({ en, vi, slug: lesson.slug, lesson }))
+}
+
+// Speaking patterns: "I'm curious about + N" → key "I'm curious about" must appear in the learner's sentence
+export function patternItems(lesson) {
+  return (lesson?.patterns || []).map(([structure, example, vi]) => ({
+    structure, example, vi, key: structure.split('+')[0].trim(),
+  }))
+}
+
+const normSpeech = s => ` ${s.toLowerCase().replace(/[’']/g, "'").replace(/\bi'm\b/g, 'i am').replace(/[^a-z' ]/g, ' ').replace(/\s+/g, ' ').trim()} `
+
+// Did the learner use the pattern, in a sentence of their own?
+export function checkPattern(pattern, sentence) {
+  const s = normSpeech(sentence), key = normSpeech(pattern.key)
+  if (!s.includes(key)) return { ok: false, msg: `Câu chưa có cấu trúc “${pattern.key}”.` }
+  if (s.trim().split(' ').length < key.trim().split(' ').length + 1) return { ok: false, msg: 'Câu còn thiếu phần sau cấu trúc — hãy nói trọn câu.' }
+  if (s === normSpeech(pattern.example)) return { ok: false, msg: 'Câu giống hệt ví dụ — thử đặt một câu của riêng bạn nhé!' }
+  return { ok: true, msg: 'Tuyệt! Bạn đã dùng đúng cấu trúc.' }
+}
+
+// Main Story line where a phrase occurs (matches its content words by stem)
+export function lineForPhrase(lesson, phrase) {
+  const stems = phrase.toLowerCase().replace(/\b(something|be|the|a|it|i)\b/g, ' ').split(/\s+/)
+    .filter(w => w.length > 2).map(w => w.slice(0, 4))
+  if (!stems.length) return null
+  return mainLines(lesson).find(l => l.t > 1 && stems.every(st => l.text.toLowerCase().includes(st))) || null
 }
 
 // First Main Story sentence that uses the word (or its first word, for phrases)

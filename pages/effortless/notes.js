@@ -12,7 +12,7 @@ export default function notesView({ app, lessons }) {
           <span class="ee-link" onclick="navigate('${BASE}/lesson/${encodeURIComponent(l.slug)}')">Mở bài →</span>
         </div>
         ${notes.filter(n => n.slug === l.slug).sort((a, b) => b.at - a.at).map(n => `
-          <div style="display:flex;gap:12px;padding:10px 0;border-top:1px solid #f7efe8;font-size:14px">
+          <div style="display:flex;gap:12px;padding:10px 0;border-top:1px solid #f1f5f9;font-size:14px">
             <span class="ee-muted" style="min-width:110px">${new Date(n.at).toLocaleDateString('vi-VN')}${n.t != null ? ` · ${n.tab === 'ms' ? 'MS' : 'Main'} ${fmt(n.t)}` : ''}</span>
             <span style="flex:1;white-space:pre-wrap">${esc(n.text)}</span>
             <span onclick="eeNDel('${n.id}')" style="cursor:pointer;color:var(--mute)" title="Xóa">✕</span>

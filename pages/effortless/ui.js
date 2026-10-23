@@ -24,41 +24,40 @@ const NAV = [
 
 const CSS = `
   #navbar{display:none}   /* this section has its own top bar; the rule leaves with the page */
-  .ee{--o:#f97316;--o2:#ea580c;--o-soft:#fff1e6;--bg:#fdf8f4;--card:#fff;--line:#f1e6dc;--ink:#1e293b;--ink2:#475569;--mute:#94a3b8;--blue:#3b82f6;
+  .ee{--o:#2563eb;--o2:#1d4ed8;--o-soft:#e8f0fe;--bg:#f8faff;--card:#fff;--line:#e2e8f0;--ink:#0f172a;--ink2:#475569;--mute:#64748b;--accent:#f97316;
     font-family:'Inter',sans-serif;color:var(--ink);background:var(--bg);min-height:100vh}
   .ee *{box-sizing:border-box}
   .ee-top{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:24px;padding:0 24px;position:sticky;top:0;z-index:30}
   .ee-brand{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:200px}
-  .ee-logo{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#fb923c,#ea580c);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
-  .ee-brand b{font-family:'Space Grotesk',sans-serif;font-size:18px;display:block;line-height:1.1}
-  .ee-brand small{font-size:10px;color:var(--mute)}
-  .ee-search{flex:1;max-width:460px;display:flex;align-items:center;gap:8px;background:#f8f5f2;border:1px solid var(--line);border-radius:999px;padding:8px 16px}
+  .ee-brand img{height:40px;display:block}
+  .ee-brand small{font-size:11px;font-weight:600;color:var(--o2);background:var(--o-soft);padding:3px 8px;border-radius:6px}
+  .ee-search{flex:1;max-width:460px;display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid var(--line);border-radius:999px;padding:8px 16px}
   .ee-search input{border:none;background:none;outline:none;flex:1;font-size:13px;color:var(--ink)}
   .ee-user{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer}
   .ee-avatar{width:34px;height:34px;border-radius:50%;background:#1e3a5f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
   .ee-body{display:flex;min-height:calc(100vh - 64px)}
-  .ee-side{width:220px;flex-shrink:0;padding:20px 14px;display:flex;flex-direction:column;gap:4px;background:#fffdfb;position:sticky;top:64px;align-self:flex-start}
-  .ee-body{background:linear-gradient(90deg,#fffdfb 220px,var(--line) 220px,var(--line) 221px,transparent 221px)}
+  .ee-side{width:220px;flex-shrink:0;padding:20px 14px;display:flex;flex-direction:column;gap:4px;background:#ffffff;position:sticky;top:64px;align-self:flex-start}
+  .ee-body{background:linear-gradient(90deg,#ffffff 220px,var(--line) 220px,var(--line) 221px,transparent 221px)}
   .ee-nav{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px;color:var(--ink2);font-weight:500;white-space:nowrap}
-  .ee-nav:hover{background:#fbf3ec}
+  .ee-nav:hover{background:#f1f5f9}
   .ee-nav.on{background:var(--o-soft);color:var(--o2);font-weight:600}
-  .ee-side-card{margin-top:24px;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#fff7ed,#fde7d3);font-size:12px;color:var(--ink2);text-align:center;padding:16px 12px 0}
+  .ee-side-card{margin-top:24px;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#eff6ff,#dbeafe);font-size:12px;color:var(--ink2);text-align:center;padding:16px 12px 0}
   .ee-main{flex:1;min-width:0;padding:24px 28px 120px}
   .ee-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
   .ee-h{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--ink)}
-  .ee-btn{white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;background:var(--o);color:#fff;box-shadow:0 4px 12px rgba(249,115,22,.25)}
+  .ee-btn{white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;background:var(--o);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.25)}
   .ee-btn:hover{background:var(--o2)}
   .ee-btn.ghost{background:#fff;color:var(--ink2);border:1px solid var(--line);box-shadow:none}
   .ee-btn:disabled{opacity:.45;cursor:default}
   .ee-pill{padding:7px 16px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2)}
   .ee-pill.on{background:var(--o);border-color:var(--o);color:#fff}
-  .ee-bar{height:6px;border-radius:3px;background:#f1e6dc;overflow:hidden}
+  .ee-bar{height:6px;border-radius:3px;background:#e2e8f0;overflow:hidden}
   .ee-bar>div{height:100%;background:var(--o);border-radius:3px}
   .ee-link{color:var(--o2);font-size:13px;font-weight:600;cursor:pointer}
   .ee-muted{color:var(--mute);font-size:12px}
   .ee-line{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid transparent}
-  .ee-line:hover{background:#fbf6f1}
-  .ee-line.ee-active{background:var(--o-soft);border-color:#fed7aa}
+  .ee-line:hover{background:#f8fafc}
+  .ee-line.ee-active{background:var(--o-soft);border-color:#bfdbfe}
   .ee-play-dot{width:22px;height:22px;border-radius:50%;background:var(--o-soft);color:var(--o2);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;margin-top:1px}
   .ee-hidden{filter:blur(5px);user-select:none}
   .ee-grid{display:grid;gap:18px}
@@ -86,8 +85,8 @@ export function shell(app, active, content) {
     <div class="ee">
       <div class="ee-top">
         <div class="ee-brand" onclick="navigate('${BASE}')">
-          <div class="ee-logo">🍃</div>
-          <div><b>LearnLang</b><small>Effortless English • Học tự nhiên</small></div>
+          <img src="https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/avatars/logo-full.png" alt="LearnLang">
+          <div><small>Effortless English</small></div>
         </div>
         <form class="ee-search" onsubmit="event.preventDefault();navigate('${BASE}/vocabulary?q='+encodeURIComponent(this.q.value))">
           <span style="color:var(--mute)">🔍</span>
@@ -118,17 +117,17 @@ function hills() {
   return `<svg viewBox="0 0 200 70" style="display:block;width:100%">
     <path d="M0 45 Q40 20 80 40 T160 32 T200 38 V70 H0Z" fill="#a3c9a8"/>
     <path d="M0 55 Q50 35 100 52 T200 48 V70 H0Z" fill="#7fb38a"/>
-    <circle cx="160" cy="18" r="9" fill="#fdba74"/></svg>`
+    <circle cx="160" cy="18" r="9" fill="#93c5fd"/></svg>`
 }
 
 // Sunset + volcano scenery used for the hero and lesson art (no external images)
 export function scene(seed = 0, opts = {}) {
   const skies = [
-    ['#1e3a8a', '#f97316', '#fdba74'],
-    ['#7c2d12', '#ea580c', '#fde68a'],
-    ['#312e81', '#db2777', '#fdba74'],
-    ['#0f766e', '#f59e0b', '#fef3c7'],
-    ['#4c1d95', '#f97316', '#fed7aa'],
+    ['#1e3a8a', '#2563eb', '#93c5fd'],
+    ['#0f172a', '#1d4ed8', '#bfdbfe'],
+    ['#312e81', '#4f46e5', '#c7d2fe'],
+    ['#0c4a6e', '#0284c7', '#bae6fd'],
+    ['#1e40af', '#3b82f6', '#dbeafe'],
   ]
   const [a, b, c] = skies[seed % skies.length]
   const id = `sky${seed}${opts.id || ''}`
@@ -161,7 +160,7 @@ export function speak(text, rate = 0.9) {
 }
 
 export function loading(app) {
-  app.innerHTML = `<div style="min-height:100vh;background:#fdf8f4;display:flex;align-items:center;justify-content:center"><div style="color:#94a3b8;font-size:14px">Đang tải...</div></div>`
+  app.innerHTML = `<div style="min-height:100vh;background:#f8faff;display:flex;align-items:center;justify-content:center"><div style="color:#94a3b8;font-size:14px">Đang tải...</div></div>`
 }
 
 // Word overlap between a spoken answer and the model answer, 0–100
