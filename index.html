@@ -437,7 +437,7 @@ h1{
 .hm-chip span{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center}
 
 /* courses */
-.hm-courses{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.hm-courses{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
 .hm-course{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;
   transition:transform .15s,box-shadow .15s}
 .hm-course:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(15,23,42,.10)}
@@ -499,7 +499,7 @@ h1{
     <div>
       <span class="hm-pill">✨ Nền tảng học ngôn ngữ cho người Việt</span>
       <h1 class="hm-title">Học ngoại ngữ tự nhiên,<br><span>tiến bộ mỗi ngày</span></h1>
-      <p class="hm-lead">TOEIC, giao tiếp theo phương pháp Effortless English và Tiếng Trung HSK — học qua câu chuyện thật, luyện phản xạ nói và theo dõi tiến độ mỗi ngày.</p>
+      <p class="hm-lead">Giao tiếp theo phương pháp Effortless English và Tiếng Trung HSK — học qua câu chuyện thật, luyện phản xạ nói và theo dõi tiến độ mỗi ngày.</p>
       <div class="hm-cta">
         <button class="hm-btn" onclick="hmStart()">🚀 Bắt đầu học miễn phí</button>
         <button class="hm-btn ghost" onclick="document.getElementById('hm-courses').scrollIntoView({behavior:'smooth'})">Khám phá khóa học ↓</button>
@@ -559,21 +559,13 @@ h1{
           <div class="go">Vào học ngay →</div>
         </div>
       </div>
-      <div class="hm-course" onclick="navigate('/toeic')">
-        <div class="thumb" style="background:linear-gradient(135deg,#dbeafe,#93c5fd)">📘<span class="hm-tag" style="color:#1e40af">HOT</span></div>
-        <div class="body"><div class="name">TOEIC Listening & Reading</div><div class="sub">5000 từ vựng • 200 bài tập • Full test L&R</div><div class="go">Luyện TOEIC →</div></div>
-      </div>
       <div class="hm-course" onclick="navigate('/chinese/pinyin')">
         <div class="thumb" style="background:linear-gradient(135deg,#fce7f3,#f9a8d4)">🀄<span class="hm-tag" style="color:#9d174d">PHỔ BIẾN</span></div>
         <div class="body"><div class="name">Tiếng Trung HSK 1-6</div><div class="sub">Pinyin • Shadowing • Luyện viết Hán tự • Sách giáo khoa</div><div class="go">Học tiếng Trung →</div></div>
       </div>
       <div class="hm-course" onclick="navigate('/english/practice')">
         <div class="thumb" style="background:linear-gradient(135deg,#fef3c7,#fcd34d)">💬<span class="hm-tag" style="color:#92400e">FREE</span></div>
-        <div class="body"><div class="name">Giao tiếp</div><div class="sub">Bảng IPA • Học qua phim • Từ vựng hình ảnh • Luyện tập</div><div class="go">Luyện giao tiếp →</div></div>
-      </div>
-      <div class="hm-course soon">
-        <div class="thumb" style="background:linear-gradient(135deg,#dcfce7,#86efac)">📗<span class="hm-tag" style="color:#166534">SẮP RA MẮT</span></div>
-        <div class="body"><div class="name">IELTS Band 7.0+</div><div class="sub">Speaking • Writing • Chiến lược thi</div><div class="go" style="color:var(--mute)">Đang chuẩn bị</div></div>
+        <div class="body"><div class="name">Giao tiếp</div><div class="sub">Bảng IPA • Luyện tập</div><div class="go">Luyện giao tiếp →</div></div>
       </div>
     </div>
   </section>
@@ -603,7 +595,7 @@ h1{
     <div class="hm-features">
       <div class="hm-feature"><div class="ic" style="background:#dbeafe">📊</div><div><h3>Tracking tiến độ hàng ngày</h3><p>Theo dõi số từ học mỗi ngày, heatmap streak và thống kê theo tháng.</p></div></div>
       <div class="hm-feature"><div class="ic" style="background:#dcfce7">🧠</div><div><h3>Spaced Repetition thông minh</h3><p>Nhắc lại từ đúng thời điểm để nhớ lâu hơn.</p></div></div>
-      <div class="hm-feature"><div class="ic" style="background:#fce7f3">📝</div><div><h3>Quiz & Bài thi thử</h3><p>Hàng trăm đề luyện TOEIC, IELTS sát thực tế.</p></div></div>
+      <div class="hm-feature"><div class="ic" style="background:#fce7f3">📝</div><div><h3>Quiz & Bài thi thử</h3><p>Câu hỏi luyện tập sau mỗi bài học.</p></div></div>
       <div class="hm-feature"><div class="ic" style="background:#fef3c7">🎯</div><div><h3>Lộ trình cá nhân hóa</h3><p>AI phân tích và đề xuất lộ trình học phù hợp.</p></div></div>
       <div class="hm-feature"><div class="ic" style="background:#fee2e2">🔴</div><div><h3>Live class với giáo viên</h3><p>Học trực tiếp với giáo viên Việt & bản ngữ.</p></div></div>
       <div class="hm-feature"><div class="ic" style="background:#e0f2fe">👥</div><div><h3>Cộng đồng học tập</h3><p>Cùng học, cùng luyện tập và tiến bộ mỗi ngày.</p></div></div>
@@ -624,7 +616,6 @@ h1{
     <img src="https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/avatars/logo-full.png" alt="LearnLang" style="height:34px">
     <div>
       <a onclick="navigate('/english/effortless')">Effortless English</a>
-      <a onclick="navigate('/toeic')">TOEIC</a>
       <a onclick="navigate('/chinese/pinyin')">Tiếng Trung</a>
       <a onclick="navigate('/blog')">Bài viết</a>
       <a href="https://www.facebook.com/groups/2065067230889617/" target="_blank" rel="noopener">Cộng đồng</a>

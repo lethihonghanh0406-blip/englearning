@@ -118,20 +118,6 @@ return ` <div class="nav">
   <!-- CENTER -->
   <div class="nav-center">
 
-    <div class="menu-item" onclick="navigate('/');setTimeout(()=>document.getElementById('hm-courses')?.scrollIntoView({behavior:'smooth'}),50)">Khóa học</div>
-
-    <!-- TOEIC DROPDOWN -->
-    <div class="menu-item toeic-menu">
-      TOEIC
-
-      <div class="toeic-dropdown">
-        <div onclick="navigate('/toeic')">🎯 4 Kỹ năng (Hub)</div>
-        <div onclick="navigate('/toeic-lr')">📝 Full Test L&R</div>
-        <div onclick="navigate('/toeic/vocabulary')">📚 Từ vựng</div>
-      </div>
-    </div>
-
-    <div class="menu-item">IELTS</div>
     <!-- TIẾNG TRUNG DROPDOWN -->
     <div class="menu-item toeic-menu">
       Tiếng Trung
@@ -148,10 +134,8 @@ return ` <div class="nav">
 
       <div class="toeic-dropdown">
         <div onclick="navigate('/english/ipa')">🔤 Bảng IPA</div>
-        <div onclick="navigate('/english/movies')">🎬 Xem phim</div>
         <div onclick="navigate('/english/practice')">🎯 Luyện tập</div>
         <div onclick="navigate('/english/effortless')">🎧 Effortless English</div>
-        <div onclick="navigate('/english/vocab')">📖 Từ vựng hình ảnh</div>
       </div>
     </div>
 
