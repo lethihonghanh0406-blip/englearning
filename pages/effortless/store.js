@@ -95,9 +95,14 @@ export function exampleFor(lesson, word) {
 // ── Progress state ───────────────────────────────────────────────────────────
 // { lessons: { slug: { done: {main,ms,vocab,practice}, completed } },
 //   days: { 'YYYY-MM-DD': { listen: sec, speak: sec } },
-//   saved: [word], notes: [{ id, slug, t, text, at }], last: slug, settings: {} }
+//   saved: [word], notes: [{ id, slug, t, text, at }], last: slug, settings: {},
+//   log: [{ act, slug, at }] — newest first, first completion of each activity }
 function key() { return `ee_progress_${user?.id || 'guest'}` }
-function empty() { return { lessons: {}, days: {}, saved: [], notes: [], last: null, settings: {} } }
+function empty() { return { lessons: {}, days: {}, saved: [], notes: [], last: null, settings: {}, log: [] } }
+
+function logEvent(s, act, slug) {
+  s.log = [{ act, slug, at: Date.now() }, ...(s.log || [])].slice(0, 50)
+}
 
 export function getState() {
   try { return { ...empty(), ...JSON.parse(localStorage.getItem(key())) } } catch { return empty() }
@@ -126,14 +131,19 @@ export function addTime(kind, sec) {
 export function markActivity(slug, act) {
   update(s => {
     const l = s.lessons[slug] ||= { done: {}, completed: false }
+    if (!l.done[act]) logEvent(s, act, slug)
     l.done[act] = true
-    if (ACTIVITIES.every(([a]) => l.done[a])) l.completed = true
+    if (!l.completed && ACTIVITIES.every(([a]) => l.done[a])) { l.completed = true; logEvent(s, 'completed', slug) }
     s.last = slug
   })
 }
 
 export function setCompleted(slug, completed) {
-  update(s => { (s.lessons[slug] ||= { done: {}, completed: false }).completed = completed })
+  update(s => {
+    const l = s.lessons[slug] ||= { done: {}, completed: false }
+    if (completed && !l.completed) logEvent(s, 'completed', slug)
+    l.completed = completed
+  })
 }
 
 export function lessonProgress(slug, s = getState()) {

@@ -478,3 +478,9 @@ update public.effortless_lessons set
     ["appreciate life", "Trân trọng cuộc sống"]
   ]$j$::jsonb
 where slug = 'day-of-the-dead';
+
+-- Mô tả ngắn hiển thị ở trang Tổng quan
+alter table public.effortless_lessons add column if not exists description text;
+update public.effortless_lessons
+  set description = 'Khám phá cuộc sống và văn hóa Guatemala trong Ngày của người chết. Học cách diễn đạt, từ vựng và luyện phản xạ qua các câu hỏi Mini-Story.'
+  where slug = 'day-of-the-dead';

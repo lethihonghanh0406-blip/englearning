@@ -16,7 +16,7 @@ const TABS = [['main', '📄 Transcript'], ['ms', '❓ Mini-Story'], ['vocab', '
 const AUDIO_FOR = { main: 'main_audio', ms: 'ms_audio', vocab: 'vocab_audio', phrases: 'main_audio', patterns: 'main_audio' }
 const AUDIO_ACT = { main: 'main', ms: 'ms', phrases: 'main', patterns: 'main' }   // activity completed by listening to the end
 
-export default function lessonView({ app, lessons, onLeave }, slug) {
+export default function lessonView({ app, lessons, params, onLeave }, slug) {
   const lesson = lessons.find(l => l.slug === slug)
   if (!lesson) {
     shell(app, '/lessons', `<div class="ee-card">Không tìm thấy bài học. <span class="ee-link" onclick="navigate('${BASE}/lessons')">Xem danh sách bài →</span></div>`)
@@ -24,7 +24,7 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
   }
   update(s => { s.last = slug })
 
-  let tab       = 'main'                          // main | ms | vocab
+  let tab       = AUDIO_FOR[params?.get('tab')] ? params.get('tab') : 'main'   // main | ms | vocab | phrases | patterns
   let showVI    = getSetting('showVI', true)
   let waitSec   = getSetting('waitSec', 5)
   if (!WAIT_OPTIONS.includes(waitSec)) waitSec = 5
@@ -152,7 +152,11 @@ export default function lessonView({ app, lessons, onLeave }, slug) {
         box-shadow:0 12px 32px rgba(15,23,42,.18)"></div>`)
 
     audioDone = !AUDIO_ACT[tab] || !!getState().lessons[slug]?.done?.[AUDIO_ACT[tab]]
-    if (['vocab', 'phrases', 'patterns'].includes(tab)) { markActivity(slug, 'vocab'); refreshProgress() }
+    if (['vocab', 'phrases', 'patterns'].includes(tab)) {
+      markActivity(slug, 'vocab')
+      if (tab !== 'vocab') markActivity(slug, 'patterns')     // "Review" step on the overview path; not a counted activity
+      refreshProgress()
+    }
     bindAudio()
   }
 

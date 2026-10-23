@@ -14,7 +14,7 @@ export function fmtDuration(sec) {
 }
 
 const NAV = [
-  ['',            '🏠', 'Trang chủ'],
+  ['',            '🏠', 'Tổng quan'],
   ['/lessons',    '📚', 'Bài học'],
   ['/vocabulary', '🔤', 'Từ vựng'],
   ['/practice',   '🎯', 'Luyện tập'],
@@ -23,6 +23,7 @@ const NAV = [
 ]
 
 const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
   #navbar{display:none}   /* this section has its own top bar; the rule leaves with the page */
   .ee{--o:#2563eb;--o2:#1d4ed8;--o-soft:#e8f0fe;--bg:#f8faff;--card:#fff;--line:#e2e8f0;--ink:#0f172a;--ink2:#475569;--mute:#64748b;--accent:#f97316;
     font-family:'Inter',sans-serif;color:var(--ink);background:var(--bg);min-height:100vh}
@@ -42,6 +43,7 @@ const CSS = `
   .ee-nav:hover{background:#f1f5f9}
   .ee-nav.on{background:var(--o-soft);color:var(--o2);font-weight:600}
   .ee-side-card{margin-top:24px;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#eff6ff,#dbeafe);font-size:12px;color:var(--ink2);text-align:center;padding:16px 12px 0}
+  .ee-hand{font-family:'Caveat',cursive;font-weight:600;color:var(--ink)}
   .ee-main{flex:1;min-width:0;padding:24px 28px 120px}
   .ee-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
   .ee-h{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--ink)}
@@ -67,13 +69,15 @@ const CSS = `
     .ee-body{flex-direction:column;background:none}
     .ee-side{top:0;z-index:20;align-self:stretch}
     .ee-top{gap:10px;padding:0 12px}
+    .ee-brand img{height:30px}
+    .ee-search{min-width:0;padding:7px 12px}.ee-search input{min-width:0;width:100%}
     .ee-brand{min-width:0}.ee-brand>div:last-child{display:none}
     .ee-top .ee-btn{padding:8px 12px;font-size:13px}
     .ee-quote{display:none}
     .ee-hero{padding:24px 20px !important}
     .ee-hero .ee-h{font-size:26px !important}
     .ee-main{padding:16px 16px 120px}
-    .ee-grid{grid-template-columns:1fr !important}
+    .ee-grid{grid-template-columns:minmax(0,1fr) !important}
   }
 `
 
@@ -103,8 +107,8 @@ export function shell(app, active, content) {
             <div class="ee-nav ${active === p ? 'on' : ''}" onclick="navigate('${BASE}${p}')"><span>${icon}</span>${label}</div>`).join('')}
           <div class="ee-nav" onclick="navigate('/')" style="margin-top:8px"><span>←</span>Trang LearnLang</div>
           <div class="ee-side-card">
-            <div style="font-size:22px">🌱</div>
-            <div style="margin:6px 0 10px;line-height:1.5">Mỗi ngày một bước nhỏ<br>dẫn tới kết quả lớn.</div>
+            <div class="ee-hand" style="font-size:22px;line-height:1.2;transform:rotate(-4deg);margin:4px 0 2px">Better English<br>Brighter Future</div>
+            <div style="color:var(--accent);font-size:14px;margin-bottom:8px">♥</div>
             ${hills()}
           </div>
         </div>
@@ -140,6 +144,16 @@ export function scene(seed = 0, opts = {}) {
     <path d="M0 175 Q80 140 160 165 T320 160 T400 150 V220 H0Z" fill="#14532d" opacity=".75"/>
     <path d="M0 200 Q100 180 200 196 T400 190 V220 H0Z" fill="#052e16" opacity=".85"/>
   </svg>`
+}
+
+export function timeAgo(at) {
+  const min = Math.floor((Date.now() - at) / 60000)
+  if (min < 1)  return 'Vừa xong'
+  if (min < 60) return `${min} phút trước`
+  const h = Math.floor(min / 60)
+  if (h < 24)   return `${h} giờ trước`
+  const d = Math.floor(h / 24)
+  return d === 1 ? 'Hôm qua' : `${d} ngày trước`
 }
 
 export function thumb(lesson, size = 64, radius = 12) {
