@@ -405,127 +405,234 @@ h1{
 
 <div id="home">
 
-<div class="hero">
-  <div class="left">
-    <div class="badge">✨ Nền tảng học ngôn ngữ #1 Việt Nam</div>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
+.hm{--o:#2563eb;--o2:#1d4ed8;--soft:#e8f0fe;--line:#e2e8f0;--ink:#0f172a;--ink2:#475569;--mute:#64748b;--accent:#f97316;color:var(--ink)}
+.hm-wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+.hm-hand{font-family:'Caveat',cursive;font-weight:600}
+.hm-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:999px;border:none;cursor:pointer;font:inherit;font-size:15px;font-weight:600;
+  background:var(--o);color:#fff;box-shadow:0 6px 18px rgba(37,99,235,.28);transition:background .15s,transform .15s}
+.hm-btn:hover{background:var(--o2);transform:translateY(-1px)}
+.hm-btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.hm-btn.ghost:hover{background:#f8fafc}
+.hm-pill{display:inline-block;border:1px solid #bfdbfe;background:#fff;color:var(--o2);font-size:13px;font-weight:600;padding:5px 14px;border-radius:999px}
+.hm-title{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--ink);letter-spacing:-.5px}
+.hm-section{padding:72px 0 0}
+.hm-head{text-align:center;margin-bottom:36px}
+.hm-head small{display:block;color:var(--o);font-weight:700;letter-spacing:1.5px;font-size:12px;margin-bottom:10px}
+.hm-head h2{font-size:32px}
+.hm-head p{color:var(--mute);margin-top:10px;font-size:15px}
 
+/* hero */
+.hm-hero{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:center;padding:56px 0 8px}
+.hm-hero h1.hm-title{font-size:46px;line-height:1.12;margin:18px 0 16px}
+.hm-hero h1 span{color:var(--o)}
+.hm-lead{font-size:17px;line-height:1.65;color:var(--ink2);max-width:520px}
+.hm-cta{display:flex;gap:12px;flex-wrap:wrap;margin:28px 0 30px}
+.hm-points{display:flex;gap:22px;flex-wrap:wrap;font-size:14px;color:var(--ink2)}
+.hm-points b{color:var(--ink)}
+.hm-art{position:relative;height:420px;border-radius:28px;overflow:hidden;box-shadow:0 20px 50px rgba(37,99,235,.15)}
+.hm-chip{position:absolute;background:#fff;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;
+  box-shadow:0 10px 26px rgba(15,23,42,.12)}
+.hm-chip span{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center}
 
-<h1>
-  Chinh phục <span class="highlight">TOEIC 900+</span><br>
-  cùng LearnLang
-</h1>
+/* courses */
+.hm-courses{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.hm-course{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;
+  transition:transform .15s,box-shadow .15s}
+.hm-course:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(15,23,42,.10)}
+.hm-course.soon{cursor:default}.hm-course.soon:hover{transform:none;box-shadow:none}
+.hm-course .thumb{position:relative;height:150px;display:flex;align-items:center;justify-content:center;font-size:54px}
+.hm-course .body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:6px;flex:1}
+.hm-course .name{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700}
+.hm-course .sub{font-size:14px;color:var(--mute);line-height:1.5}
+.hm-course .go{margin-top:auto;padding-top:10px;color:var(--o);font-weight:600;font-size:14px}
+.hm-tag{position:absolute;top:12px;left:12px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:#fff}
+.hm-course.featured{grid-column:span 2;flex-direction:row}
+.hm-course.featured .thumb{height:auto;width:46%;min-height:240px}
+.hm-course.featured .body{padding:28px}
+.hm-course.featured .name{font-size:26px}
 
-<div class="desc">
-  Học TOEIC, IELTS, Giao tiếp và Tiếng Trung với lộ trình cá nhân hóa và hệ thống theo dõi tiến độ thông minh.
+/* method */
+.hm-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.hm-step{background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px}
+.hm-step .num{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#fff;margin-bottom:16px}
+.hm-step h3{font-family:'Space Grotesk',sans-serif;font-size:19px;margin-bottom:6px}
+.hm-step p{font-size:14px;color:var(--mute);line-height:1.6}
+
+/* features */
+.hm-features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.hm-feature{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;gap:16px;align-items:flex-start}
+.hm-feature .ic{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.hm-feature h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.hm-feature p{font-size:14px;color:var(--mute);line-height:1.55}
+
+/* cta + footer */
+.hm-band{margin:72px 0 0;border-radius:28px;background:linear-gradient(120deg,#1e40af,#2563eb 55%,#60a5fa);color:#fff;padding:44px 48px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;position:relative;overflow:hidden}
+.hm-band h2{font-family:'Space Grotesk',sans-serif;font-size:30px;line-height:1.2}
+.hm-band p{opacity:.9;margin-top:8px}
+.hm-band .hm-btn{background:#fff;color:var(--o2);box-shadow:none;position:relative;z-index:1}
+.hm-foot{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:36px 0 40px;margin-top:56px;border-top:1px solid var(--line);font-size:14px;color:var(--mute)}
+.hm-foot a{color:var(--ink2);text-decoration:none;margin-left:20px;cursor:pointer}
+.hm-foot a:hover{color:var(--o)}
+
+@media (max-width:960px){
+  .hm-wrap{padding:0 16px}
+  .hm-hero{grid-template-columns:minmax(0,1fr);padding-top:32px}
+  .hm-hero h1.hm-title{font-size:34px}
+  .hm-art{height:300px}
+  .hm-courses,.hm-steps,.hm-features{grid-template-columns:minmax(0,1fr)}
+  .hm-course.featured{grid-column:auto;flex-direction:column}
+  .hm-course.featured .thumb{width:100%;min-height:170px}
+  .hm-band{flex-direction:column;align-items:flex-start;padding:32px 24px}
+  .hm-head h2{font-size:26px}
+  .hm-foot a{margin:0 16px 0 0}
+}
+</style>
+
+<div class="hm">
+<div class="hm-wrap">
+
+  <!-- HERO -->
+  <section class="hm-hero">
+    <div>
+      <span class="hm-pill">✨ Nền tảng học ngôn ngữ cho người Việt</span>
+      <h1 class="hm-title">Học ngoại ngữ tự nhiên,<br><span>tiến bộ mỗi ngày</span></h1>
+      <p class="hm-lead">TOEIC, giao tiếp theo phương pháp Effortless English và Tiếng Trung HSK — học qua câu chuyện thật, luyện phản xạ nói và theo dõi tiến độ mỗi ngày.</p>
+      <div class="hm-cta">
+        <button class="hm-btn" onclick="hmStart()">🚀 Bắt đầu học miễn phí</button>
+        <button class="hm-btn ghost" onclick="document.getElementById('hm-courses').scrollIntoView({behavior:'smooth'})">Khám phá khóa học ↓</button>
+      </div>
+      <div class="hm-points">
+        <span>🎧 <b>Nghe</b> câu chuyện thật</span>
+        <span>🗣 <b>Nói</b> phản xạ tự nhiên</span>
+        <span>📈 <b>Theo dõi</b> tiến độ</span>
+      </div>
+    </div>
+
+    <div class="hm-art">
+      <svg viewBox="0 0 520 420" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%">
+        <defs><linearGradient id="hmSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#bfdbfe"/><stop offset=".65" stop-color="#eff6ff"/><stop offset="1" stop-color="#fef3c7"/></linearGradient></defs>
+        <rect width="520" height="420" fill="url(#hmSky)"/>
+        <circle cx="400" cy="70" r="30" fill="#fde68a"/>
+        <path d="M0 230 L80 160 L150 200 L230 120 L310 190 L380 150 L450 205 L520 170 V420 H0Z" fill="#93c5fd"/>
+        <path d="M0 255 L100 210 L190 245 L280 200 L380 245 L520 220 V420 H0Z" fill="#60a5fa" opacity=".75"/>
+        <rect y="262" width="520" height="56" fill="#dbeafe"/>
+        <path d="M0 315 Q130 285 260 312 T520 305 V420 H0Z" fill="#86c5a1"/>
+        <path d="M0 350 Q150 322 300 352 T520 345 V420 H0Z" fill="#5fa57e"/>
+      </svg>
+      <div style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:120px;height:120px;border-radius:50%;background:#fff;
+        box-shadow:0 14px 36px rgba(37,99,235,.25);display:flex;align-items:center;justify-content:center;font-size:58px">🎧</div>
+      <div class="hm-hand" style="position:absolute;left:24px;top:22px;font-size:24px;line-height:1.15;transform:rotate(-5deg)">
+        Small steps every day<br>lead to big results.<span style="color:var(--accent);font-size:16px"> ♥</span></div>
+      <div class="hm-chip" style="left:24px;bottom:28px"><span style="background:#dcfce7">🗣</span>Phản xạ nói</div>
+      <div class="hm-chip" style="right:24px;bottom:86px"><span style="background:#ffedd5">🔥</span>Học mỗi ngày</div>
+      <div class="hm-chip" style="right:24px;top:104px"><span style="background:#e8f0fe">📘</span>Từ vựng theo ngữ cảnh</div>
+    </div>
+  </section>
+
+  <!-- COURSES -->
+  <section class="hm-section" id="hm-courses">
+    <div class="hm-head">
+      <small>CHƯƠNG TRÌNH HỌC</small>
+      <h2 class="hm-title">Chọn lộ trình phù hợp với bạn</h2>
+      <p>Mỗi chương trình có bài học, luyện tập và theo dõi tiến độ riêng.</p>
+    </div>
+    <div class="hm-courses">
+      <div class="hm-course featured" onclick="navigate('/english/effortless')">
+        <div class="thumb" style="background:linear-gradient(160deg,#1e3a8a,#3b82f6 60%,#bfdbfe)">
+          <svg viewBox="0 0 300 240" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%">
+            <circle cx="210" cy="80" r="22" fill="#fde68a"/>
+            <path d="M0 150 L60 100 L110 130 L170 70 L220 120 L300 90 V240 H0Z" fill="#1e293b" opacity=".45"/>
+            <path d="M0 185 Q80 160 160 180 T300 172 V240 H0Z" fill="#14532d" opacity=".75"/>
+            <path d="M0 215 Q100 195 200 212 T300 206 V240 H0Z" fill="#052e16" opacity=".85"/>
+          </svg>
+          <span class="hm-tag" style="color:#c2410c">MỚI</span>
+        </div>
+        <div class="body">
+          <div class="name">Effortless English</div>
+          <div class="sub">Phương pháp A.J. Hoge: nghe câu chuyện thật, trả lời câu hỏi Mini-Story, học cụm từ và mẫu câu để nói tự nhiên.</div>
+          <div class="sub" style="display:flex;gap:14px;flex-wrap:wrap;color:var(--ink2);margin-top:4px">
+            <span>🎧 Main Audio</span><span>❓ Mini-Story</span><span>🗣 Mẫu câu</span></div>
+          <div class="go">Vào học ngay →</div>
+        </div>
+      </div>
+      <div class="hm-course" onclick="navigate('/toeic')">
+        <div class="thumb" style="background:linear-gradient(135deg,#dbeafe,#93c5fd)">📘<span class="hm-tag" style="color:#1e40af">HOT</span></div>
+        <div class="body"><div class="name">TOEIC Listening & Reading</div><div class="sub">5000 từ vựng • 200 bài tập • Full test L&R</div><div class="go">Luyện TOEIC →</div></div>
+      </div>
+      <div class="hm-course" onclick="navigate('/chinese/pinyin')">
+        <div class="thumb" style="background:linear-gradient(135deg,#fce7f3,#f9a8d4)">🀄<span class="hm-tag" style="color:#9d174d">PHỔ BIẾN</span></div>
+        <div class="body"><div class="name">Tiếng Trung HSK 1-6</div><div class="sub">Pinyin • Shadowing • Luyện viết Hán tự • Sách giáo khoa</div><div class="go">Học tiếng Trung →</div></div>
+      </div>
+      <div class="hm-course" onclick="navigate('/english/practice')">
+        <div class="thumb" style="background:linear-gradient(135deg,#fef3c7,#fcd34d)">💬<span class="hm-tag" style="color:#92400e">FREE</span></div>
+        <div class="body"><div class="name">Giao tiếp</div><div class="sub">Bảng IPA • Học qua phim • Từ vựng hình ảnh • Luyện tập</div><div class="go">Luyện giao tiếp →</div></div>
+      </div>
+      <div class="hm-course soon">
+        <div class="thumb" style="background:linear-gradient(135deg,#dcfce7,#86efac)">📗<span class="hm-tag" style="color:#166534">SẮP RA MẮT</span></div>
+        <div class="body"><div class="name">IELTS Band 7.0+</div><div class="sub">Speaking • Writing • Chiến lược thi</div><div class="go" style="color:var(--mute)">Đang chuẩn bị</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- METHOD -->
+  <section class="hm-section">
+    <div class="hm-head">
+      <small>PHƯƠNG PHÁP</small>
+      <h2 class="hm-title">Học như cách bạn học tiếng mẹ đẻ</h2>
+    </div>
+    <div class="hm-steps">
+      <div class="hm-step"><div class="num" style="background:#2563eb">1</div><h3>🎧 Nghe trước</h3>
+        <p>Nghe câu chuyện thật với transcript song ngữ, chỉnh tốc độ và nghe lại từng câu.</p></div>
+      <div class="hm-step"><div class="num" style="background:#7c3aed">2</div><h3>💡 Hiểu tự nhiên</h3>
+        <p>Học từ vựng, cụm từ và mẫu câu ngay trong ngữ cảnh — không học thuộc lòng khô khan.</p></div>
+      <div class="hm-step"><div class="num" style="background:#16a34a">3</div><h3>🗣 Nói phản xạ</h3>
+        <p>Audio tự dừng sau mỗi câu hỏi để bạn trả lời to, rồi so với câu trả lời mẫu.</p></div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="hm-section">
+    <div class="hm-head">
+      <small>TÍNH NĂNG</small>
+      <h2 class="hm-title">Mọi thứ bạn cần để học hiệu quả</h2>
+    </div>
+    <div class="hm-features">
+      <div class="hm-feature"><div class="ic" style="background:#dbeafe">📊</div><div><h3>Tracking tiến độ hàng ngày</h3><p>Theo dõi số từ học mỗi ngày, heatmap streak và thống kê theo tháng.</p></div></div>
+      <div class="hm-feature"><div class="ic" style="background:#dcfce7">🧠</div><div><h3>Spaced Repetition thông minh</h3><p>Nhắc lại từ đúng thời điểm để nhớ lâu hơn.</p></div></div>
+      <div class="hm-feature"><div class="ic" style="background:#fce7f3">📝</div><div><h3>Quiz & Bài thi thử</h3><p>Hàng trăm đề luyện TOEIC, IELTS sát thực tế.</p></div></div>
+      <div class="hm-feature"><div class="ic" style="background:#fef3c7">🎯</div><div><h3>Lộ trình cá nhân hóa</h3><p>AI phân tích và đề xuất lộ trình học phù hợp.</p></div></div>
+      <div class="hm-feature"><div class="ic" style="background:#fee2e2">🔴</div><div><h3>Live class với giáo viên</h3><p>Học trực tiếp với giáo viên Việt & bản ngữ.</p></div></div>
+      <div class="hm-feature"><div class="ic" style="background:#e0f2fe">👥</div><div><h3>Cộng đồng học tập</h3><p>Cùng học, cùng luyện tập và tiến bộ mỗi ngày.</p></div></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="hm-band">
+    <div style="position:relative;z-index:1">
+      <h2>Học mỗi ngày để tiến bộ hơn</h2>
+      <p>Chỉ cần 15 phút mỗi ngày, bạn sẽ thấy sự khác biệt lớn!</p>
+    </div>
+    <button class="hm-btn" onclick="hmStart()">Bắt đầu ngay →</button>
+    <div style="position:absolute;right:240px;bottom:-12px;font-size:72px;opacity:.22">🌱</div>
+  </section>
+
+  <footer class="hm-foot">
+    <img src="https://trehfvxlqfshfhcapqca.supabase.co/storage/v1/object/public/avatars/logo-full.png" alt="LearnLang" style="height:34px">
+    <div>
+      <a onclick="navigate('/english/effortless')">Effortless English</a>
+      <a onclick="navigate('/toeic')">TOEIC</a>
+      <a onclick="navigate('/chinese/pinyin')">Tiếng Trung</a>
+      <a onclick="navigate('/blog')">Bài viết</a>
+      <a href="https://www.facebook.com/groups/2065067230889617/" target="_blank" rel="noopener">Cộng đồng</a>
+    </div>
+    <span>© 2026 LearnLang</span>
+  </footer>
+
 </div>
-
-<div class="buttons">
-  <button class="primary" onclick="loginGoogle()">🚀 Học miễn phí ngay</button>
-  <button class="outline">▶ Làm bài test thử</button>
-</div>
-
-
-  </div>
-
-  <div class="right">
-    <div class="card active">
-      <div class="icon" style="background:#dbeafe;">📘</div>
-      <div class="card-content">
-        <div class="card-title">TOEIC Listening & Reading</div>
-        <div class="card-sub">5000 từ vựng • 200 bài tập • 3 tháng</div>
-      </div>
-      <div class="tag" style="background:#dbeafe;color:#1e40af;">HOT</div>
-    </div>
-
-
-<div class="card">
-  <div class="icon" style="background:#dcfce7;">📗</div>
-  <div class="card-content">
-    <div class="card-title">IELTS Band 7.0+</div>
-    <div class="card-sub">Speaking AI • Writing feedback</div>
-  </div>
-  <div class="tag" style="background:#dcfce7;color:#166534;">MỚI</div>
-</div>
-
-<div class="card">
-  <div class="icon" style="background:#fce7f3;">🀄</div>
-  <div class="card-content">
-    <div class="card-title">HSK 1-6</div>
-    <div class="card-sub">6000 từ • Hán tự </div>
-  </div>
-  <div class="tag" style="background:#fce7f3;color:#9d174d;">PHỔ BIẾN</div>
-</div>
-
-<div class="card">
-  <div class="icon" style="background:#fef3c7;">💬</div>
-  <div class="card-content">
-    <div class="card-title">Giao tiếp</div>
-    <div class="card-sub">Tình huống thực tế • Phát âm</div>
-  </div>
-  <div class="tag" style="background:#fef3c7;color:#92400e;">FREE</div>
-</div>
-
-  </div>
-</div>
-
-<div class="features">
-
-  <div class="section-title">
-    <small>TÍNH NĂNG</small>
-    <h2>Mọi thứ bạn cần để học hiệu quả</h2>
-  </div>
-
-  <div class="feature-grid">
-
-    <div class="feature-card">
-      <div class="icon-box" style="background:#dbeafe;">📊</div>
-      <div class="feature-title">Tracking tiến độ hàng ngày</div>
-      <div class="feature-desc">
-        Theo dõi số từ học mỗi ngày, heatmap streak và thống kê theo tháng.
-      </div>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon-box" style="background:#dcfce7;">🧠</div>
-      <div class="feature-title">Spaced Repetition thông minh</div>
-      <div class="feature-desc">
-        Nhắc lại từ đúng thời điểm để nhớ lâu hơn.
-      </div>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon-box" style="background:#fce7f3;">📝</div>
-      <div class="feature-title">Quiz & Bài thi thử</div>
-      <div class="feature-desc">
-        Hàng trăm đề luyện TOEIC, IELTS sát thực tế.
-      </div>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon-box" style="background:#fef3c7;">🎯</div>
-      <div class="feature-title">Lộ trình cá nhân hóa</div>
-      <div class="feature-desc">
-        AI phân tích và đề xuất lộ trình học phù hợp.
-      </div>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon-box" style="background:#fee2e2;">🔴</div>
-      <div class="feature-title">Live class với giáo viên</div>
-      <div class="feature-desc">
-        Học trực tiếp với giáo viên Việt & bản ngữ.
-      </div>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon-box" style="background:#e0f2fe;">👥</div>
-      <div class="feature-title">Cộng đồng học tập</div>
-      <div class="feature-desc">
-        Cùng học, cùng luyện tập và tiến bộ mỗi ngày.
-      </div>
-    </div>
-
-  </div>
 </div>
 
 <script type="module">
@@ -545,6 +652,12 @@ window.goDashboard = () => {
 window.logout = async () => {
   await supabase.auth.signOut()
   window.location.reload()
+}
+
+// Hero / CTA: logged-in users go straight to learning, guests sign in first
+window.hmStart = async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  session ? navigate('/english/effortless') : loginGoogle()
 }
 
 window.loginGoogle = async () => {

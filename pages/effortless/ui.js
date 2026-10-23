@@ -25,10 +25,11 @@ const NAV = [
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
   #navbar{display:none}   /* this section has its own top bar; the rule leaves with the page */
+  html{zoom:1 !important} /* index.html zooms the site to 112.5%; this section is designed at 100% */
   .ee{--o:#2563eb;--o2:#1d4ed8;--o-soft:#e8f0fe;--bg:#f8faff;--card:#fff;--line:#e2e8f0;--ink:#0f172a;--ink2:#475569;--mute:#64748b;--accent:#f97316;
     font-family:'Inter',sans-serif;color:var(--ink);background:var(--bg);min-height:100vh}
   .ee *{box-sizing:border-box}
-  .ee-top{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:24px;padding:0 24px;position:sticky;top:0;z-index:30}
+  .ee-top{height:60px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:24px;padding:0 24px;position:sticky;top:0;z-index:30}
   .ee-brand{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:200px}
   .ee-brand img{height:40px;display:block}
   .ee-brand small{font-size:11px;font-weight:600;color:var(--o2);background:var(--o-soft);padding:3px 8px;border-radius:6px}
@@ -36,16 +37,16 @@ const CSS = `
   .ee-search input{border:none;background:none;outline:none;flex:1;font-size:13px;color:var(--ink)}
   .ee-user{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer}
   .ee-avatar{width:34px;height:34px;border-radius:50%;background:#1e3a5f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
-  .ee-body{display:flex;min-height:calc(100vh - 64px)}
-  .ee-side{width:220px;flex-shrink:0;padding:20px 14px;display:flex;flex-direction:column;gap:4px;background:#ffffff;position:sticky;top:64px;align-self:flex-start}
-  .ee-body{background:linear-gradient(90deg,#ffffff 220px,var(--line) 220px,var(--line) 221px,transparent 221px)}
+  .ee-body{display:flex;min-height:calc(100vh - 60px)}
+  .ee-side{width:210px;flex-shrink:0;padding:18px 12px;display:flex;flex-direction:column;gap:4px;background:#ffffff;position:sticky;top:60px;align-self:flex-start}
+  .ee-body{background:linear-gradient(90deg,#ffffff 210px,var(--line) 210px,var(--line) 211px,transparent 211px)}
   .ee-nav{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px;color:var(--ink2);font-weight:500;white-space:nowrap}
   .ee-nav:hover{background:#f1f5f9}
   .ee-nav.on{background:var(--o-soft);color:var(--o2);font-weight:600}
   .ee-side-card{margin-top:24px;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#eff6ff,#dbeafe);font-size:12px;color:var(--ink2);text-align:center;padding:16px 12px 0}
   .ee-hand{font-family:'Caveat',cursive;font-weight:600;color:var(--ink)}
-  .ee-main{flex:1;min-width:0;padding:24px 28px 120px}
-  .ee-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .ee-main{flex:1;min-width:0;padding:20px 24px 100px;max-width:1480px;width:100%;margin:0 auto}
+  .ee-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
   .ee-h{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--ink)}
   .ee-btn{white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;background:var(--o);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.25)}
   .ee-btn:hover{background:var(--o2)}

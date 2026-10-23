@@ -118,7 +118,7 @@ return ` <div class="nav">
   <!-- CENTER -->
   <div class="nav-center">
 
-    <div class="menu-item">Khóa học</div>
+    <div class="menu-item" onclick="navigate('/');setTimeout(()=>document.getElementById('hm-courses')?.scrollIntoView({behavior:'smooth'}),50)">Khóa học</div>
 
     <!-- TOEIC DROPDOWN -->
     <div class="menu-item toeic-menu">
@@ -180,9 +180,11 @@ return ` <div class="nav">
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:18px 60px;
-    background:white;
-    border-bottom:1px solid #eee;
+    gap:16px;
+    padding:10px 40px;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid #e2e8f0;
     position:sticky;
     top:0;
     z-index:100;
@@ -195,8 +197,10 @@ return ` <div class="nav">
     display:flex;
     justify-content:center;
     align-items:center;
-    gap:36px;
+    gap:4px;
     font-weight:500;
+    font-size:15px;
+    color:#334155;
   }
 
   .nav-right{
@@ -207,17 +211,23 @@ return ` <div class="nav">
   }
 
   .logo{
-    height:45px;
+    height:42px;
     cursor:pointer;
+    display:block;
   }
 
   .menu-item{
     cursor:pointer;
     position:relative;
+    white-space:nowrap;
+    padding:8px 14px;
+    border-radius:999px;
+    transition:background .15s,color .15s;
   }
 
   .menu-item:hover{
     color:#2563eb;
+    background:#eff6ff;
   }
 
   /* USER */
@@ -293,6 +303,7 @@ return ` <div class="nav">
   }
 
   .login-btn{
+    white-space:nowrap;
     padding:10px 16px;
     border:none;
     border-radius:10px;
@@ -302,6 +313,7 @@ return ` <div class="nav">
   }
 
   .trial-btn{
+    white-space:nowrap;
     padding:10px 18px;
     border:none;
     border-radius:10px;
@@ -324,16 +336,18 @@ return ` <div class="nav">
 
   .toeic-dropdown{
     position:absolute;
-    top:100%;
+    top:calc(100% + 6px);
     left:0;
 
     background:white;
-    border:1px solid #eee;
-    border-radius:12px;
-    width:230px;
+    border:1px solid #e2e8f0;
+    border-radius:14px;
+    width:240px;
     padding:6px;
+    color:#334155;
+    font-size:14px;
 
-    box-shadow:0 10px 25px rgba(0,0,0,0.08);
+    box-shadow:0 12px 32px rgba(15,23,42,0.12);
 
     display:none;
 
@@ -343,12 +357,13 @@ return ` <div class="nav">
   }
 
   .toeic-dropdown div{
-    padding:10px;
-    border-radius:8px;
+    padding:10px 12px;
+    border-radius:10px;
   }
 
   .toeic-dropdown div:hover{
-    background:#f1f5f9;
+    background:#eff6ff;
+    color:#1d4ed8;
   }
 
   /* hover mượt */
@@ -365,7 +380,19 @@ return ` <div class="nav">
     top:100%;
     left:0;
     width:100%;
-    height:10px;
+    height:12px;
+  }
+
+  @media (max-width:1000px){
+    .nav{ padding:10px 16px; }
+    .nav-center{ display:none; }
+    .username{ display:none; }
+    .logo{ height:32px; }
+    .login-btn,.trial-btn{ padding:8px 12px; font-size:13px; }
+  }
+
+  @media (max-width:480px){
+    .login-btn{ display:none; }
   }
 
 </style>

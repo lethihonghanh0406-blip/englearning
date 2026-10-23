@@ -49,10 +49,10 @@ export default function dashboardView({ app, lessons }) {
       <div class="ee-grid" style="grid-template-columns:minmax(0,1fr)">
 
         <!-- Hero -->
-        <div class="ee-card" style="position:relative;overflow:hidden;padding:0;min-height:250px;display:flex;background:linear-gradient(90deg,#eff6ff,#f8fbff 55%,#fff)">
-          <div class="ee-hero-text" style="position:relative;z-index:1;padding:28px 32px;max-width:56%">
+        <div class="ee-card" style="position:relative;overflow:hidden;padding:0;min-height:220px;display:flex;background:linear-gradient(90deg,#eff6ff,#f8fbff 55%,#fff)">
+          <div class="ee-hero-text" style="position:relative;z-index:1;padding:24px 28px;max-width:56%">
             <span style="display:inline-block;border:1px solid #93c5fd;color:var(--o2);background:#fff;font-size:12px;font-weight:600;padding:3px 12px;border-radius:999px">Chương trình học</span>
-            <div class="ee-h" style="font-size:38px;line-height:1.1;margin:12px 0 6px">Effortless English</div>
+            <div class="ee-h" style="font-size:32px;line-height:1.1;margin:12px 0 6px">Effortless English</div>
             <div style="font-size:18px;font-weight:600;color:var(--ink)">Nghe tự nhiên. Hiểu dễ dàng. Nói tự tin.</div>
             <div style="font-size:14px;color:var(--ink2);line-height:1.6;margin:12px 0 20px">Học tiếng Anh theo phương pháp của A.J. Hoge –<br>tập trung vào nghe hiểu, phản xạ và giao tiếp thực tế.</div>
             ${current ? `<button class="ee-btn" style="border-radius:999px;padding:12px 24px" onclick="${openLesson(current)}">${started ? 'Tiếp tục học' : 'Bắt đầu học ngay'} ›</button>` : ''}
@@ -204,7 +204,7 @@ function heroArt() {
       <linearGradient id="heroFade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f8fbff"/><stop offset=".25" stop-color="#f8fbff" stop-opacity="0"/></linearGradient>
     </defs>
     <rect width="400" height="260" fill="url(#heroSky)"/>
-    <circle cx="300" cy="96" r="22" fill="#fde68a" opacity=".9"/>
+    <circle cx="215" cy="70" r="20" fill="#fde68a" opacity=".9"/>
     <path d="M0 150 L60 110 L110 135 L170 80 L230 128 L280 100 L340 140 L400 115 V260 H0Z" fill="#bfdbfe"/>
     <path d="M0 165 L80 135 L150 160 L220 128 L300 158 L400 140 V260 H0Z" fill="#93c5fd" opacity=".8"/>
     <rect y="170" width="400" height="40" fill="#e0f2fe"/>
