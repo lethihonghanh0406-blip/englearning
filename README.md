@@ -11,6 +11,7 @@ It is a plain HTML + ES-module single-page app with no build step, backed by [Su
 | TOEIC | `/toeic`, `/toeic/listening`, `/toeic/reading`, `/toeic/speaking`, `/toeic/writing`, `/toeic/vocabulary`, `/toeic-lr` | Practice by skill, full L&R tests |
 | Tests & quizzes | `/test`, `/quiz` | Login required |
 | English | `/english/ipa`, `/english/movies`, `/english/practice` | IPA sounds, learning from YouTube clips with transcripts |
+| Effortless English | `/english/effortless` (+ `/lessons`, `/lesson/<slug>`, `/vocabulary`, `/practice`, `/progress`, `/notes`) | Story lessons with auto-pause Q&A, practice modes; progress kept in localStorage. Code in `pages/effortless/`, data in `effortless_lessons` |
 | English vocab | `/english/vocab`, `/english/vocab/body`, `/english/vocab/camping`, `/english/vocab/vegetables` | Topic-based illustrated vocab |
 | Chinese | `/chinese/pinyin`, `/chinese/shadowing`, `/chinese/writing`, `/chinese/books` | Pinyin, shadowing, stroke writing, textbook reader |
 | Spaced repetition | `/vocab/review`, `/my-vocab` | SRS review and personal word lists (login required) |

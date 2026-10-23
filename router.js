@@ -22,7 +22,7 @@ import vocabSrsPage   from './pages/vocab-srs.js'
 import blogPage       from './pages/blog.js'
 import myVocabPage    from './pages/my-vocab.js'
 import chineseBooksPage from './pages/chinese-books.js'
-import effortlessPage from './pages/effortless.js'
+import effortlessPage from './pages/effortless/index.js'
 import { supabase }   from './supabase/client.js'
 import { requireAuth } from './utils/auth.js'
 
@@ -57,7 +57,7 @@ function router() {
   else if (path === '/english/ipa')       showPage(ipaPage)
   else if (path === '/english/movies')    showPage(moviesPage)
   else if (path === '/english/practice')  showPage(practicePage)
-  else if (path === '/english/effortless') showPage(effortlessPage)
+  else if (path === '/english/effortless' || path.startsWith('/english/effortless/')) showPage(effortlessPage, params)
   else if (path === '/english/vocab')          showPage(vocabHubPage)
   else if (path === '/english/vocab/body')     showPage(vocabBodyPage)
   else if (path === '/english/vocab/camping')    showPage(vocabCampingPage)
