@@ -1,4 +1,4 @@
-import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, vocabItems, exampleFor, getState, update,
+import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, msParts, vocabItems, exampleFor, getState, update,
          markActivity, setCompleted, lessonProgress, addTime, getSetting, setSetting,
          phraseItems, patternItems, checkPattern, lineForPhrase } from './store.js'
 import { shell, esc, fmt, scene, levelLabel, speak, matchScore, scoreColor, getSR } from './ui.js'
@@ -42,9 +42,11 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   let audioOk   = true
   let pendingSeek = null
   let audioDone = false                           // current tab's audio activity already recorded
+  const parts   = msParts(lesson)
+  let msPart    = Math.min(parts.length - 1, Math.max(0, parts.findIndex(p => p.label === params?.get('part'))))
 
-  const lines = () => tab === 'main' ? mainLines(lesson) : tab === 'ms' ? msLines(lesson) : []
-  const srcFor = t => audioUrl(lesson[AUDIO_FOR[t]])
+  const lines = () => tab === 'main' ? mainLines(lesson) : tab === 'ms' ? msLines(lesson, msPart) : []
+  const srcFor = t => audioUrl(t === 'ms' ? parts[msPart].audio : lesson[AUDIO_FOR[t]])
   let patState = {}                               // per pattern index: { text, heard, listening, result }
   let patRec   = null
   const $ = id => document.getElementById(id)
@@ -82,7 +84,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
             ${scene(lesson.lesson_no, { id: 'player' })}
             <div style="position:absolute;inset:0;background:rgba(15,23,42,.45)"></div>
             <div style="position:relative;text-align:center">
-              <div style="font-size:17px;font-weight:700">${pTitle}</div>
+              <div style="font-size:17px;font-weight:700">${pTitle}${tab === 'ms' && parts[msPart].label ? ` ${esc(parts[msPart].label)}` : ''}</div>
               <div style="font-size:13px;opacity:.85">${pSub}</div>
               ${url ? `<audio id="ee-audio" src="${esc(url)}" preload="metadata"></audio>` : ''}
               <div style="display:flex;align-items:center;justify-content:center;gap:28px;margin:22px 0 18px">
@@ -210,6 +212,10 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     if (tab === 'phrases') return `<span class="ee-muted">Bấm vào cụm từ để nghe • “Nghe trong bài” phát đúng câu có cụm từ đó</span>`
     if (tab === 'patterns') return `<span class="ee-muted">Nghe câu mẫu, rồi nói hoặc gõ một câu <b>của riêng bạn</b> dùng cấu trúc đó</span>`
     return `
+      ${parts.length > 1 ? `
+        <span style="font-size:12px;color:var(--ink2);font-weight:600">Phần:</span>
+        ${parts.map((p, i) => btn(msPart === i, `eeMsPart(${i})`, `Mini-Story ${esc(p.label)}`)).join('')}
+        <span style="width:100%"></span>` : ''}
       <span style="font-size:12px;color:var(--ink2);font-weight:600">⏸ Dừng sau câu hỏi:</span>
       ${WAIT_OPTIONS.map(s => btn(waitSec === s, `eeWaitSec(${s})`, s ? `${s}s` : 'Tắt')).join('')}
       <span style="width:1px;height:18px;background:var(--line);margin:0 4px"></span>
@@ -325,7 +331,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     return notes.map(n => `
       <div style="border-top:1px solid #f1f5f9;padding:8px 0;font-size:13px;display:flex;gap:8px">
         <div style="flex:1;min-width:0">
-          ${n.t != null ? `<span class="ee-link" style="font-size:12px" onclick="eeGoNote('${n.id}')">${n.tab === 'ms' ? 'Mini-Story' : 'Main'} ${fmt(n.t)}</span> ` : ''}
+          ${n.t != null ? `<span class="ee-link" style="font-size:12px" onclick="eeGoNote('${n.id}')">${n.tab === 'ms' ? `Mini-Story${parts[n.part || 0]?.label ? ' ' + esc(parts[n.part || 0].label) : ''}` : 'Main'} ${fmt(n.t)}</span> ` : ''}
           <span style="white-space:pre-wrap">${esc(n.text)}</span>
         </div>
         <span onclick="eeDelNote('${n.id}')" style="cursor:pointer;color:var(--mute)" title="Xóa">✕</span>
@@ -556,13 +562,14 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   function addNote(text, withTime = true) {
     const audio = $('ee-audio')
     const t = withTime && audio && tab !== 'vocab' ? Math.floor(audio.currentTime) : null
-    update(s => s.notes.push({ id: Date.now().toString(36), slug, tab, t, text, at: Date.now() }))
+    update(s => s.notes.push({ id: Date.now().toString(36), slug, tab, part: tab === 'ms' ? msPart : undefined, t, text, at: Date.now() }))
     if ($('ee-notes')) $('ee-notes').innerHTML = buildNotes()
   }
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   Object.assign(window, {
     eeTab:       k  => { tab = k; revealed = new Set(); render() },
+    eeMsPart:    i  => { msPart = i; revealed = new Set(); render() },
     eePlay:      i  => playLine(i),
     eeToggle:    () => { const a = $('ee-audio'); if (!a || !audioOk) return speak(lines()[Math.max(0, activeIdx)]?.text); a.paused ? a.play() : a.pause() },
     eeSkip:      d  => { const a = $('ee-audio'); if (a) a.currentTime = Math.max(0, a.currentTime + d) },
@@ -593,7 +600,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     eeNoteCurrent: () => { const l = lines()[activeIdx]; if (l) addNote(l.text); else $('ee-note-text').focus() },
     eeDelNote:   id => { update(s => { s.notes = s.notes.filter(n => n.id !== id) }); $('ee-notes').innerHTML = buildNotes() },
     eeGoNote:    id => { const n = getState().notes.find(x => x.id === id); if (!n) return
-                         if (n.tab !== tab) { tab = n.tab; render() }
+                         if (n.tab !== tab || (n.tab === 'ms' && (n.part || 0) !== msPart)) { tab = n.tab; msPart = n.part || 0; render() }
                          const a = $('ee-audio'); if (!a || n.t == null) return
                          if (a.readyState >= 1) { a.currentTime = n.t } else pendingSeek = n.t
                          a.play() },

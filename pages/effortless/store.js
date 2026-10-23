@@ -49,8 +49,14 @@ export function audioUrl(path) {
 export function mainLines(lesson) {
   return (lesson?.main_story || []).map(([t, text, vi]) => ({ t, text, vi }))
 }
-export function msLines(lesson) {
-  return (lesson?.mini_story || []).map(([t, type, text]) => ({ t, type, text }))
+// Mini-Story parts: lessons with several mini stories (A, B, …) list them in ms_parts
+export function msParts(lesson) {
+  const parts = lesson?.ms_parts?.length ? lesson.ms_parts
+    : [{ label: '', audio: lesson?.ms_audio, story: lesson?.mini_story || [] }]
+  return parts.map(p => ({ label: p.label, audio: p.audio, lines: p.story.map(([t, type, text]) => ({ t, type, text })) }))
+}
+export function msLines(lesson, part = 0) {
+  return msParts(lesson)[part]?.lines || []
 }
 export function vocabItems(lesson) {
   return (lesson?.vocab || []).map(([word, ipa, vi]) => ({ word, ipa, vi, slug: lesson.slug, lesson }))

@@ -1,4 +1,4 @@
-import { BASE, audioUrl, mainLines, msLines, vocabItems, patternItems, checkPattern, getState, markActivity, addTime } from './store.js'
+import { BASE, audioUrl, mainLines, msParts, vocabItems, patternItems, checkPattern, getState, markActivity, addTime } from './store.js'
 import { shell, esc, speak, matchScore, scoreColor, getSR } from './ui.js'
 
 const ROUND = 5
@@ -36,12 +36,11 @@ export default function practiceView({ app, lessons, params, onLeave }) {
     const l = lesson()
     if (!l) return []
     if (mode === 'listen') {
-      const ls = msLines(l)
       const pairs = []
-      ls.forEach((q, i) => {
+      for (const { audio, lines: ls } of msParts(l)) ls.forEach((q, i) => {
         const a = ls[i + 1]
         if (q.type === 'q' && a?.type === 'a' && a.text.split(' ').length > 2)
-          pairs.push({ q, a, qEnd: a.t, aEnd: ls[i + 2]?.t ?? a.t + 5 })
+          pairs.push({ q, a, audio, qEnd: a.t, aEnd: ls[i + 2]?.t ?? a.t + 5 })
       })
       return shuffle(pairs).slice(0, ROUND)
     }
@@ -276,8 +275,8 @@ export default function practiceView({ app, lessons, params, onLeave }) {
     eeRestart: () => restart(),
     eeSkipQ:   () => { results[idx] = results[idx] ?? null; advance() },
     eeNext:    () => advance(),
-    eePlayQ:   () => { const it = items[idx]; playSegment(lesson().ms_audio, it.q.t, it.qEnd, it.q.text) },
-    eePlayA:   () => { const it = items[idx]; playSegment(lesson().ms_audio, it.a.t, it.aEnd, it.a.text) },
+    eePlayQ:   () => { const it = items[idx]; playSegment(it.audio, it.q.t, it.qEnd, it.q.text) },
+    eePlayA:   () => { const it = items[idx]; playSegment(it.audio, it.a.t, it.aEnd, it.a.text) },
     eeHint:    () => { cur.revealed = true; if (results[idx] == null) results[idx] = 0; renderItem(); window.eePlayA() },
     eeMic:     () => cur.listening ? stopListening() : startListening(),
     eePlayLine:() => { const it = items[idx]; playSegment(lesson().main_audio, it.line.t, it.end, it.line.text) },
