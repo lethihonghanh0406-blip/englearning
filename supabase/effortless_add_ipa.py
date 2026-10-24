@@ -23,6 +23,10 @@ missing = set()
 def spell_numbers(text):
     text = re.sub(r'\$(\d[\d,]*)', lambda m: m.group(1) + ' dollars', text)
     text = re.sub(r'(\d+)(st|nd|rd|th)\b', lambda m: num2words(int(m.group(1)), to='ordinal'), text)
+    def decade(m):                                        # 20s → twenties
+        w = num2words(int(m.group(1)))
+        return w[:-1] + 'ies' if w.endswith('y') else w + 's'
+    text = re.sub(r'\b(\d+)s\b', decade, text)
     def year_or_num(m):
         n = int(m.group(0).replace(',', ''))
         return num2words(n, to='year') if 1900 <= n <= 2099 and ',' not in m.group(0) else num2words(n)

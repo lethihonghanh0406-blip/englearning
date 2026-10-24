@@ -1507,3 +1507,37 @@ update public.effortless_lessons set
     ["S + used + something + to + V", "She used a towel to dry the dog.", "Cô ấy dùng khăn để lau khô con chó.", "used|use|uses|using"]
   ]$j$::jsonb
 where slug = 'drag';
+
+-- ── Bài 6: Intimacy (mới có Main Story; audio chờ tải lên với đúng tên file dưới đây) ──
+insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, ms_audio, vocab_audio,
+  main_story, mini_story, ms_parts, vocab, patterns, phrases)
+values (
+  'Original Course', 6, 'intimacy', 'Intimacy', 'intermediate',
+  'Một người vợ trẻ viết thư cho Dear Abby vì vợ chồng không còn gần gũi. Học cách bày tỏ cảm xúc, nói về mong muốn trong mối quan hệ và xin lời khuyên.',
+  'https://images.unsplash.com/photo-1484876632310-ddb3b48133cc',
+  'Original_Course/106a Intimacy (main).mp3',
+  null,
+  'Original_Course/106b Intimacy (vocabulary).mp3',
+$j$[
+  [0,"Intimacy","Sự gần gũi"],
+  [1.1,"Dear Abby, my husband, James, and I have been married only three years.","Abby thân mến, chồng tôi là James và tôi mới kết hôn được ba năm."],
+  [15,"We are both in our 20s.","Cả hai chúng tôi đều ngoài hai mươi tuổi."],
+  [19,"Everything is really great between us, except our sex life.","Mọi thứ giữa chúng tôi đều rất tốt, trừ đời sống chăn gối."],
+  [25.7,"As far as he is concerned, that's fine too, but I'm not satisfied.","Với anh ấy thì chuyện đó cũng ổn, nhưng tôi thì không thấy thỏa mãn."],
+  [34.3,"It may seem odd to hear the female wants to have sex more frequently than a young and healthy male, but that's the case in our relationship.","Nghe có vẻ lạ khi người phụ nữ lại muốn gần gũi thường xuyên hơn một người đàn ông trẻ khỏe, nhưng đó là chuyện trong mối quan hệ của chúng tôi."],
+  [50.7,"Abby, I work with the public, and I get frequent remarks about what a beautiful woman I am.","Abby à, công việc của tôi tiếp xúc với nhiều người, và tôi thường được khen là một phụ nữ xinh đẹp."],
+  [62.2,"This makes it hard for me to believe that I don't attract him at all.","Vì vậy tôi khó mà tin rằng mình hoàn toàn không hấp dẫn anh ấy."],
+  [71.2,"I have expressed many times that I wish we were more intimate.","Tôi đã nhiều lần nói rằng tôi mong hai chúng tôi gần gũi nhau hơn."],
+  [78.1,"I have even expressed it to him in more than one letter, hoping to reach him.","Tôi thậm chí đã viết cho anh ấy hơn một lá thư để bày tỏ, mong anh ấy hiểu."],
+  [87.7,"I am at a total loss as to how to make him realize how important this is to me.","Tôi hoàn toàn bế tắc, không biết làm sao để anh ấy nhận ra chuyện này quan trọng với tôi đến mức nào."],
+  [99.7,"Is there something wrong with my body?","Có phải cơ thể tôi có vấn đề gì không?"],
+  [104.3,"I just don't know who to turn to for advice on this subject.","Tôi thật sự không biết nên tìm ai để xin lời khuyên về chuyện này."],
+  [113,"Please help me.","Xin hãy giúp tôi."],
+  [115,"Signed, Short on Intimacy in Ohio.","Ký tên: Thiếu sự gần gũi ở Ohio."]
+]$j$::jsonb,
+'[]'::jsonb, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb
+)
+on conflict (slug) do update set
+  course = excluded.course, lesson_no = excluded.lesson_no, title = excluded.title, level = excluded.level,
+  description = excluded.description, cover = excluded.cover, main_audio = excluded.main_audio,
+  vocab_audio = excluded.vocab_audio, main_story = excluded.main_story;
