@@ -1443,3 +1443,67 @@ update public.effortless_lessons set
   {"label":"B","audio":"Original_Course/105c Drag B (ms).mp3","story":[[0,"s","Hello, welcome to Mini-Story B for drag."],[10,"s","In this mini-story lesson, I will ask two kinds of questions."],[20,"s","I will ask information you know."],[25,"s","And I will ask information you don't know."],[34,"s","If you don't know, guess."],[40.3,"s","Let's get started."],[44,"s","Twenty years ago, the sisters or daughters bought a business from their mother."],[60,"q","Did they buy a business from their mother?"],[68,"a","Yes, they did."],[70.1,"q","Who bought a business from their mother?"],[75,"a","The daughters."],[78,"s","What were their names?"],[84,"q","Were their names Sam and Olivia?"],[92,"a","Yes, that's right."],[94.7,"s","The daughters' names were Sam and Olivia."],[101,"q","What did Sam and Olivia buy?"],[108,"a","They bought a business."],[114,"q","When did they buy a business?"],[121,"a","Twenty years ago, they bought a business."],[128,"s","Where did they buy a business?"],[133,"s","Where did they buy a business?"],[139,"q","Did they buy a business in California?"],[145,"a","No."],[146.1,"q","Did they buy a business in Texas?"],[154,"a","No."],[155,"q","Did they buy a business in Canada?"],[162,"a","Yes, that's right."],[165,"s","They bought a business in Canada."],[171,"s","What kind of business did they buy?"],[180,"q","Did they buy a farm?"],[184,"a","No."],[186,"q","Did they buy a paper-making business?"],[194,"a","No, they didn't."],[196.3,"s","They didn't buy a paper-making business."],[201,"q","Did they buy a dog-cleaning business?"],[209,"a","Yes, that's right."],[211.7,"s","They bought a dog-cleaning business from their mother."],[219,"q","When did they buy a dog-cleaning business from their mother?"],[227,"a","Oh, you know."],[228.9,"s","Twenty years ago, they bought a dog-cleaning business from their mother."],[236,"q","Where did they buy the dog-cleaning business?"],[243,"a","In Canada."],[245,"s","They bought the dog-cleaning business from their mother in Canada."],[255,"s","How did they buy the business?"],[262,"q","How did they buy the business?"],[267,"a","They bought the business with gold."],[272,"s","G-O-L-D, gold."],[276,"s","They bought the business with gold from their mother in Canada."],[285,"q","What kind of business did they buy with gold?"],[293,"a","They bought a dog-cleaning business with gold from their mother."],[302,"s","Did they buy a cat-cleaning business from their mother?"],[309,"q","Or a dog-cleaning business from their mother?"],[314,"a","Ah, they bought a dog-cleaning business from their mother."],[323,"s","Okay, how much gold did they pay to buy the dog-cleaning business?"],[336,"q","Did they pay ten pounds of gold every year?"],[343,"a","No, they didn't pay ten pounds of gold every year."],[350,"q","Did they pay five hundred pounds of gold every year?"],[356,"a","Well, almost."],[357.5,"s","They paid five hundred and five pounds of gold every year."],[366,"q","Who did they pay five hundred and five pounds of gold to?"],[377,"a","Ah, to their mother, right?"],[380,"s","They paid five hundred and five pounds of gold every year to their mother."],[389,"q","Okay, how many times did they pay their mother?"],[398,"a","Well, they paid their mother every year."],[403,"s","Every year, they paid their mother five hundred and five pounds of gold."],[413,"q","Every year, did they pay their mother five hundred and six pounds of gold?"],[423,"a","No, every year, they paid their mother five hundred and five pounds of gold."],[433,"q","Why did they pay their mother five hundred and five pounds of gold every year?"],[445,"a","Well, because they bought her business."],[450,"q","What kind of business did they buy?"],[455,"a","A dog-cleaning business."],[458.4,"s","They bought a dog-cleaning business."],[464,"q","Did the mom continue to help with the dog-cleaning business?"],[474,"a","Yes, the mom continued to help with the dog-cleaning business."],[482,"q","Who did she continue to help?"],[488,"a","Well, she continued to help Sam and Olivia, her daughters."],[499,"q","Did she continue to help Sam and Olivia?"],[506,"a","Yeah, she continued to help Sam and Olivia."],[512,"q","Where did she help them?"],[516,"a","Well, she helped them at the business, at work."],[523,"q","Where was the business?"],[526,"a","In Canada."],[528,"s","She helped them at the business in Canada."],[534,"s","How did the mom help Sam and Olivia?"],[541,"s","How did she help them?"],[545,"s","Did she wash the dogs?"],[550,"q","Did she clean, did she wash the dogs?"],[555,"a","No, no, she didn't wash the dogs."],[561,"q","Why didn't she help wash the dogs?"],[565,"a","Well, because she was too old."],[570,"s","She was too old to wash the dogs."],[576,"q","Was she too old to use the computer?"],[584,"a","No, she wasn't too old to use the computer."],[589,"s","She was too old to wash the dogs."],[594,"q","Was she too old to wash all of the dogs?"],[602,"a","No, no, she wasn't too old to wash all of the dogs."],[610,"s","Which dogs was she too old to wash?"],[617,"q","Was she too old to wash the big dogs or the little dogs?"],[626,"a","Oh, she was too old to wash the little dogs."],[632,"s","Yeah, she was too old to wash the little dogs."],[638,"s","Hmm, why?"],[640,"q","Why was she too old to wash the little dogs?"],[646,"a","Oh, because they are fast."],[649,"s","The little dogs are very fast."],[653,"s","The little dogs are very fast, so mom was too old to wash the little dogs."],[662,"s","Mom only washed the big dogs."],[667,"q","Why did she only wash the big dogs?"],[673,"a","Well, obviously, because they were slow."],[679,"s","The big dogs were very slow, but the little dogs were too fast."],[687,"s","Mom only washed the big dogs."],[692,"s","How many big dogs did she wash every day?"],[698,"s","Did she wash one big dog every day?"],[703,"q","500 big dogs every day?"],[709,"a","No, she washed half a big dog every day."],[717,"q","Who washed only half a big dog every day?"],[726,"a","Mom, the mom."],[727,"q","What did the mom wash every day?"],[734,"a","The mom washed half a big dog every day."],[741,"q","When did she wash half a dog every day?"],[749,"a","Oh, well, at midnight, at midnight."],[754,"s","Only at midnight, she washed half a big dog every day."],[761,"s","Actually, every night."],[765,"q","Where did she wash half a big dog?"],[770,"a","Oh, in Canada, right?"],[772,"s","At the business in Canada."],[776,"q","How did she wash half a big dog?"],[783,"a","Well, she washed half a big dog with a toothbrush."],[789,"s","You know, brush your teeth."],[792,"s","She washed half a big dog with a toothbrush."],[798,"s","T-O-O-T-H-B-R-U-S-H She washed half a big dog every night at midnight with a toothbrush."],[815,"q","Why did she use a toothbrush?"],[821,"a","Oh, she used a toothbrush because her hands were very small."],[830,"s","Mom's hands were very small."],[835,"s","That's why she used a toothbrush."],[839,"q","Who used a toothbrush because her hands were small?"],[845,"a","The mom used a toothbrush because her hands were small."],[852,"q","What did the mom use to wash half a big dog?"],[861,"a","She used a toothbrush to wash half a big dog."],[868,"q","When did she use a toothbrush?"],[873,"a","At midnight."],[875,"s","At midnight, she used a toothbrush."],[879,"q","What did she use the toothbrush for?"],[887,"a","She used the toothbrush to wash half a big dog."],[897,"s","Okay, very good."],[899,"s","Now we understand more of the story."],[903,"s","Listen to this mini-story many, many times."],[908,"s","Listen every day."],[910,"s","Answer all the questions."],[914,"s","Use your pause button."],[917,"s","Listen to this story every day for two weeks, maybe three weeks, maybe ten weeks, but listen every day until you understand everything."],[933,"s","Okay, see you next time."],[936.3,"s","Bye-bye."]]}
 ]$j$::jsonb
 where slug = 'drag';
+
+-- ── Bài 5: Drag — từ vựng, cụm từ, mẫu câu (soạn từ Main Story + Mini-Story A/B) ──
+update public.effortless_lessons set
+  vocab = $j$[
+    ["drag", "/dræɡ/", "gánh nặng, điều cản trở"],
+    ["family business", "/ˈfæməli ˈbɪznəs/", "việc kinh doanh của gia đình"],
+    ["buy a business from someone", "/baɪ ə ˈbɪznəs frɒm ˈsʌmwʌn/", "mua lại cơ sở kinh doanh từ ai"],
+    ["respect", "/rɪˈspekt/", "tôn trọng"],
+    ["get along well", "/ɡet əˈlɒŋ wel/", "hòa thuận với nhau"],
+    ["pay off", "/peɪ ɒf/", "trả hết (khoản nợ, khoản mua)"],
+    ["draw a salary", "/drɔː ə ˈsæləri/", "nhận lương"],
+    ["above and beyond", "/əˈbʌv ənd bɪˈjɒnd/", "ngoài ra, vượt quá (khoản đã có)"],
+    ["workload", "/ˈwɜːkləʊd/", "khối lượng công việc"],
+    ["lessen", "/ˈlesən/", "giảm bớt"],
+    ["burden", "/ˈbɜːdən/", "gánh nặng"],
+    ["retire", "/rɪˈtaɪə/", "nghỉ hưu"],
+    ["go crazy", "/ɡəʊ ˈkreɪzi/", "phát điên"],
+    ["paperwork", "/ˈpeɪpəwɜːk/", "giấy tờ, thủ tục"],
+    ["on the clock", "/ɒn ðə klɒk/", "trong giờ làm (được tính lương)"],
+    ["get hurt", "/ɡet hɜːt/", "bị tổn thương"],
+    ["be worth the money", "/bi wɜːθ ðə ˈmʌni/", "đáng đồng tiền"],
+    ["fairness", "/ˈfeənəs/", "sự công bằng"],
+    ["expenses", "/ɪkˈspensɪz/", "chi phí"],
+    ["go through the roof", "/ɡəʊ θruː ðə ruːf/", "tăng vọt"],
+    ["buyout", "/ˈbaɪaʊt/", "việc mua lại toàn bộ"],
+    ["dog-cleaning business", "/ˈdɒɡ ˌkliːnɪŋ ˈbɪznəs/", "dịch vụ tắm rửa cho chó"],
+    ["gold", "/ɡəʊld/", "vàng"],
+    ["toothbrush", "/ˈtuːθbrʌʃ/", "bàn chải đánh răng"]
+  ]$j$::jsonb,
+  phrases = $j$[
+    ["be a drag on something", "là gánh nặng cho điều gì"],
+    ["buy a business from someone", "mua lại cơ sở kinh doanh từ ai"],
+    ["love and respect one another", "yêu thương và tôn trọng nhau"],
+    ["get along well", "hòa thuận với nhau"],
+    ["finish paying off something", "trả xong khoản tiền còn nợ"],
+    ["draw a salary", "nhận lương"],
+    ["above and beyond", "ngoài ra, thêm vào khoản đã có"],
+    ["as it should", "như lẽ đương nhiên"],
+    ["lessen the burden of something", "giảm bớt gánh nặng của điều gì"],
+    ["go crazy", "phát điên"],
+    ["as often as she wants", "thường xuyên tùy thích"],
+    ["on the clock", "trong giờ làm có tính lương"],
+    ["get hurt", "bị tổn thương"],
+    ["not worth the money", "không đáng đồng tiền"],
+    ["go through the roof", "tăng vọt"],
+    ["on top of something", "cộng thêm, ngoài ra còn"]
+  ]$j$::jsonb,
+  patterns = $j$[
+    ["S + bought + something + from + someone", "I bought this car from my uncle.", "Tôi đã mua chiếc xe này từ chú tôi.", "from"],
+    ["S + get(s) along well with + someone", "I get along well with my coworkers.", "Tôi rất hòa thuận với đồng nghiệp.", "get along|gets along|got along|getting along"],
+    ["S + will finish + V-ing", "I will finish paying off my loan next year.", "Năm sau tôi sẽ trả xong khoản vay.", "finish|finished|finishes"],
+    ["S + still + V", "My grandfather still works every day.", "Ông tôi vẫn đi làm mỗi ngày.", "still"],
+    ["S + could + V", "You could take the bus to work.", "Bạn có thể đi xe buýt đi làm.", "could"],
+    ["S + would + V + if + S + V2", "I would travel more if I had more time.", "Tôi sẽ đi du lịch nhiều hơn nếu có nhiều thời gian hơn.", "if"],
+    ["as often as + S + want(s)", "You can call me as often as you want.", "Bạn có thể gọi cho tôi thường xuyên tùy thích.", "as often as"],
+    ["If + S + try to + V, ...", "If I try to cook, I always burn the food.", "Nếu tôi thử nấu ăn, tôi luôn làm cháy đồ ăn.", "try to|tries to|tried to"],
+    ["S + would hope + (that) + clause", "I would hope my friends would help me.", "Tôi mong bạn bè sẽ giúp tôi.", "hope"],
+    ["S + is/are going through the roof", "Rent prices are going through the roof.", "Giá thuê nhà đang tăng vọt.", "through the roof"],
+    ["S + can't + V + as long as + clause", "We can't save money as long as we pay this rent.", "Chúng tôi không thể tiết kiệm khi vẫn còn trả tiền thuê này.", "as long as"],
+    ["On top of + noun, ...", "On top of my job, I study English at night.", "Ngoài công việc, tôi còn học tiếng Anh vào buổi tối.", "on top of"],
+    ["S + be + too + adj + to + V", "My grandma is too old to drive.", "Bà tôi đã quá lớn tuổi để lái xe.", "too"],
+    ["S + used + something + to + V", "She used a towel to dry the dog.", "Cô ấy dùng khăn để lau khô con chó.", "used|use|uses|using"]
+  ]$j$::jsonb
+where slug = 'drag';
