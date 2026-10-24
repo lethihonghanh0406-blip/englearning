@@ -34,7 +34,7 @@ def spell_numbers(text):
 
 
 # Words the CMU dictionary lacks or gets wrong (placeholders survive ipa.convert as "word*")
-CUSTOM = {"bubba's": 'ˈbʌbəz', 'amtoken': 'ˌeɪˈɛm', 'imtoken': 'aɪm', 'eyeful': 'ˈaɪfʊl', 'soulmates': 'ˈsoʊlmeɪts', 'ocd': 'ˌoʊsiːˈdiː', 'damnable': 'ˈdæmnəbəl', 'emote': 'ɪˈmoʊt', 'foci': 'ˈfoʊsaɪ', 'iwagaki': 'ˌiwəˈɡɑki', 'mohandas': 'moʊˈhɑndəs', 'resisters': 'rɪˈzɪstərz', 'shiori': 'ʃiˈɔri', 'chomsky': 'ˈtʃɑmski', 'counterposing': 'ˌkaʊntərˈpoʊzɪŋ', 'pacifistic': 'ˌpæsəˈfɪstɪk'}
+CUSTOM = {"bubba's": 'ˈbʌbəz', 'amtoken': 'ˌeɪˈɛm', 'imtoken': 'aɪm', 'eyeful': 'ˈaɪfʊl', 'soulmates': 'ˈsoʊlmeɪts', 'ocd': 'ˌoʊsiːˈdiː', 'damnable': 'ˈdæmnəbəl', 'emote': 'ɪˈmoʊt', 'foci': 'ˈfoʊsaɪ', 'iwagaki': 'ˌiwəˈɡɑki', 'mohandas': 'moʊˈhɑndəs', 'resisters': 'rɪˈzɪstərz', 'shiori': 'ʃiˈɔri', 'chomsky': 'ˈtʃɑmski', 'counterposing': 'ˌkaʊntərˈpoʊzɪŋ', 'pacifistic': 'ˌpæsəˈfɪstɪk', 'agnosticism': 'æɡˈnɑstəˌsɪzəm', 'bc': 'ˌbiˈsi', 'falun': 'ˈfɑˌlun', 'image': 'ˈɪmɪdʒ', 'korzybski': 'kɔrˈʒɪbski', 'lowercase': 'ˈloʊərˌkeɪs', 'msn': 'ˌɛmɛsˈɛn', 'org': 'ɔrɡ', 'theist': 'ˈθiɪst', 'tprs': 'ˌtiˌpiˌɑrˈɛs', 'transmuted': 'trænzˈmjutɪd', 'unachieved': 'ˌʌnəˈtʃivd'}
 
 
 def to_ipa(text):
