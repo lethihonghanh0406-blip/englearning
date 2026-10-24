@@ -1,5 +1,5 @@
 // Shared layout + helpers for the Effortless English section
-import { BASE, getUser, streak, dayMinutes, DAILY_GOAL_MIN, PRICE } from './store.js'
+import { BASE, getUser, streak, dayMinutes, DAILY_GOAL_MIN, PRICE, audioUrl } from './store.js'
 
 export function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
@@ -232,6 +232,33 @@ export function paywall(app, lesson, freeSlug) {
         </div>
       </div>
     </div>`)
+}
+
+// Play [start, end) of a lesson audio file; speech synthesis when there is no file or it can't play
+const segAudio = new Audio()
+let segLoop = null
+export function playSegment(path, start, end, fallbackText) {
+  const url = audioUrl(path)
+  stopSegment()
+  speechSynthesis.cancel()
+  if (!url) return speak(fallbackText)
+  if (segAudio.dataset.src !== url) { segAudio.src = url; segAudio.dataset.src = url }
+  const go = () => {
+    segAudio.currentTime = start
+    segAudio.play().then(() => {
+      const loop = () => {
+        if (segAudio.currentTime >= end - 0.05) return segAudio.pause()
+        segLoop = requestAnimationFrame(loop)
+      }
+      segLoop = requestAnimationFrame(loop)
+    }).catch(() => speak(fallbackText))
+  }
+  if (segAudio.readyState >= 1) go()
+  else { segAudio.onloadedmetadata = go; segAudio.onerror = () => speak(fallbackText) }
+}
+export function stopSegment() {
+  cancelAnimationFrame(segLoop)
+  segAudio.pause()
 }
 
 export function loading(app) {

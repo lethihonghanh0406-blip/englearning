@@ -1,5 +1,5 @@
-import { BASE, audioUrl, mainLines, msParts, vocabItems, patternItems, checkPattern, getState, markActivity, addTime } from './store.js'
-import { shell, esc, speak, matchScore, scoreColor, getSR } from './ui.js'
+import { BASE, mainLines, msParts, vocabItems, patternItems, checkPattern, getState, markActivity, addTime } from './store.js'
+import { shell, esc, speak, matchScore, scoreColor, getSR, playSegment, stopSegment } from './ui.js'
 
 const ROUND = 5
 const MODES = [
@@ -27,7 +27,6 @@ export default function practiceView({ app, lessons, params, onLeave }) {
   let cur   = {}              // per-item UI state: { heard, listening, revealed, picked, typed, checked }
   let rec   = null
   let recStart = 0
-  let segLoop = null
 
   const lesson = () => lessons.find(l => l.slug === slug)
   const $ = id => document.getElementById(id)
@@ -73,29 +72,6 @@ export default function practiceView({ app, lessons, params, onLeave }) {
   }
 
   // ── Audio segments ─────────────────────────────────────────────────────────
-  function playSegment(path, start, end, fallbackText) {
-    const audio = $('ee-paudio')
-    const url = audioUrl(path)
-    stopSegment()
-    if (!audio || !url) return speak(fallbackText)
-    if (audio.dataset.src !== url) { audio.src = url; audio.dataset.src = url }
-    const go = () => {
-      audio.currentTime = start
-      audio.play().then(() => {
-        const loop = () => {
-          if (!document.contains(audio)) return audio.pause()
-          if (audio.currentTime >= end - 0.05) return audio.pause()
-          segLoop = requestAnimationFrame(loop)
-        }
-        segLoop = requestAnimationFrame(loop)
-      }).catch(() => speak(fallbackText))
-    }
-    audio.readyState >= 1 ? go() : (audio.onloadedmetadata = go, audio.onerror = () => speak(fallbackText))
-  }
-  function stopSegment() {
-    cancelAnimationFrame(segLoop)
-    $('ee-paudio')?.pause()
-  }
 
   // ── Speech ─────────────────────────────────────────────────────────────────
   function startListening() {
@@ -142,7 +118,6 @@ export default function practiceView({ app, lessons, params, onLeave }) {
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
         ${MODES.map(([k, label]) => `<button class="ee-pill ${mode === k ? 'on' : ''}" onclick="eePMode('${k}')">${label}</button>`).join('')}
       </div>
-      <audio id="ee-paudio" preload="metadata"></audio>
       <div style="max-width:720px">
         <div class="ee-card" id="ee-pcard" style="padding:24px;min-height:340px">${l ? '' : 'Chưa có bài học'}</div>
         <div id="ee-pnav" style="display:flex;justify-content:space-between;margin-top:14px"></div>

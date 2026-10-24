@@ -3,7 +3,7 @@ import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, msParts, vocabItems, ex
          phraseItems, patternItems, checkPattern, lineForPhrase, qaItems,
          ROUTINE, getRoutine, setRoutineStep, pendingSeconds,
          addPlay, plays, listenStage, LISTEN_PLAN } from './store.js'
-import { shell, esc, fmt, art, levelLabel, speak, matchScore, scoreColor, getSR } from './ui.js'
+import { shell, esc, fmt, art, levelLabel, speak, matchScore, scoreColor, getSR, playSegment, stopSegment } from './ui.js'
 
 const WAIT_OPTIONS = [0, 5, 10, 15]
 const SPEEDS = [0.75, 1, 1.25, 1.5]
@@ -63,6 +63,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   function render() {
     cancelWait()
     stopPatRec()
+    stopSegment()
     flushListen()
     cancelAnimationFrame(loopId)
     activeIdx = -1; handledQ = -1; audioOk = true; passHeard = 0; lastT = 0
@@ -297,7 +298,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
             <div style="display:flex;gap:10px;align-items:flex-start">
               <span style="font-size:11px;font-weight:700;color:var(--o2);background:var(--o-soft);border-radius:6px;padding:3px 8px;margin-top:2px">Q${i + 1}</span>
               <div style="flex:1;font-size:15px;font-weight:600;line-height:1.5">${esc(it.q)}</div>
-              <button onclick="eeQASay(${i})" title="Nghe câu hỏi" class="ee-play-dot" style="border:none;cursor:pointer;width:30px;height:30px;font-size:13px">🔊</button>
+              <button onclick="eeQASay(${i})" title="${it.qSeg ? 'Nghe câu hỏi (giọng thật trong Mini-Story)' : 'Nghe câu hỏi (giọng đọc máy)'}" class="ee-play-dot" style="border:none;cursor:pointer;width:30px;height:30px;font-size:13px">${it.qSeg ? '🎧' : '🔊'}</button>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
               ${getSR() ? `<button onclick="eeQAMic(${i})" title="Trả lời bằng giọng nói" style="width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;color:#fff;font-size:15px;
@@ -311,7 +312,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
             <div style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:14px">
               ${st.score != null ? `<span style="font-weight:700;color:${scoreColor(st.score)}">${st.score}%</span>` : ''}
               ${show ? `<span><span class="ee-muted">Đáp án:</span> <b>${esc(it.a)}</b></span>
-                <span class="ee-link" style="font-size:12px" onclick="eeQASayA(${i})">🔊</span>`
+                <span class="ee-link" style="font-size:12px" title="${it.aSeg ? 'Giọng thật trong Mini-Story' : 'Giọng đọc máy'}" onclick="eeQASayA(${i})">${it.aSeg ? '🎧' : '🔊'}</span>`
                 : `<span class="ee-link" style="font-size:13px" onclick="eeQAShow(${i})">Xem đáp án</span>`}
             </div>
           </div>`
@@ -658,6 +659,15 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     updatePanel()
   }
 
+  // Q&A audio: the Mini-Story clip when the question/answer was matched to it, else speech synthesis
+  function playQA(i, which) {
+    const it = qaItems(lesson)[i], seg = which === 'q' ? it?.qSeg : it?.aSeg, text = which === 'q' ? it?.q : it?.a
+    if (!it) return
+    $('ee-audio')?.pause()
+    if (seg) playSegment(seg.audio, seg.start, seg.end, text)
+    else { stopSegment(); speak(text, 0.9) }
+  }
+
   const patListen = i => micListen(patState, i, text => ({ text, result: checkPattern(patternItems(lesson)[i], text) }))
   const qaListen  = i => micListen(qaState, i, text => ({ text, score: matchScore(text, qaItems(lesson)[i].a), shown: true }))
 
@@ -708,8 +718,8 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     eePhraseCtx: i  => { const line = lineForPhrase(lesson, phraseItems(lesson)[i].en); const a = $('ee-audio')
                          if (!line) return
                          if (a && audioOk) { a.currentTime = line.t; a.play().catch(() => speak(line.text)) } else speak(line.text) },
-    eeQASay:     i  => speak(qaItems(lesson)[i]?.q, 0.9),
-    eeQASayA:    i  => speak(qaItems(lesson)[i]?.a, 0.9),
+    eeQASay:     i  => playQA(i, 'q'),
+    eeQASayA:    i  => playQA(i, 'a'),
     eeQAShow:    i  => { qaState[i] = { ...qaState[i], shown: true }; updatePanel() },
     eeQAAll:     () => { qaShowAll = !qaShowAll; updatePanel() },
     eeQAMic:     i  => qaListen(i),
@@ -753,7 +763,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   onLeave(() => {
     clearInterval(routineTimer)
     document.removeEventListener('keydown', onKey)
-    cancelWait(); stopPatRec(); flushListen(); cancelAnimationFrame(loopId); clearTimeout(fbTimer)
+    cancelWait(); stopPatRec(); stopSegment(); flushListen(); cancelAnimationFrame(loopId); clearTimeout(fbTimer)
     $('ee-audio')?.pause(); speechSynthesis.cancel()
   })
 

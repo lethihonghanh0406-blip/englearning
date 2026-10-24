@@ -90,16 +90,49 @@ export function msParts(lesson) {
 export function msLines(lesson, part = 0) {
   return msParts(lesson)[part]?.lines || []
 }
-// Q&A: the lesson's own list, or else question → answer pairs taken from the Mini-Story transcripts
+// Word-overlap similarity (Dice) on content words, 0–1; leading fillers (okay, well, ah…) are skipped
+const QA_STOP = new Set('the a an did does do is was were are be to of in on at for with and or it he she they her his their them him okay well ah oh so'.split(' '))
+const QA_FILLER = /^(okay|well|ah|oh|so)\b,?\s*/i
+const qaWords = s => s.replace(QA_FILLER, '').toLowerCase().replace(/[^a-z0-9' ]/g, ' ').split(/\s+/).filter(w => w && !QA_STOP.has(w))
+const qaHead = s => s.replace(QA_FILLER, '').toLowerCase().match(/[a-z']+/)?.[0]
+function similarity(a, b) {
+  const A = qaWords(a), B = new Set(qaWords(b))
+  return A.length + B.size ? 2 * A.filter(w => B.has(w)).length / (A.length + B.size) : 0
+}
+
+// Q&A: the lesson's own list, or else question → answer pairs taken from the Mini-Story transcripts.
+// qSeg / aSeg = { audio, start, end }: the matching stretch of Mini-Story audio (A.J.'s voice), if any.
 export function qaItems(lesson, max = 15) {
-  if (lesson?.qa?.length) return lesson.qa.map(([q, a]) => ({ q, a }))
+  const all = msParts(lesson).flatMap(p => {
+    const seg = i => ({ audio: p.audio, start: p.lines[i].t, end: p.lines[i + 1]?.t ?? p.lines[i].t + 6 })
+    return p.lines.map((l, i) => ({
+      ...l, seg: seg(i),
+      next: p.lines[i + 1] && { ...p.lines[i + 1], seg: seg(i + 1) },
+      after: p.lines.slice(i + 1, i + 5).map((x, k) => ({ ...x, seg: seg(i + 1 + k) })),   // a few lines that follow
+    }))
+  })
+  if (lesson?.qa?.length) return lesson.qa.map(([q, a]) => {
+    // best spoken question that reads like the written one;
+    // same opening word (who / how / when / did …) counts extra: it decides what kind of question it is
+    let best = null, score = 0
+    for (const l of all) if (/\?$/.test(l.text)) {
+      const sc = similarity(q, l.text) + (qaHead(q) === qaHead(l.text) ? 0.15 : 0)
+      if (sc > score) { score = sc; best = l }
+    }
+    if (score < 0.55) return { q, a }
+    // spoken answer: the first of the next few lines that isn't another question and contains
+    // most of the written answer's words (answers are short, so containment rather than similarity)
+    const aw = qaWords(a)
+    const covers = text => { const w = new Set(qaWords(text)); return aw.length && aw.filter(x => w.has(x)).length / aw.length >= 0.5 }
+    const ans = best.after.find(x => !/\?$/.test(x.text) && (covers(x.text) || similarity(a, x.text) >= 0.4))
+    return { q, a, qSeg: best.seg, aSeg: ans?.seg || null }
+  })
   const seen = new Set(), out = []
-  for (const { lines } of msParts(lesson)) lines.forEach((l, i) => {
-    const a = lines[i + 1]
+  all.forEach(l => {
     const key = l.text.toLowerCase()
-    if (l.type !== 'q' || a?.type !== 'a' || seen.has(key) || out.length >= max) return
+    if (l.type !== 'q' || l.next?.type !== 'a' || seen.has(key) || out.length >= max) return
     seen.add(key)
-    out.push({ q: l.text, a: a.text })
+    out.push({ q: l.text, a: l.next.text, qSeg: l.seg, aSeg: l.next.seg })
   })
   return out
 }
