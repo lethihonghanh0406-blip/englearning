@@ -352,6 +352,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
           </div>
         </div>`).join('')
     }
+    if (!lines().length) return `<div class="ee-muted" style="padding:16px">Phần này chưa có transcript — bạn vẫn nghe audio và trả lời các câu hỏi bình thường.</div>`
     return lines().map((l, i) => msLineHTML(l, i)).join('')
   }
 
