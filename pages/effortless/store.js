@@ -87,6 +87,10 @@ export function msParts(lesson) {
     : [{ label: '', audio: lesson?.ms_audio, story: lesson?.mini_story || [] }]
   return parts.map(p => ({ label: p.label, audio: p.audio, lines: p.story.map(([t, type, text]) => ({ t, type, text })) }))
 }
+// POV / Commentary transcripts: [[t, text], ...]
+export function storyLines(story) {
+  return (story || []).map(([t, text]) => ({ t, text }))
+}
 export function msLines(lesson, part = 0) {
   return msParts(lesson)[part]?.lines || []
 }

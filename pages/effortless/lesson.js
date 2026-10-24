@@ -1,4 +1,4 @@
-import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, msParts, vocabItems, exampleFor, getState, update,
+import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, msParts, storyLines, vocabItems, exampleFor, getState, update,
          markActivity, setCompleted, lessonProgress, addTime, getSetting, setSetting,
          phraseItems, patternItems, checkPattern, lineForPhrase, qaItems,
          ROUTINE, getRoutine, setRoutineStep, pendingSeconds,
@@ -14,10 +14,13 @@ const PLAYER_TEXT = {
   phrases:  ['Main Audio', 'Nghe lại câu chuyện để bắt các cụm từ hay.'],
   patterns: ['Main Audio', 'Nghe mẫu câu, rồi tự đặt câu của riêng bạn.'],
   qa:       ['Main Audio', 'Nghe câu chuyện, rồi tự trả lời các câu hỏi.'],
+  pov:      ['Point of View', 'Cùng câu chuyện kể ở thì / góc nhìn khác — ngữ pháp vào tai một cách tự nhiên.'],
+  com:      ['Commentary', 'A.J. bình luận về bài học và cách học — nghe để hiểu sâu hơn.'],
 }
-const TABS = [['main', '📄 Transcript'], ['ms', '❓ Mini-Story'], ['vocab', '🔤 Từ vựng'], ['phrases', '💬 Cụm từ'], ['patterns', '🗣 Mẫu câu'], ['qa', '🙋 Hỏi đáp']]
-const AUDIO_FOR = { main: 'main_audio', ms: 'ms_audio', vocab: 'vocab_audio', phrases: 'main_audio', patterns: 'main_audio', qa: 'main_audio' }
+const TABS = [['main', '📄 Transcript'], ['ms', '❓ Mini-Story'], ['vocab', '🔤 Từ vựng'], ['phrases', '💬 Cụm từ'], ['patterns', '🗣 Mẫu câu'], ['qa', '🙋 Hỏi đáp'], ['pov', '🔄 POV'], ['com', '🎙 Commentary']]
+const AUDIO_FOR = { main: 'main_audio', ms: 'ms_audio', vocab: 'vocab_audio', phrases: 'main_audio', patterns: 'main_audio', qa: 'main_audio', pov: 'pov_audio', com: 'com_audio' }
 const AUDIO_ACT = { main: 'main', ms: 'ms', phrases: 'main', patterns: 'main', qa: 'main' }   // activity completed by listening to the end
+const EXTRA = { pov: 'pov_audio', com: 'com_audio' }                                            // tabs only some lessons have
 
 export default function lessonView({ app, lessons, params, onLeave }, slug) {
   const lesson = lessons.find(l => l.slug === slug)
@@ -51,7 +54,9 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   const parts   = msParts(lesson)
   let msPart    = Math.min(parts.length - 1, Math.max(0, parts.findIndex(p => p.label === params?.get('part'))))
 
-  const lines = () => tab === 'main' ? mainLines(lesson) : tab === 'ms' ? msLines(lesson, msPart) : []
+  const lines = () => tab === 'main' ? mainLines(lesson) : tab === 'ms' ? msLines(lesson, msPart)
+    : tab === 'pov' ? storyLines(lesson.pov_story) : tab === 'com' ? storyLines(lesson.com_story) : []
+  const tabs = TABS.filter(([k]) => !EXTRA[k] || lesson[EXTRA[k]])
   const srcFor = t => audioUrl(t === 'ms' ? parts[msPart].audio : lesson[AUDIO_FOR[t]])
   let patState = {}                               // per pattern index: { text, heard, listening, result }
   let patRec   = null
@@ -79,7 +84,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
         <div>
           <div style="font-size:13px;font-weight:600;color:var(--o2)">${esc(lesson.course)} · ${levelLabel(lesson.level)}</div>
           <div class="ee-h" style="font-size:28px;margin:4px 0 6px">Bài ${lesson.lesson_no} – ${esc(lesson.title)}</div>
-          <div class="ee-muted" style="font-size:13px">🔊 Main Audio + Mini-Story &nbsp;•&nbsp; 📖 ${(lesson.vocab || []).length} từ vựng &nbsp;•&nbsp; ✅ ${p.total} hoạt động</div>
+          <div class="ee-muted" style="font-size:13px">🔊 Main Audio + Mini-Story${lesson.pov_audio ? ' + POV' : ''}${lesson.com_audio ? ' + Commentary' : ''} &nbsp;•&nbsp; 📖 ${(lesson.vocab || []).length} từ vựng &nbsp;•&nbsp; ✅ ${p.total} hoạt động</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;min-width:220px">
           <span style="font-size:13px;font-weight:600" id="ee-prog-label">${p.done}/${p.total}</span>
@@ -116,7 +121,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
           <!-- Content panel -->
           <div class="ee-card" style="padding:14px">
             <div style="display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px">
-              ${TABS.map(([k, l]) =>
+              ${tabs.map(([k, l]) =>
                 `<button class="ee-pill ${tab === k ? 'on' : ''}" onclick="eeTab('${k}')">${l}</button>`).join('')}
             </div>
             <div id="ee-tools" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:12px 4px 4px">${buildTools()}</div>
@@ -135,6 +140,8 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
             ${toolRow('🗣', '#fce7f3', 'Mẫu câu', 'Tự đặt câu & luyện nói', `eeTab('patterns')`)}
             ${toolRow('🙋', '#fef9c3', 'Hỏi đáp', 'Tự trả lời câu hỏi về bài', `eeTab('qa')`)}
             ${toolRow('❓', '#dcfce7', 'Mini-Story', 'Luyện phản xạ nói', `eeTab('ms')`)}
+            ${lesson.pov_audio ? toolRow('🔄', '#e0e7ff', 'POV', 'Câu chuyện ở góc nhìn khác', `eeTab('pov')`) : ''}
+            ${lesson.com_audio ? toolRow('🎙', '#fae8ff', 'Commentary', 'A.J. bình luận bài học', `eeTab('com')`) : ''}
             ${toolRow('🎯', '#fef3c7', 'Luyện tập', 'Nghe & trả lời, điền từ…', `navigate('${BASE}/practice?lesson=${encodeURIComponent(slug)}')`)}
             ${toolRow('📝', '#ede9fe', 'Ghi chú', 'Ghi chú của bạn', `document.getElementById('ee-note-text').focus()`)}
           </div>
@@ -227,7 +234,9 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
       </div>
       <div style="display:flex;align-items:baseline;gap:8px;margin:10px 0 8px">
         <span class="ee-h" style="font-size:30px;color:var(--o2)">${n}</span><span class="ee-muted">lần Main Audio</span>
-        <span class="ee-muted" style="margin-left:auto">Mini-Story: <b style="color:var(--ink)">${ms}</b> lần</span>
+        <span class="ee-muted" style="margin-left:auto;text-align:right">Mini-Story: <b style="color:var(--ink)">${ms}</b> lần
+          ${lesson.pov_audio ? `<br>POV: <b style="color:var(--ink)">${plays(slug, 'pov')}</b> lần` : ''}
+          ${lesson.com_audio ? `<br>Commentary: <b style="color:var(--ink)">${plays(slug, 'com')}</b> lần` : ''}</span>
       </div>
       <div style="display:flex;gap:3px" title="Mục tiêu 10 lần">${dots}</div>
       <div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--o-soft);font-size:13px;line-height:1.5">
@@ -266,6 +275,8 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   // ── Panel ──────────────────────────────────────────────────────────────────
   function buildTools() {
     const btn = (on, call, label) => `<button class="ee-pill ${on ? 'on' : ''}" style="padding:5px 12px;font-size:12px" onclick="${call}">${label}</button>`
+    if (EXTRA[tab]) return btn(hideText, 'eeToggleText()', '🙈 Ẩn transcript') +
+      `<span class="ee-muted" style="margin-left:6px">${tab === 'pov' ? 'Để ý thì của động từ thay đổi so với Main Audio.' : 'Bấm vào câu để nghe lại đoạn đó.'}</span>`
     if (tab === 'main')  return btn(showVI, 'eeToggleVI()', 'Dịch tiếng Việt') + (lesson.main_story?.[0]?.[3] ? btn(showIPA, 'eeToggleIPA()', '/ə/ IPA') : '') + btn(hideText, 'eeToggleText()', '🙈 Ẩn transcript')
     if (tab === 'vocab') return `<span class="ee-muted">Bấm vào từ để nghe phát âm • ☆ để lưu vào danh sách của bạn</span>`
     if (tab === 'phrases') return `<span class="ee-muted">Bấm vào cụm từ để nghe • “Nghe trong bài” phát đúng câu có cụm từ đó</span>`
@@ -382,7 +393,8 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
           <button onclick="event.stopPropagation();eeSave(${i})" title="Lưu từ" style="border:none;background:none;cursor:pointer;font-size:18px;color:${saved.has(v.word) ? 'var(--o)' : 'var(--mute)'}">${saved.has(v.word) ? '★' : '☆'}</button>
         </div>`).join('')
     }
-    if (tab === 'main') {
+    if (EXTRA[tab] && !lines().length) return `<div class="ee-muted" style="padding:16px">Phần này chưa có transcript — bạn vẫn nghe audio bình thường.</div>`
+    if (tab === 'main' || EXTRA[tab]) {
       return lines().map((l, i) => `
         <div class="ee-line" data-ee-line="${i}" onclick="eePlay(${i})">
           <span class="ee-play-dot">▶</span>
@@ -427,7 +439,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     return notes.map(n => `
       <div style="border-top:1px solid #f1f5f9;padding:8px 0;font-size:13px;display:flex;gap:8px">
         <div style="flex:1;min-width:0">
-          ${n.t != null ? `<span class="ee-link" style="font-size:12px" onclick="eeGoNote('${n.id}')">${n.tab === 'ms' ? `Mini-Story${parts[n.part || 0]?.label ? ' ' + esc(parts[n.part || 0].label) : ''}` : 'Main'} ${fmt(n.t)}</span> ` : ''}
+          ${n.t != null ? `<span class="ee-link" style="font-size:12px" onclick="eeGoNote('${n.id}')">${n.tab === 'ms' ? `Mini-Story${parts[n.part || 0]?.label ? ' ' + esc(parts[n.part || 0].label) : ''}` : (PLAYER_TEXT[n.tab]?.[0] || 'Main')} ${fmt(n.t)}</span> ` : ''}
           <span style="white-space:pre-wrap">${esc(n.text)}</span>
         </div>
         <span onclick="eeDelNote('${n.id}')" style="cursor:pointer;color:var(--mute)" title="Xóa">✕</span>
@@ -473,7 +485,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   }
 
   function countListen() {
-    const kind = tab === 'ms' ? 'ms' : AUDIO_FOR[tab] === 'main_audio' ? 'main' : null
+    const kind = tab === 'ms' ? 'ms' : EXTRA[tab] ? tab : AUDIO_FOR[tab] === 'main_audio' ? 'main' : null
     if (!kind) return
     addPlay(slug, kind)
     if ($('ee-listens')) $('ee-listens').innerHTML = buildListens()
