@@ -34,7 +34,7 @@ def spell_numbers(text):
 
 
 # Words the CMU dictionary lacks or gets wrong (placeholders survive ipa.convert as "word*")
-CUSTOM = {"bubba's": 'ˈbʌbəz', 'amtoken': 'ˌeɪˈɛm', 'imtoken': 'aɪm'}
+CUSTOM = {"bubba's": 'ˈbʌbəz', 'amtoken': 'ˌeɪˈɛm', 'imtoken': 'aɪm', 'eyeful': 'ˈaɪfʊl', 'soulmates': 'ˈsoʊlmeɪts', 'ocd': 'ˌoʊsiːˈdiː'}
 
 
 def to_ipa(text):
