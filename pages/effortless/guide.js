@@ -42,7 +42,7 @@ export default function guideView({ app, lessons }) {
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
             <div class="ee-h" style="font-size:18px">Lộ trình hôm nay</div>
             <label style="font-size:13px;color:var(--ink2);display:flex;align-items:center;gap:8px">Bài học
-              <select id="ee-gd-lesson" ${routine ? 'disabled title="Đã bắt đầu buổi học hôm nay"' : ''}
+              <select id="ee-gd-lesson" onchange="eeGdLesson(this.value)"
                 style="border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;max-width:240px">
                 ${lessons.map(l => `<option value="${esc(l.slug)}" ${l.slug === slug ? 'selected' : ''}>Bài ${l.lesson_no} – ${esc(l.title)}</option>`).join('')}
               </select></label>
@@ -115,6 +115,9 @@ export default function guideView({ app, lessons }) {
         </div>
       </div>
     </div>`)
+
+  // Switching lesson keeps today's step and minutes; only the lesson changes
+  window.eeGdLesson = v => { slug = v; if (getRoutine()) startRoutine(v) }
 
   window.eeGoStep = i => {
     slug = document.getElementById('ee-gd-lesson')?.value || slug

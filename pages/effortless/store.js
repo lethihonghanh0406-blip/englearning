@@ -205,7 +205,7 @@ export function getRoutine(s = getState()) {
 export function startRoutine(slug) {
   update(s => {
     const r = getRoutine(s)
-    s.routine = r && r.slug === slug ? r : { date: today(), slug, step: 0, spent: ROUTINE.map(() => 0) }
+    s.routine = r ? { ...r, slug } : { date: today(), slug, step: 0, spent: ROUTINE.map(() => 0) }   // one 45-min routine per day, any lesson
   })
 }
 export function setRoutineStep(step) {
