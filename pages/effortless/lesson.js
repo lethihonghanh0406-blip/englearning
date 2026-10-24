@@ -1,7 +1,8 @@
 import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, msParts, vocabItems, exampleFor, getState, update,
          markActivity, setCompleted, lessonProgress, addTime, getSetting, setSetting,
          phraseItems, patternItems, checkPattern, lineForPhrase,
-         ROUTINE, getRoutine, setRoutineStep, pendingSeconds } from './store.js'
+         ROUTINE, getRoutine, setRoutineStep, pendingSeconds,
+         addPlay, plays, listenStage, LISTEN_PLAN } from './store.js'
 import { shell, esc, fmt, art, levelLabel, speak, matchScore, scoreColor, getSR } from './ui.js'
 
 const WAIT_OPTIONS = [0, 5, 10, 15]
@@ -32,6 +33,8 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   let useMic    = getSetting('useMic', true)
   let speed     = getSetting('speed', 1)
   let hideAns   = false
+  let hideText  = false                           // main transcript blurred (first listens: ears only)
+  let passHeard = 0, lastT = 0                    // audio seconds actually played in this pass (seeks don't count)
   let revealed  = new Set()
   let activeIdx = -1
   let handledQ  = -1                              // question index we already paused after
@@ -58,7 +61,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     stopPatRec()
     flushListen()
     cancelAnimationFrame(loopId)
-    activeIdx = -1; handledQ = -1; audioOk = true
+    activeIdx = -1; handledQ = -1; audioOk = true; passHeard = 0; lastT = 0
     speechSynthesis.cancel()
     const p   = lessonProgress(slug)
     const url = srcFor(tab)
@@ -118,6 +121,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
 
         <!-- Right column -->
         <div class="ee-grid" style="grid-template-columns:minmax(0,1fr)">
+          <div class="ee-card" style="padding:16px" id="ee-listens">${buildListens()}</div>
           <div class="ee-card" style="padding:16px">
             <div class="ee-h" style="font-size:15px;margin-bottom:10px">Công cụ bài học</div>
             ${toolRow('📄', '#dbeafe', 'Transcript', 'Đọc và nghe theo', `eeTab('main')`)}
@@ -206,6 +210,28 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
       <div><div style="font-size:14px;font-weight:600">${title}</div><div class="ee-muted">${sub}</div></div></div>`
   }
 
+  // ── Listen counter + suggested schedule ───────────────────────────────────
+  function buildListens() {
+    const n = plays(slug, 'main'), ms = plays(slug, 'ms'), st = listenStage(n)
+    const dots = Array.from({ length: 10 }, (_, i) => `<span style="flex:1;height:8px;border-radius:4px;background:${i < n ? 'var(--o)' : '#e2e8f0'}"></span>`).join('')
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="ee-h" style="font-size:15px">🎧 Số lần nghe</div>
+        <span class="ee-link" style="font-size:12px" onclick="navigate('${BASE}/guide#listen-plan')">Lịch nghe gợi ý</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin:10px 0 8px">
+        <span class="ee-h" style="font-size:30px;color:var(--o2)">${n}</span><span class="ee-muted">lần Main Audio</span>
+        <span class="ee-muted" style="margin-left:auto">Mini-Story: <b style="color:var(--ink)">${ms}</b> lần</span>
+      </div>
+      <div style="display:flex;gap:3px" title="Mục tiêu 10 lần">${dots}</div>
+      <div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--o-soft);font-size:13px;line-height:1.5">
+        <div style="font-weight:700;color:var(--o2)">${st.icon} Lần nghe tiếp theo: ${n + 1} · ${st.label}</div>
+        <div style="color:var(--ink2);margin-top:2px">${st.text}</div>
+        ${st === LISTEN_PLAN[0] && tab === 'main' ? `<span class="ee-link" style="font-size:12px" onclick="eeToggleText()">${hideText ? '👁 Hiện transcript' : '🙈 Ẩn transcript khi nghe'}</span>` : ''}
+        ${st === LISTEN_PLAN[3] && tab !== 'ms' ? `<span class="ee-link" style="font-size:12px" onclick="eeTab('ms')">❓ Luyện Mini-Story →</span>` : ''}
+      </div>`
+  }
+
   function buildActivities() {
     const done = getState().lessons[slug]?.done || {}
     return ACTIVITIES.map(([a, label]) => `
@@ -234,7 +260,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   // ── Panel ──────────────────────────────────────────────────────────────────
   function buildTools() {
     const btn = (on, call, label) => `<button class="ee-pill ${on ? 'on' : ''}" style="padding:5px 12px;font-size:12px" onclick="${call}">${label}</button>`
-    if (tab === 'main')  return btn(showVI, 'eeToggleVI()', 'Dịch tiếng Việt')
+    if (tab === 'main')  return btn(showVI, 'eeToggleVI()', 'Dịch tiếng Việt') + btn(hideText, 'eeToggleText()', '🙈 Ẩn transcript')
     if (tab === 'vocab') return `<span class="ee-muted">Bấm vào từ để nghe phát âm • ☆ để lưu vào danh sách của bạn</span>`
     if (tab === 'phrases') return `<span class="ee-muted">Bấm vào cụm từ để nghe • “Nghe trong bài” phát đúng câu có cụm từ đó</span>`
     if (tab === 'patterns') return `<span class="ee-muted">Nghe câu mẫu, rồi nói hoặc gõ một câu <b>của riêng bạn</b> dùng cấu trúc đó</span>`
@@ -321,8 +347,8 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
           <span class="ee-play-dot">▶</span>
           <span style="font-size:12px;color:var(--mute);min-width:40px;padding-top:2px;font-variant-numeric:tabular-nums">${fmt(l.t)}</span>
           <div>
-            <div style="font-size:15px;line-height:1.6">${esc(l.text)}</div>
-            ${showVI && l.vi ? `<div style="font-size:13px;color:var(--o2);font-style:italic;line-height:1.5">${esc(l.vi)}</div>` : ''}
+            <div class="${hideText ? 'ee-hidden' : ''}" style="font-size:15px;line-height:1.6">${esc(l.text)}</div>
+            ${showVI && l.vi ? `<div class="${hideText ? 'ee-hidden' : ''}" style="font-size:13px;color:var(--o2);font-style:italic;line-height:1.5">${esc(l.vi)}</div>` : ''}
           </div>
         </div>`).join('')
     }
@@ -403,6 +429,13 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     if (sec > 0) { addTime('listen', sec); pendingListen -= sec }
   }
 
+  function countListen() {
+    const kind = tab === 'ms' ? 'ms' : AUDIO_FOR[tab] === 'main_audio' ? 'main' : null
+    if (!kind) return
+    addPlay(slug, kind)
+    if ($('ee-listens')) $('ee-listens').innerHTML = buildListens()
+  }
+
   function finishAudio() {
     if (audioDone) return
     audioDone = true
@@ -416,6 +449,11 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
       $('ee-cur').textContent = fmt(t)
       if (document.activeElement !== $('ee-seek')) $('ee-seek').value = t / audio.duration * 100
       if (!audioDone && t / audio.duration >= 0.9) finishAudio()
+      // One listen = reached 90% after really playing ≥70% of the audio in this pass
+      const step = t - lastT
+      if (!audio.paused && step > 0 && step < 2) passHeard += step
+      lastT = t
+      if (t / audio.duration >= 0.9 && passHeard >= audio.duration * 0.7) { passHeard = 0; countListen() }
     }
     const ls = lines()
     let idx = -1
@@ -609,6 +647,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     eeSpeed:     s  => { speed = s; setSetting('speed', s); if ($('ee-audio')) $('ee-audio').playbackRate = s; $('ee-speeds').innerHTML = buildSpeeds() },
     eeReveal:    i  => { revealed.add(i); updatePanel() },
     eeToggleVI:  () => { showVI = !showVI; setSetting('showVI', showVI); updatePanel() },
+    eeToggleText:() => { hideText = !hideText; updatePanel(); if ($('ee-listens')) $('ee-listens').innerHTML = buildListens() },
     eeToggleHide:() => { hideAns = !hideAns; revealed = new Set(); updatePanel() },
     eeWaitSec:   s  => { waitSec = s; setSetting('waitSec', s); if (!s) cancelWait(); updatePanel() },
     eeToggleMic: () => { useMic = !useMic; setSetting('useMic', useMic); updatePanel() },

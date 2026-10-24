@@ -1,5 +1,5 @@
 import { BASE, ROUTINE, DAILY_GOAL_MIN, getState, getRoutine, startRoutine, setRoutineStep, nextLesson,
-         streak, dayMinutes, goalMet, today, setSetting } from './store.js'
+         streak, dayMinutes, goalMet, today, setSetting, LISTEN_PLAN, listenStage, plays } from './store.js'
 import { shell, esc } from './ui.js'
 
 const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
@@ -11,6 +11,9 @@ export default function guideView({ app, lessons }) {
   const todayMin = dayMinutes(s)
   const step    = routine?.step ?? 0
   const allDone = routine && step >= ROUTINE.length
+  const cur     = lessons.find(l => l.slug === slug)
+  const heard   = cur ? plays(cur.slug, 'main', s) : 0
+  const stage   = listenStage(heard)
   const stepDone = i => routine && (i < step || routine.spent[i] >= ROUTINE[i].min * 60)
 
   const week = Array.from({ length: 7 }, (_, i) => {
@@ -77,6 +80,26 @@ export default function guideView({ app, lessons }) {
             🎉 Bạn đã hoàn thành lộ trình hôm nay! ${todayMin >= DAILY_GOAL_MIN ? 'Chuỗi ngày học đã được cộng.' : `Học thêm ${DAILY_GOAL_MIN - todayMin} phút nữa để giữ chuỗi.`}</div>` : ''}
         </div>
 
+        <div class="ee-card" id="listen-plan">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+            <div class="ee-h" style="font-size:16px">🎧 Nghe bao nhiêu lần?</div>
+            ${cur ? `<span class="ee-muted">Bài ${cur.lesson_no}: đã nghe <b style="color:var(--o2)">${heard}</b> lần Main Audio</span>` : ''}
+          </div>
+          <div class="ee-grid" style="grid-template-columns:minmax(0,1fr);gap:8px">
+            ${LISTEN_PLAN.map(p => {
+              const on = cur && p === stage
+              return `<div style="display:flex;gap:14px;align-items:center;padding:12px 14px;border-radius:12px;border:1px solid ${on ? '#93c5fd' : 'var(--line)'};background:${on ? 'var(--o-soft)' : '#fff'}">
+                <span style="font-size:22px;width:30px;text-align:center">${p.icon}</span>
+                <span style="min-width:150px;font-weight:700;color:${on ? 'var(--o2)' : 'var(--ink)'}">${p.label}</span>
+                <span style="flex:1;font-size:14px;color:var(--ink2)">${p.text}</span>
+                ${on ? `<span style="font-size:11px;font-weight:700;color:#fff;background:var(--o);border-radius:999px;padding:3px 10px;white-space:nowrap">Bạn đang ở đây</span>` : ''}
+              </div>`
+            }).join('')}
+          </div>
+          <div class="ee-muted" style="margin-top:10px">Đây là lịch gợi ý để luyện tập, không phải quy định bắt buộc của A.J. Hoge.
+            Một lần nghe được tính khi bạn nghe gần hết bài (tua nhanh không tính).</div>
+        </div>
+
         <div class="ee-card">
           <div class="ee-h" style="font-size:16px;margin-bottom:10px">Nguyên tắc Effortless English</div>
           <div style="font-size:14px;color:var(--ink2);line-height:1.8">
@@ -115,6 +138,9 @@ export default function guideView({ app, lessons }) {
         </div>
       </div>
     </div>`)
+
+  // Deep link from the lesson page ("Lịch nghe gợi ý"); after the router's scroll-to-top
+  if (location.hash === '#listen-plan') setTimeout(() => document.getElementById('listen-plan')?.scrollIntoView({ behavior: 'smooth' }), 60)
 
   // Switching lesson keeps today's step and minutes; only the lesson changes
   window.eeGdLesson = v => { slug = v; if (getRoutine()) startRoutine(v) }

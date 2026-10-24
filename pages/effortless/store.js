@@ -180,6 +180,30 @@ export function markActivity(slug, act) {
   })
 }
 
+// How many times each audio was listened to (almost) to the end: { main, ms }
+export function addPlay(slug, kind) {
+  update(s => {
+    const l = s.lessons[slug] ||= { done: {}, completed: false }
+    l.plays ||= {}
+    l.plays[kind] = (l.plays[kind] || 0) + 1
+  })
+}
+export function plays(slug, kind, s = getState()) {
+  return s.lessons[slug]?.plays?.[kind] || 0
+}
+
+// Suggested listening schedule (gợi ý luyện tập, không phải quy định của A.J. Hoge)
+export const LISTEN_PLAN = [
+  { to: 2,        label: 'Lần 1–2',              icon: '👂', text: 'Nghe toàn bộ bài, chưa nhìn transcript, cố hiểu ý chính.' },
+  { to: 5,        label: 'Lần 3–5',              icon: '📖', text: 'Vừa nghe vừa xem transcript để hiểu nội dung và cụm từ.' },
+  { to: 10,       label: 'Lần 6–10',             icon: '🗣', text: 'Nghe lại, nói theo audio, bắt chước phát âm và ngữ điệu.' },
+  { to: Infinity, label: 'Những ngày tiếp theo', icon: '❓', text: 'Nghe lại và luyện trả lời câu hỏi mà không nhìn đáp án.' },
+]
+// Stage for the next listen, given how many listens are done
+export function listenStage(done) {
+  return LISTEN_PLAN.find(p => done + 1 <= p.to)
+}
+
 export function setCompleted(slug, completed) {
   update(s => {
     const l = s.lessons[slug] ||= { done: {}, completed: false }
