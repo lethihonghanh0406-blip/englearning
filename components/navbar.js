@@ -1,6 +1,25 @@
 import { supabase } from '../supabase/client.js'
 
+// Main menu: [path, icon, label, tag]
+const NAV_LINKS = [
+  ['/english/effortless', '🎧', 'Effortless<span class="nav-long"> English</span>', 'Mới'],
+  ['/english/ipa',        '🔤', 'Bảng IPA'],
+  ['/english/practice',   '🎯', 'Luyện tập'],
+]
+
+// The navbar is rendered once, so re-mark the current section after every SPA navigation
+function markActive() {
+  document.querySelectorAll('.nav-link').forEach(a => a.classList.toggle('on', location.pathname.startsWith(a.dataset.path)))
+}
+if (!window.__navActiveHook) {
+  window.__navActiveHook = true
+  const push = history.pushState
+  history.pushState = function (...args) { push.apply(this, args); markActive() }
+  addEventListener('popstate', markActive)
+}
+
 export async function navbar(){
+  setTimeout(markActive, 0)
 
 const { data } = await supabase.auth.getSession()
 
@@ -116,40 +135,12 @@ return ` <div class="nav">
   </div>
 
   <!-- CENTER -->
-  <div class="nav-center">
-
-    <!-- TIẾNG TRUNG DROPDOWN -->
-    <div class="menu-item toeic-menu">
-      Tiếng Trung
-
-      <div class="toeic-dropdown">
-        <div onclick="navigate('/chinese/pinyin')">🔤 Bảng Pinyin</div>
-        <div onclick="navigate('/chinese/shadowing')">🎤 Shadowing</div>
-        <div onclick="navigate('/chinese/writing')">✍️ Luyện viết</div>
-        <div onclick="navigate('/chinese/books')">📚 Sách giáo khoa</div>
-      </div>
-    </div>
-    <div class="menu-item toeic-menu">
-      Giao tiếp
-
-      <div class="toeic-dropdown">
-        <div onclick="navigate('/english/ipa')">🔤 Bảng IPA</div>
-        <div onclick="navigate('/english/practice')">🎯 Luyện tập</div>
-        <div onclick="navigate('/english/effortless')">🎧 Effortless English</div>
-      </div>
-    </div>
-
-    <!-- CỘNG ĐỒNG DROPDOWN -->
-    <div class="menu-item toeic-menu">
-      Cộng đồng
-
-      <div class="toeic-dropdown">
-        <div onclick="navigate('/blog')">📝 Bài viết</div>
-        <div onclick="window.open('https://www.facebook.com/groups/2065067230889617/','_blank')">👥 Nhóm Facebook</div>
-      </div>
-    </div>
-
-  </div>
+  <nav class="nav-center">
+    ${NAV_LINKS.map(([path, icon, label, tag]) => `
+      <a class="nav-link" data-path="${path}" onclick="navigate('${path}')">
+        <span class="nav-ic">${icon}</span>${label}${tag ? `<span class="nav-tag">${tag}</span>` : ''}
+      </a>`).join('')}
+  </nav>
 
   <!-- RIGHT -->
   <div class="nav-right">
@@ -200,18 +191,30 @@ return ` <div class="nav">
     display:block;
   }
 
-  .menu-item{
-    cursor:pointer;
-    position:relative;
-    white-space:nowrap;
-    padding:8px 14px;
+  .nav-link{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 16px;
     border-radius:999px;
+    cursor:pointer;
+    white-space:nowrap;
+    color:#334155;
+    text-decoration:none;
     transition:background .15s,color .15s;
   }
 
-  .menu-item:hover{
-    color:#2563eb;
-    background:#eff6ff;
+  .nav-link:hover{ background:#f1f5f9; color:#0f172a; }
+  .nav-link.on{ background:#eff6ff; color:#1d4ed8; font-weight:600; }
+  .nav-ic{ font-size:16px; line-height:1; }
+
+  .nav-tag{
+    font-size:10px;
+    font-weight:700;
+    color:#fff;
+    background:#f97316;
+    border-radius:6px;
+    padding:1px 6px;
   }
 
   /* USER */
@@ -312,70 +315,21 @@ return ` <div class="nav">
     background:#1d4ed8;
   }
 
-  /* ===== TOEIC DROPDOWN FIX ===== */
-
-  .toeic-menu{
-    position:relative;
-  }
-
-  .toeic-dropdown{
-    position:absolute;
-    top:calc(100% + 6px);
-    left:0;
-
-    background:white;
-    border:1px solid #e2e8f0;
-    border-radius:14px;
-    width:240px;
-    padding:6px;
-    color:#334155;
-    font-size:14px;
-
-    box-shadow:0 12px 32px rgba(15,23,42,0.12);
-
-    display:none;
-
-    opacity:0;
-    transform:translateY(8px);
-    transition:0.2s;
-  }
-
-  .toeic-dropdown div{
-    padding:10px 12px;
-    border-radius:10px;
-  }
-
-  .toeic-dropdown div:hover{
-    background:#eff6ff;
-    color:#1d4ed8;
-  }
-
-  /* hover mượt */
-  .toeic-menu:hover .toeic-dropdown{
-    display:block;
-    opacity:1;
-    transform:translateY(0);
-  }
-
-  /* nối hover tránh giật */
-  .toeic-menu::after{
-    content:"";
-    position:absolute;
-    top:100%;
-    left:0;
-    width:100%;
-    height:12px;
-  }
-
   @media (max-width:1000px){
-    .nav{ padding:10px 16px; }
-    .nav-center{ display:none; }
+    .nav{ padding:10px 16px; flex-wrap:wrap; row-gap:8px; }
+    .nav-left,.nav-right{ flex:1 1 auto; }
+    .nav-center{ order:3; flex:1 1 100%; justify-content:flex-start; overflow-x:auto; font-size:14px; }
+    .nav-link{ padding:6px 12px; }
     .username{ display:none; }
     .logo{ height:32px; }
     .login-btn,.trial-btn{ padding:8px 12px; font-size:13px; }
   }
 
   @media (max-width:480px){
+    .nav-center{ justify-content:space-between; gap:2px; font-size:13px; }
+    .nav-link{ padding:6px 8px; gap:5px; }
+    .nav-ic{ font-size:14px; }
+    .nav-tag,.nav-long{ display:none; }
     .login-btn{ display:none; }
   }
 

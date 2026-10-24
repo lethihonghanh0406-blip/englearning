@@ -109,8 +109,10 @@ export default function dashboardView({ app, lessons }) {
             ${course('🌄', 'linear-gradient(135deg,#1e40af,#60a5fa)', 'Effortless English', 'Tự nhiên • Giao tiếp • Thực tế',
               `<div style="display:flex;align-items:center;gap:8px;margin-top:10px"><div class="ee-bar" style="flex:1"><div style="width:${pct}%"></div></div>
                 <span class="ee-muted">${completedCount}/${lessons.length} bài</span></div>`, `navigate('${BASE}/lessons')`, 'Đang học')}
-            ${course('🀄', 'linear-gradient(135deg,#db2777,#f9a8d4)', 'Tiếng Trung HSK', 'Pinyin • Shadowing • Luyện viết',
-              `<div class="ee-link" style="margin-top:10px">Khám phá →</div>`, `navigate('/chinese/pinyin')`)}
+            ${course('🔤', 'linear-gradient(135deg,#1d4ed8,#93c5fd)', 'Bảng IPA', '44 âm • Video phát âm',
+              `<div class="ee-link" style="margin-top:10px">Học phát âm →</div>`, `navigate('/english/ipa')`)}
+            ${course('🎯', 'linear-gradient(135deg,#d97706,#fcd34d)', 'Luyện tập', 'Nghe – nói giao tiếp',
+              `<div class="ee-link" style="margin-top:10px">Luyện ngay →</div>`, `navigate('/english/practice')`)}
           </div>
         </div>
       </div>
