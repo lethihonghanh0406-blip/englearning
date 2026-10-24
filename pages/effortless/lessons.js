@@ -1,4 +1,4 @@
-import { BASE, getState, lessonProgress } from './store.js'
+import { BASE, getState, lessonProgress, isPro } from './store.js'
 import { shell, esc, scene, levelLabel } from './ui.js'
 
 export default function lessonsView({ app, lessons }) {
@@ -25,11 +25,12 @@ export default function lessonsView({ app, lessons }) {
                 <div style="position:relative;height:130px">
                   ${scene(l.lesson_no, { id: `l${l.lesson_no}` })}
                   <span style="position:absolute;top:10px;left:10px;background:rgba(15,23,42,.75);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:6px">Bài ${l.lesson_no}</span>
+                  ${l.locked ? `<div style="position:absolute;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;gap:6px">🔒 Gói trọn đời</div>` : ''}
                   ${p.completed ? `<span style="position:absolute;top:10px;right:10px;background:#16a34a;color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:6px">✓ Hoàn thành</span>` : ''}
                 </div>
                 <div style="padding:14px 16px">
                   <div class="ee-h" style="font-size:16px">${esc(l.title)}</div>
-                  <div class="ee-muted" style="margin:2px 0 10px">${levelLabel(l.level)} • ${(l.vocab || []).length} từ vựng</div>
+                  <div class="ee-muted" style="margin:2px 0 10px">${levelLabel(l.level)} • ${l.vocab_count ?? (l.vocab || []).length} từ vựng${l.lesson_no === 1 && !isPro() ? ' • <b style="color:#16a34a">Miễn phí</b>' : ''}</div>
                   <div class="ee-bar"><div style="width:${p.done / p.total * 100}%"></div></div>
                   <div class="ee-muted" style="margin-top:6px">${p.done}/${p.total} hoạt động</div>
                 </div>

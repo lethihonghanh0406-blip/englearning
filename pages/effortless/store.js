@@ -36,23 +36,40 @@ export const ROUTINE = [
 ]
 export const DAILY_GOAL_MIN = ROUTINE.reduce((n, r) => n + r.min, 0)
 
-let lessonsCache = null
-let user = null
+export const PRICE = 199_000          // gói trọn đời, mở khóa mọi bài (Bài 1 học miễn phí)
 
+let lessonsCache = null, cacheKey = null
+let user = null, pro = false
+
+// All lessons in order. RLS only returns content the user may open (Bài 1, or every lesson for Pro);
+// the rest come from the public catalog as { ...titles, locked: true } so they can be listed with 🔒.
 export async function loadLessons() {
-  if (lessonsCache) return lessonsCache
-  const { data } = await supabase.from('effortless_lessons').select('*').order('course').order('lesson_no')
-  lessonsCache = data || []
+  const key = `${user?.id || 'guest'}:${pro}`
+  if (lessonsCache && cacheKey === key) return lessonsCache
+  const [{ data: cat }, { data: full }] = await Promise.all([
+    supabase.from('effortless_catalog').select('*').order('course').order('lesson_no'),
+    supabase.from('effortless_lessons').select('*'),
+  ])
+  const open = Object.fromEntries((full || []).map(l => [l.slug, l]))
+  lessonsCache = (cat || []).map(c => open[c.slug] ||
+    { ...c, locked: true, main_story: [], mini_story: [], ms_parts: [], vocab: [], patterns: [], phrases: [] })
+  cacheKey = key
   return lessonsCache
 }
 
 export async function loadUser() {
   const { data: { session } } = await supabase.auth.getSession()
   user = session?.user || null
+  pro = false
+  if (user) {
+    const { data: p } = await supabase.from('profiles').select('plan, plan_expires_at').eq('id', user.id).single()
+    pro = p?.plan === 'pro' && (!p.plan_expires_at || new Date(p.plan_expires_at) > new Date())
+  }
   return user
 }
 
 export function getUser() { return user }
+export function isPro() { return pro }
 
 // Audio paths are full URLs or "bucket/path/file.mp3" in public Supabase Storage
 export function audioUrl(path) {

@@ -19,6 +19,7 @@ const norm = s => s.toLowerCase().replace(/[^a-z']/g, '')
 export default function practiceView({ app, lessons, params, onLeave }) {
   const s0 = getState()
   let slug  = params.get('lesson') || s0.last || lessons[0]?.slug
+  if (!lessons.some(l => l.slug === slug)) slug = lessons[0]?.slug   // locked or unknown lesson
   let mode  = 'listen'
   let items = []
   let idx   = 0

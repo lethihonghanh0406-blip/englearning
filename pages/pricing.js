@@ -8,42 +8,26 @@ const BANK = {
   prefix:  'LEARNLANG',
 }
 
+// One plan only. The price is enforced in the database (trigger payments_set_price), this is display only.
 const PLANS = [
-  {
-    id:       'monthly',
-    label:    '1 Tháng',
-    price:    79_000,
-    sub:      'Dùng thử linh hoạt',
-    badge:    null,
-    days:     30,
-    highlight: false,
-  },
-  {
-    id:       'yearly',
-    label:    '1 Năm',
-    price:    599_000,
-    sub:      'Tiết kiệm 37% so với tháng',
-    badge:    '🔥 Phổ biến nhất',
-    days:     365,
-    highlight: true,
-  },
   {
     id:       'lifetime',
     label:    'Trọn đời',
-    price:    1_280_000,
-    sub:      'Một lần · dùng mãi mãi',
-    badge:    '⭐ Tốt nhất',
+    price:    199_000,
+    sub:      'Thanh toán một lần · dùng mãi mãi',
+    badge:    '⭐ Effortless English',
     days:     null,
-    highlight: false,
+    highlight: true,
   },
 ]
 
 const FEATURES = [
-  ['🌐', 'Đọc song ngữ EN–VI theo từng câu'],
-  ['📊', 'Thống kê & báo cáo chi tiết'],
-  ['🔖', 'Lưu từ vựng & ôn tập thông minh'],
-  ['⚡', 'Truy cập không giới hạn tất cả đề thi'],
-  ['🎯', 'Luyện tập theo từng kỹ năng chuyên sâu'],
+  ['🎧', 'Toàn bộ bài học Effortless English'],
+  ['🗣', 'Mini-Story tự dừng để luyện phản xạ nói'],
+  ['🌐', 'Transcript song ngữ EN–VI từng câu'],
+  ['📘', 'Từ vựng, cụm từ & mẫu câu kèm IPA'],
+  ['🔥', 'Lộ trình 45 phút mỗi ngày & theo dõi tiến độ'],
+  ['♾️', 'Bao gồm các bài được thêm sau này'],
 ]
 
 export default async function pricingPage(app) {
@@ -85,11 +69,11 @@ function renderPlans(app, uid) {
           <h1 style="font-size:34px;font-weight:800;color:#0f172a;margin:0 0 10px;font-family:'Space Grotesk',sans-serif;line-height:1.2">
             Nâng cấp để học<br>hiệu quả hơn
           </h1>
-          <p style="font-size:15px;color:#64748b;margin:0">Mở khóa toàn bộ tính năng Premium với giá cực hợp lý</p>
+          <p style="font-size:15px;color:#64748b;margin:0">Bài 1 học miễn phí · mở khóa tất cả các bài chỉ với một lần thanh toán</p>
         </div>
 
         <!-- Plan cards -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">
+        <div style="display:grid;grid-template-columns:minmax(0,360px);justify-content:center;gap:16px;margin-bottom:28px">
           ${PLANS.map(p => planCard(p)).join('')}
         </div>
 
@@ -118,7 +102,7 @@ function renderPlans(app, uid) {
     // Lấy hoặc tạo payment cho plan này
     const { data: existing } = await supabase
       .from('payments').select('*')
-      .eq('user_id', uid).eq('status', 'pending').eq('plan', planId)
+      .eq('user_id', uid).eq('status', 'pending').eq('plan', planId).eq('amount', plan.price)
       .order('created_at', { ascending: false }).limit(1).single()
 
     let payment = existing
@@ -307,9 +291,9 @@ function renderSuccess(app, plan) {
               <span>${ic}</span>${tx}
             </div>`).join('')}
         </div>
-        <button onclick="navigate('/toeic-lr')"
+        <button onclick="location.href='/english/effortless/lessons'"
           style="width:100%;padding:14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(217,119,6,.3)">
-          Bắt đầu luyện tập →
+          Vào học ngay →
         </button>
       </div>
     </div>
@@ -328,9 +312,9 @@ function renderAlreadyPro(app, profile) {
         <div style="font-size:56px;margin-bottom:16px">👑</div>
         <h2 style="font-size:22px;font-weight:700;color:#92400e;margin:0 0 6px;font-family:'Space Grotesk',sans-serif">Bạn đang dùng Pro!</h2>
         <p style="font-size:13px;color:#94a3b8;margin:0 0 24px">${expires}</p>
-        <button onclick="navigate('/toeic-lr')"
+        <button onclick="navigate('/english/effortless/lessons')"
           style="width:100%;padding:13px;background:#2563eb;color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">
-          ← Về luyện tập
+          Vào học Effortless English →
         </button>
       </div>
     </div>`

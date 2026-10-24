@@ -44,7 +44,7 @@ export default function guideView({ app, lessons }) {
             <label style="font-size:13px;color:var(--ink2);display:flex;align-items:center;gap:8px">Bài học
               <select id="ee-gd-lesson" onchange="eeGdLesson(this.value)"
                 style="border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;max-width:240px">
-                ${lessons.map(l => `<option value="${esc(l.slug)}" ${l.slug === slug ? 'selected' : ''}>Bài ${l.lesson_no} – ${esc(l.title)}</option>`).join('')}
+                ${lessons.map(l => `<option value="${esc(l.slug)}" ${l.slug === slug ? 'selected' : ''}>${l.locked ? '🔒 ' : ''}Bài ${l.lesson_no} – ${esc(l.title)}</option>`).join('')}
               </select></label>
           </div>
           <div class="ee-grid" style="grid-template-columns:minmax(0,1fr);gap:12px">

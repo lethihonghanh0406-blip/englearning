@@ -1,5 +1,5 @@
 // Shared layout + helpers for the Effortless English section
-import { BASE, getUser, streak, dayMinutes, DAILY_GOAL_MIN } from './store.js'
+import { BASE, getUser, streak, dayMinutes, DAILY_GOAL_MIN, PRICE } from './store.js'
 
 export function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
@@ -184,6 +184,46 @@ export function speak(text, rate = 0.9) {
   const u = new SpeechSynthesisUtterance(text)
   u.lang = 'en-US'; u.rate = rate
   speechSynthesis.speak(u)
+}
+
+// Locked lesson: what the lifetime plan unlocks + upgrade / free-lesson buttons
+export function paywall(app, lesson, freeSlug) {
+  const user = getUser()
+  const perks = [
+    ['🎧', 'Toàn bộ bài học Effortless English', 'Main Audio, Mini-Story, transcript song ngữ'],
+    ['🗣', 'Mini-Story tự dừng để bạn trả lời', 'Luyện phản xạ nói, chấm câu trả lời bằng giọng nói'],
+    ['📘', 'Từ vựng, cụm từ & mẫu câu', 'Kèm IPA, nghĩa tiếng Việt và bài luyện tập'],
+    ['🔥', 'Lộ trình 45 phút mỗi ngày', 'Theo dõi tiến độ và chuỗi ngày học'],
+    ['♾️', 'Thanh toán một lần, dùng trọn đời', 'Bao gồm cả các bài được thêm sau này'],
+  ]
+  shell(app, '/lessons', `
+    <div style="max-width:720px;margin:20px auto">
+      <div class="ee-card" style="padding:0;overflow:hidden">
+        <div style="position:relative;height:150px;color:#fff">
+          ${scene(lesson?.lesson_no || 0, { id: 'pw' })}
+          <div style="position:absolute;inset:0;background:rgba(15,23,42,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+            <div style="font-size:34px">🔒</div>
+            <div style="font-size:14px;font-weight:600">Bài ${lesson?.lesson_no ?? ''} – ${esc(lesson?.title || '')}</div>
+          </div>
+        </div>
+        <div style="padding:26px 28px">
+          <div class="ee-h" style="font-size:24px;text-align:center">Mở khóa Effortless English trọn đời</div>
+          <div style="text-align:center;margin:10px 0 22px">
+            <span class="ee-h" style="font-size:40px;color:var(--o2)">${(PRICE / 1000).toLocaleString('vi-VN')}k</span>
+            <span style="color:var(--ink2);font-size:14px"> · một lần duy nhất</span>
+          </div>
+          ${perks.map(([ic, t, d]) => `
+            <div style="display:flex;gap:12px;align-items:flex-start;padding:8px 0">
+              <span style="font-size:20px;width:28px;text-align:center">${ic}</span>
+              <div><div style="font-size:14px;font-weight:600">${t}</div><div class="ee-muted">${d}</div></div>
+            </div>`).join('')}
+          <button class="ee-btn" style="width:100%;margin-top:18px;padding:14px;font-size:15px"
+            onclick="${user ? `navigate('/pricing')` : `sessionStorage.setItem('authReturnPath','/pricing');location.href='/login.html'`}">
+            ${user ? 'Nâng cấp ngay' : 'Đăng nhập để nâng cấp'} – ${PRICE.toLocaleString('vi-VN')}đ</button>
+          ${freeSlug ? `<button class="ee-btn ghost" style="width:100%;margin-top:10px" onclick="navigate('${BASE}/lesson/${encodeURIComponent(freeSlug)}')">Học thử Bài 1 miễn phí</button>` : ''}
+        </div>
+      </div>
+    </div>`)
 }
 
 export function loading(app) {
