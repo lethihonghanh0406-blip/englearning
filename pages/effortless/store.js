@@ -79,7 +79,7 @@ export function audioUrl(path) {
 }
 
 export function mainLines(lesson) {
-  return (lesson?.main_story || []).map(([t, text, vi]) => ({ t, text, vi }))
+  return (lesson?.main_story || []).map(([t, text, vi, ipa]) => ({ t, text, vi, ipa }))
 }
 // Mini-Story parts: lessons with several mini stories (A, B, …) list them in ms_parts
 export function msParts(lesson) {
@@ -109,16 +109,16 @@ export function vocabItems(lesson) {
 }
 
 export function phraseItems(lesson) {
-  return (lesson?.phrases || []).map(([en, vi]) => ({ en, vi, slug: lesson.slug, lesson }))
+  return (lesson?.phrases || []).map(([en, vi, ipa]) => ({ en, vi, ipa, slug: lesson.slug, lesson }))
 }
 
 // Speaking patterns: "I'm curious about + N" → key "I'm curious about" must appear in the learner's sentence.
 // An optional 4th field lists the keys explicitly ("weigh|weighs|weighed" = any of them), for structures
 // like "Present perfect + since" where the text before "+" isn't a word the learner says.
 export function patternItems(lesson) {
-  return (lesson?.patterns || []).map(([structure, example, vi, keys]) => {
+  return (lesson?.patterns || []).map(([structure, example, vi, keys, ipa]) => {
     const alts = (keys || structure.split('+')[0]).split('|').map(k => k.trim())
-    return { structure, example, vi, key: alts[0], keys: alts }
+    return { structure, example, vi, ipa, key: alts[0], keys: alts }
   })
 }
 

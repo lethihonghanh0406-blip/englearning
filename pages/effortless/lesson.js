@@ -29,6 +29,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
 
   let tab       = AUDIO_FOR[params?.get('tab')] ? params.get('tab') : 'main'   // main | ms | vocab | phrases | patterns
   let showVI    = getSetting('showVI', true)
+  let showIPA   = getSetting('showIPA', false)
   let waitSec   = getSetting('waitSec', 5)
   if (!WAIT_OPTIONS.includes(waitSec)) waitSec = 5
   let useMic    = getSetting('useMic', true)
@@ -264,7 +265,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   // ── Panel ──────────────────────────────────────────────────────────────────
   function buildTools() {
     const btn = (on, call, label) => `<button class="ee-pill ${on ? 'on' : ''}" style="padding:5px 12px;font-size:12px" onclick="${call}">${label}</button>`
-    if (tab === 'main')  return btn(showVI, 'eeToggleVI()', 'Dịch tiếng Việt') + btn(hideText, 'eeToggleText()', '🙈 Ẩn transcript')
+    if (tab === 'main')  return btn(showVI, 'eeToggleVI()', 'Dịch tiếng Việt') + (lesson.main_story?.[0]?.[3] ? btn(showIPA, 'eeToggleIPA()', '/ə/ IPA') : '') + btn(hideText, 'eeToggleText()', '🙈 Ẩn transcript')
     if (tab === 'vocab') return `<span class="ee-muted">Bấm vào từ để nghe phát âm • ☆ để lưu vào danh sách của bạn</span>`
     if (tab === 'phrases') return `<span class="ee-muted">Bấm vào cụm từ để nghe • “Nghe trong bài” phát đúng câu có cụm từ đó</span>`
     if (tab === 'qa') return `<span class="ee-muted">Nghe câu hỏi, tự trả lời (nói hoặc gõ) rồi so với đáp án mẫu</span>
@@ -327,6 +328,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
             <span class="ee-play-dot">🔊</span>
             <div style="flex:1;min-width:0">
               <div style="font-size:15px;font-weight:600">${esc(p.en)}</div>
+              ${p.ipa ? `<div style="font-size:13px;color:var(--mute);font-family:'Lucida Sans Unicode','Segoe UI',sans-serif">${esc(p.ipa)}</div>` : ''}
               <div style="font-size:13px;color:var(--ink2)">${esc(p.vi)}</div>
               ${line ? `<div style="font-size:12px;color:var(--mute);margin-top:2px"><i>“${esc(line.text)}”</i>
                 <span class="ee-link" style="font-size:12px;margin-left:6px" onclick="event.stopPropagation();eePhraseCtx(${i})">▶ Nghe trong bài (${fmt(line.t)})</span></div>` : ''}
@@ -348,7 +350,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
             </div>
             <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
               <button onclick="eeSayPattern(${i})" title="Nghe câu mẫu" class="ee-play-dot" style="border:none;cursor:pointer;width:30px;height:30px;font-size:13px">🔊</button>
-              <div><div style="font-size:15px">${esc(p.example)}</div><div class="ee-muted" style="font-size:13px">${esc(p.vi)}</div></div>
+              <div><div style="font-size:15px">${esc(p.example)}</div>${p.ipa ? `<div style="font-size:13px;color:var(--mute);font-family:'Lucida Sans Unicode','Segoe UI',sans-serif">${esc(p.ipa)}</div>` : ''}<div class="ee-muted" style="font-size:13px">${esc(p.vi)}</div></div>
             </div>
             <div style="margin-top:14px;border-top:1px dashed var(--line);padding-top:12px">
               <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px">Đến lượt bạn: đặt một câu khác với “${esc(p.key)}”</div>
@@ -386,6 +388,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
           <span style="font-size:12px;color:var(--mute);min-width:40px;padding-top:2px;font-variant-numeric:tabular-nums">${fmt(l.t)}</span>
           <div>
             <div class="${hideText ? 'ee-hidden' : ''}" style="font-size:15px;line-height:1.6">${esc(l.text)}</div>
+            ${showIPA && l.ipa ? `<div class="${hideText ? 'ee-hidden' : ''}" style="font-size:13px;color:var(--mute);font-family:'Lucida Sans Unicode','Segoe UI',sans-serif;line-height:1.5">${esc(l.ipa)}</div>` : ''}
             ${showVI && l.vi ? `<div class="${hideText ? 'ee-hidden' : ''}" style="font-size:13px;color:var(--o2);font-style:italic;line-height:1.5">${esc(l.vi)}</div>` : ''}
           </div>
         </div>`).join('')
@@ -690,6 +693,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     eeSpeed:     s  => { speed = s; setSetting('speed', s); if ($('ee-audio')) $('ee-audio').playbackRate = s; $('ee-speeds').innerHTML = buildSpeeds() },
     eeReveal:    i  => { revealed.add(i); updatePanel() },
     eeToggleVI:  () => { showVI = !showVI; setSetting('showVI', showVI); updatePanel() },
+    eeToggleIPA: () => { showIPA = !showIPA; setSetting('showIPA', showIPA); updatePanel() },
     eeToggleText:() => { hideText = !hideText; updatePanel(); if ($('ee-listens')) $('ee-listens').innerHTML = buildListens() },
     eeToggleHide:() => { hideAns = !hideAns; revealed = new Set(); updatePanel() },
     eeWaitSec:   s  => { waitSec = s; setSetting('waitSec', s); if (!s) cancelWait(); updatePanel() },
