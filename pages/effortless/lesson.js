@@ -1,6 +1,7 @@
 import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, msParts, vocabItems, exampleFor, getState, update,
          markActivity, setCompleted, lessonProgress, addTime, getSetting, setSetting,
-         phraseItems, patternItems, checkPattern, lineForPhrase } from './store.js'
+         phraseItems, patternItems, checkPattern, lineForPhrase,
+         ROUTINE, getRoutine, setRoutineStep, pendingSeconds } from './store.js'
 import { shell, esc, fmt, scene, levelLabel, speak, matchScore, scoreColor, getSR } from './ui.js'
 
 const WAIT_OPTIONS = [0, 5, 10, 15]
@@ -64,6 +65,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     const [pTitle, pSub] = PLAYER_TEXT[tab]
 
     shell(app, '/lessons', `
+      <div id="ee-routine">${routineBanner()}</div>
       <div style="font-size:13px;color:var(--ink2);cursor:pointer;margin-bottom:10px" onclick="navigate('${BASE}/lessons')">‹ Quay lại danh sách bài</div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px">
         <div>
@@ -160,6 +162,31 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
       refreshProgress()
     }
     bindAudio()
+  }
+
+  // ── Today's 45-minute routine (from the "Cách học" page) ──────────────────
+  function routineBanner() {
+    const r = getRoutine()
+    if (!r || r.slug !== slug || r.step >= ROUTINE.length) return ''
+    const st = ROUTINE[r.step], goal = st.min * 60
+    const spent = Math.min(goal, r.spent[r.step] + pendingSeconds()), ok = spent >= goal
+    const last = r.step === ROUTINE.length - 1
+    return `
+      <div data-ok="${ok}" data-step="${r.step}" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;margin-bottom:14px;border-radius:14px;
+        border:1px solid ${ok ? '#86efac' : '#bfdbfe'};background:${ok ? '#f0fdf4' : '#eff6ff'}">
+        <span style="font-size:22px">${st.icon}</span>
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:12px;font-weight:700;color:var(--o2)">LỘ TRÌNH HÔM NAY · BƯỚC ${r.step + 1}/${ROUTINE.length}</div>
+          <div style="font-size:14px;font-weight:600">${st.title} <span style="font-weight:400;color:var(--ink2)">— ${st.desc}</span></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+            <div class="ee-bar" style="flex:1"><div id="ee-rt-bar" style="width:${spent / goal * 100}%;${ok ? 'background:#16a34a' : ''}"></div></div>
+            <span id="ee-rt-time" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink2)">${fmt(spent)} / ${fmt(goal)}</span>
+          </div>
+        </div>
+        <span class="ee-link" onclick="navigate('${BASE}/guide')">Lộ trình</span>
+        <button class="ee-btn ${ok ? '' : 'ghost'}" style="padding:8px 16px" onclick="eeRoutineNext()">
+          ${ok ? '✓ ' : ''}${last ? 'Hoàn thành' : 'Bước tiếp theo'} →</button>
+      </div>`
   }
 
   function buildSpeeds() {
@@ -569,6 +596,12 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   // ── Handlers ───────────────────────────────────────────────────────────────
   Object.assign(window, {
     eeTab:       k  => { tab = k; revealed = new Set(); render() },
+    eeRoutineNext: () => { const r = getRoutine(); if (!r) return
+                         setRoutineStep(r.step + 1)
+                         const st = ROUTINE[r.step + 1]
+                         if (!st) return navigate(`${BASE}/guide`)
+                         if (st.vi != null) { showVI = st.vi; setSetting('showVI', showVI) }
+                         tab = st.tab; revealed = new Set(); render(); window.scrollTo(0, 0) },
     eeMsPart:    i  => { msPart = i; revealed = new Set(); render() },
     eePlay:      i  => playLine(i),
     eeToggle:    () => { const a = $('ee-audio'); if (!a || !audioOk) return speak(lines()[Math.max(0, activeIdx)]?.text); a.paused ? a.play() : a.pause() },
@@ -614,7 +647,18 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     else if (e.code === 'Space') { e.preventDefault(); window.eeToggle() }
   }
   document.addEventListener('keydown', onKey)
+  // Live routine counter: patch time + bar in place; rebuild only when the step or "done" state changes
+  const routineTimer = setInterval(() => {
+    const el = $('ee-routine'), r = getRoutine()
+    if (!el || !r || r.slug !== slug || r.step >= ROUTINE.length) return
+    const goal = ROUTINE[r.step].min * 60, spent = Math.min(goal, r.spent[r.step] + pendingSeconds())
+    const box = el.firstElementChild
+    if (!box || box.dataset.ok !== String(spent >= goal) || box.dataset.step !== String(r.step)) { el.innerHTML = routineBanner(); return }
+    $('ee-rt-bar').style.width = `${spent / goal * 100}%`
+    $('ee-rt-time').textContent = `${fmt(spent)} / ${fmt(goal)}`
+  }, 1000)
   onLeave(() => {
+    clearInterval(routineTimer)
     document.removeEventListener('keydown', onKey)
     cancelWait(); stopPatRec(); flushListen(); cancelAnimationFrame(loopId); clearTimeout(fbTimer)
     $('ee-audio')?.pause(); speechSynthesis.cancel()

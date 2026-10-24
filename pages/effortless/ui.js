@@ -1,5 +1,5 @@
 // Shared layout + helpers for the Effortless English section
-import { BASE, getUser } from './store.js'
+import { BASE, getUser, streak, dayMinutes, DAILY_GOAL_MIN } from './store.js'
 
 export function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
@@ -15,6 +15,7 @@ export function fmtDuration(sec) {
 
 const NAV = [
   ['',            '🏠', 'Tổng quan'],
+  ['/guide',      '🧭', 'Cách học'],
   ['/lessons',    '📚', 'Bài học'],
   ['/vocabulary', '🔤', 'Từ vựng'],
   ['/practice',   '🎯', 'Luyện tập'],
@@ -35,7 +36,10 @@ const CSS = `
   .ee-brand small{font-size:11px;font-weight:600;color:var(--o2);background:var(--o-soft);padding:3px 8px;border-radius:6px}
   .ee-search{flex:1;max-width:460px;display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid var(--line);border-radius:999px;padding:8px 16px}
   .ee-search input{border:none;background:none;outline:none;flex:1;font-size:13px;color:var(--ink)}
-  .ee-user{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer}
+  .ee-fire{margin-left:auto;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;white-space:nowrap}
+  .ee-fire:hover{background:#f8fafc}
+  .ee-fire.lit{border-color:#fdba74;background:#fff7ed;color:#c2410c}
+  .ee-user{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer}
   .ee-avatar{width:34px;height:34px;border-radius:50%;background:#1e3a5f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
   .ee-body{display:flex;min-height:calc(100vh - 60px)}
   .ee-side{width:210px;flex-shrink:0;padding:18px 12px;display:flex;flex-direction:column;gap:4px;background:#ffffff;position:sticky;top:60px;align-self:flex-start}
@@ -75,6 +79,7 @@ const CSS = `
     .ee-brand{min-width:0}.ee-brand>div:last-child{display:none}
     .ee-top .ee-btn{padding:8px 12px;font-size:13px}
     .ee-quote{display:none}
+    .ee-fire .ee-fire-min{display:none}
     .ee-hero{padding:24px 20px !important}
     .ee-hero .ee-h{font-size:26px !important}
     .ee-main{padding:16px 16px 120px}
@@ -98,9 +103,9 @@ export function shell(app, active, content) {
           <input name="q" placeholder="Tìm từ vựng, nghĩa, câu ví dụ…" autocomplete="off">
         </form>
         ${user
-          ? `<div class="ee-user" onclick="navigate('/')" title="Về trang chính LearnLang">
+          ? `${fire()}<div class="ee-user" onclick="navigate('/')" title="Về trang chính LearnLang">
                <div class="ee-avatar">${esc(name[0]?.toUpperCase() || 'U')}</div><span>${esc(name)}</span></div>`
-          : `<button class="ee-btn ghost" style="margin-left:auto" onclick="sessionStorage.setItem('authReturnPath', location.pathname);location.href='/login.html'">Đăng nhập</button>`}
+          : `${fire()}<button class="ee-btn ghost" onclick="sessionStorage.setItem('authReturnPath', location.pathname);location.href='/login.html'">Đăng nhập</button>`}
       </div>
       <div class="ee-body">
         <div class="ee-side">
@@ -116,6 +121,13 @@ export function shell(app, active, content) {
         <div class="ee-main">${content}</div>
       </div>
     </div>`
+}
+
+// Streak badge: 🔥 days in a row with the full daily goal + today's minutes
+function fire() {
+  const n = streak(), min = dayMinutes()
+  return `<div class="ee-fire ${min >= DAILY_GOAL_MIN ? 'lit' : ''}" onclick="navigate('${BASE}/guide')"
+    title="Học đủ ${DAILY_GOAL_MIN} phút mỗi ngày để giữ chuỗi">🔥 ${n}<span class="ee-fire-min" style="font-weight:500;color:var(--mute)">· ${Math.min(min, DAILY_GOAL_MIN)}/${DAILY_GOAL_MIN} phút</span></div>`
 }
 
 function hills() {

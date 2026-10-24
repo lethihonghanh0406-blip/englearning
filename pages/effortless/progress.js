@@ -1,4 +1,4 @@
-import { BASE, getState, lessonProgress, nextLesson, streak, totalSeconds, today } from './store.js'
+import { BASE, DAILY_GOAL_MIN, getState, lessonProgress, nextLesson, streak, totalSeconds, today } from './store.js'
 import { shell, esc, scene, thumb, fmtDuration } from './ui.js'
 
 const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
@@ -41,7 +41,7 @@ export default function progressView({ app, lessons }) {
     <div class="ee-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">
       ${stat('⏱️', 'Tổng thời gian học', fmtDuration(totalSeconds(s)))}
       ${stat('📘', 'Bài đã hoàn thành', `${completed} / ${lessons.length}`)}
-      ${stat('🔥', 'Chuỗi ngày học', `${streak(s)} ngày`)}
+      ${stat('🔥', `Chuỗi ngày học đủ ${DAILY_GOAL_MIN} phút`, `${streak(s)} ngày`)}
     </div>
 
     <div class="ee-card" style="margin-bottom:18px">

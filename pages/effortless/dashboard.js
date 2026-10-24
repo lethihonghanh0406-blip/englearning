@@ -1,4 +1,4 @@
-import { BASE, DAILY_GOAL_MIN, getState, lessonProgress, nextLesson, today } from './store.js'
+import { BASE, DAILY_GOAL_MIN, getState, lessonProgress, nextLesson, dayMinutes, streak } from './store.js'
 import { shell, esc, scene, levelLabel, timeAgo } from './ui.js'
 
 // Learning path for one lesson: [tab or route, title, subtitle, progress flag, colors]
@@ -26,7 +26,7 @@ export default function dashboardView({ app, lessons }) {
   const started = current && Object.keys(done).length > 0
   const completedCount = lessons.filter(l => lessonProgress(l.slug, s).completed).length
   const pct     = lessons.length ? Math.round(completedCount / lessons.length * 100) : 0
-  const todayMin = Math.floor(((s.days[today()]?.listen || 0) + (s.days[today()]?.speak || 0)) / 60)
+  const todayMin = dayMinutes(s)
   const wordsLearned = lessons.filter(l => s.lessons[l.slug]?.done?.vocab).reduce((n, l) => n + (l.vocab || []).length, 0)
   const practiced    = lessons.filter(l => s.lessons[l.slug]?.done?.practice).length
   const firstOpen    = PATH.findIndex(([, , , flag]) => !done[flag])
@@ -127,7 +127,7 @@ export default function dashboardView({ app, lessons }) {
             <div><div style="font-size:15px;font-weight:600">Hoàn thành khóa học</div>
               <div style="font-size:15px;color:var(--ink2);margin-top:2px">${completedCount} / ${lessons.length} bài học</div></div>
           </div>
-          <div class="ee-row"><span>⏱️</span><span style="flex:1">Thời gian học hôm nay</span><b>${todayMin} phút</b></div>
+          <div class="ee-row"><span>⏱️</span><span style="flex:1">Thời gian học hôm nay</span><b>${todayMin} / ${DAILY_GOAL_MIN} phút</b></div>
           <div class="ee-row"><span>📘</span><span style="flex:1">Từ vựng đã học</span><b>${wordsLearned} từ</b></div>
           <div class="ee-row"><span>✅</span><span style="flex:1">Bài tập hoàn thành</span><b>${practiced} / ${lessons.length}</b></div>
         </div>
@@ -145,8 +145,8 @@ export default function dashboardView({ app, lessons }) {
             <span style="font-size:24px">🚀</span>
             <div>
               <div class="ee-h" style="font-size:17px;line-height:1.3">Học mỗi ngày<br>để tiến bộ hơn</div>
-              <div style="font-size:13px;color:var(--ink2);margin:8px 0 14px;line-height:1.5">Chỉ cần ${DAILY_GOAL_MIN} phút mỗi ngày,<br>bạn sẽ thấy sự khác biệt lớn!</div>
-              ${current ? `<button class="ee-btn ghost" style="border-radius:999px;border-color:#93c5fd;color:var(--o2);padding:8px 18px" onclick="${openLesson(current)}">Bắt đầu ngay →</button>` : ''}
+              <div style="font-size:13px;color:var(--ink2);margin:8px 0 14px;line-height:1.5">Học đủ ${DAILY_GOAL_MIN} phút theo 4 bước mỗi ngày<br>để giữ chuỗi 🔥 ${streak(s)} ngày của bạn!</div>
+              <button class="ee-btn ghost" style="border-radius:999px;border-color:#93c5fd;color:var(--o2);padding:8px 18px" onclick="navigate('${BASE}/guide')">Xem lộ trình 45 phút →</button>
             </div>
           </div>
           <div style="position:absolute;right:14px;bottom:8px;font-size:44px;opacity:.9">🌱</div>
