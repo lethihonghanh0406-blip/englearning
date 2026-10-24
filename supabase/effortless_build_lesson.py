@@ -31,7 +31,8 @@ def load(f):
 
 def is_q(s):
     s = s.rstrip('”"')
-    return s.endswith('?') and not re.search(r'right\?$', s, re.I)
+    quoted = re.search(r'\b(said|says|asked|asks|yelled|yells)\b,', s, re.I)    # "He said, why ...?" is story, not a quiz question
+    return s.endswith('?') and not re.search(r'right\?$', s, re.I) and not quoted
 
 
 def label(rows):
