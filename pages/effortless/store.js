@@ -90,6 +90,20 @@ export function msParts(lesson) {
 export function msLines(lesson, part = 0) {
   return msParts(lesson)[part]?.lines || []
 }
+// Q&A: the lesson's own list, or else question → answer pairs taken from the Mini-Story transcripts
+export function qaItems(lesson, max = 15) {
+  if (lesson?.qa?.length) return lesson.qa.map(([q, a]) => ({ q, a }))
+  const seen = new Set(), out = []
+  for (const { lines } of msParts(lesson)) lines.forEach((l, i) => {
+    const a = lines[i + 1]
+    const key = l.text.toLowerCase()
+    if (l.type !== 'q' || a?.type !== 'a' || seen.has(key) || out.length >= max) return
+    seen.add(key)
+    out.push({ q: l.text, a: a.text })
+  })
+  return out
+}
+
 export function vocabItems(lesson) {
   return (lesson?.vocab || []).map(([word, ipa, vi]) => ({ word, ipa, vi, slug: lesson.slug, lesson }))
 }

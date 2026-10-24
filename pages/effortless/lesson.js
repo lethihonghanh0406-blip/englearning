@@ -1,6 +1,6 @@
 import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, msParts, vocabItems, exampleFor, getState, update,
          markActivity, setCompleted, lessonProgress, addTime, getSetting, setSetting,
-         phraseItems, patternItems, checkPattern, lineForPhrase,
+         phraseItems, patternItems, checkPattern, lineForPhrase, qaItems,
          ROUTINE, getRoutine, setRoutineStep, pendingSeconds,
          addPlay, plays, listenStage, LISTEN_PLAN } from './store.js'
 import { shell, esc, fmt, art, levelLabel, speak, matchScore, scoreColor, getSR } from './ui.js'
@@ -13,10 +13,11 @@ const PLAYER_TEXT = {
   vocab: ['Vocabulary', 'Nghe giải thích các từ mới trong bài.'],
   phrases:  ['Main Audio', 'Nghe lại câu chuyện để bắt các cụm từ hay.'],
   patterns: ['Main Audio', 'Nghe mẫu câu, rồi tự đặt câu của riêng bạn.'],
+  qa:       ['Main Audio', 'Nghe câu chuyện, rồi tự trả lời các câu hỏi.'],
 }
-const TABS = [['main', '📄 Transcript'], ['ms', '❓ Mini-Story'], ['vocab', '🔤 Từ vựng'], ['phrases', '💬 Cụm từ'], ['patterns', '🗣 Mẫu câu']]
-const AUDIO_FOR = { main: 'main_audio', ms: 'ms_audio', vocab: 'vocab_audio', phrases: 'main_audio', patterns: 'main_audio' }
-const AUDIO_ACT = { main: 'main', ms: 'ms', phrases: 'main', patterns: 'main' }   // activity completed by listening to the end
+const TABS = [['main', '📄 Transcript'], ['ms', '❓ Mini-Story'], ['vocab', '🔤 Từ vựng'], ['phrases', '💬 Cụm từ'], ['patterns', '🗣 Mẫu câu'], ['qa', '🙋 Hỏi đáp']]
+const AUDIO_FOR = { main: 'main_audio', ms: 'ms_audio', vocab: 'vocab_audio', phrases: 'main_audio', patterns: 'main_audio', qa: 'main_audio' }
+const AUDIO_ACT = { main: 'main', ms: 'ms', phrases: 'main', patterns: 'main', qa: 'main' }   // activity completed by listening to the end
 
 export default function lessonView({ app, lessons, params, onLeave }, slug) {
   const lesson = lessons.find(l => l.slug === slug)
@@ -53,6 +54,8 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   const srcFor = t => audioUrl(t === 'ms' ? parts[msPart].audio : lesson[AUDIO_FOR[t]])
   let patState = {}                               // per pattern index: { text, heard, listening, result }
   let patRec   = null
+  let qaState  = {}                               // per Q&A index: { text, heard, listening, score, shown }
+  let qaShowAll = false
   const $ = id => document.getElementById(id)
 
   // ── Page ───────────────────────────────────────────────────────────────────
@@ -128,6 +131,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
             ${toolRow('🔤', '#dbeafe', 'Từ vựng', 'Học từ mới', `eeTab('vocab')`)}
             ${toolRow('💬', '#e0f2fe', 'Cụm từ hay', 'Cụm từ dùng trong bài', `eeTab('phrases')`)}
             ${toolRow('🗣', '#fce7f3', 'Mẫu câu', 'Tự đặt câu & luyện nói', `eeTab('patterns')`)}
+            ${toolRow('🙋', '#fef9c3', 'Hỏi đáp', 'Tự trả lời câu hỏi về bài', `eeTab('qa')`)}
             ${toolRow('❓', '#dcfce7', 'Mini-Story', 'Luyện phản xạ nói', `eeTab('ms')`)}
             ${toolRow('🎯', '#fef3c7', 'Luyện tập', 'Nghe & trả lời, điền từ…', `navigate('${BASE}/practice?lesson=${encodeURIComponent(slug)}')`)}
             ${toolRow('📝', '#ede9fe', 'Ghi chú', 'Ghi chú của bạn', `document.getElementById('ee-note-text').focus()`)}
@@ -263,6 +267,8 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     if (tab === 'main')  return btn(showVI, 'eeToggleVI()', 'Dịch tiếng Việt') + btn(hideText, 'eeToggleText()', '🙈 Ẩn transcript')
     if (tab === 'vocab') return `<span class="ee-muted">Bấm vào từ để nghe phát âm • ☆ để lưu vào danh sách của bạn</span>`
     if (tab === 'phrases') return `<span class="ee-muted">Bấm vào cụm từ để nghe • “Nghe trong bài” phát đúng câu có cụm từ đó</span>`
+    if (tab === 'qa') return `<span class="ee-muted">Nghe câu hỏi, tự trả lời (nói hoặc gõ) rồi so với đáp án mẫu</span>
+      <span style="flex:1"></span>${btn(qaShowAll, 'eeQAAll()', '👁 Hiện tất cả đáp án')}`
     if (tab === 'patterns') return `<span class="ee-muted">Nghe câu mẫu, rồi nói hoặc gõ một câu <b>của riêng bạn</b> dùng cấu trúc đó</span>`
     return `
       ${parts.length > 1 ? `
@@ -278,6 +284,38 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   }
 
   function buildList() {
+    if (tab === 'qa') {
+      const items = qaItems(lesson)
+      if (!items.length) return `<div class="ee-muted" style="padding:16px">Bài này chưa có câu hỏi đáp.</div>`
+      const own = !!lesson.qa?.length
+      return (own ? '' : `<div class="ee-muted" style="padding:6px 4px 2px">Các câu hỏi được lấy từ Mini-Story của bài.</div>`) + items.map((it, i) => {
+        const st = qaState[i] || {}
+        const show = qaShowAll || st.shown
+        return `
+          <div style="border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 4px">
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <span style="font-size:11px;font-weight:700;color:var(--o2);background:var(--o-soft);border-radius:6px;padding:3px 8px;margin-top:2px">Q${i + 1}</span>
+              <div style="flex:1;font-size:15px;font-weight:600;line-height:1.5">${esc(it.q)}</div>
+              <button onclick="eeQASay(${i})" title="Nghe câu hỏi" class="ee-play-dot" style="border:none;cursor:pointer;width:30px;height:30px;font-size:13px">🔊</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+              ${getSR() ? `<button onclick="eeQAMic(${i})" title="Trả lời bằng giọng nói" style="width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;color:#fff;font-size:15px;
+                background:${st.listening ? '#dc2626' : 'var(--o)'}">${st.listening ? '■' : '🎤'}</button>` : ''}
+              <input id="ee-qa-${i}" value="${esc(st.text || '')}" placeholder="${getSR() ? '…hoặc gõ câu trả lời' : 'Gõ câu trả lời'}" autocomplete="off"
+                onkeydown="if(event.key==='Enter')eeQACheck(${i})"
+                style="flex:1;min-width:160px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font:inherit;font-size:14px;outline-color:#93c5fd">
+              <button class="ee-btn" style="padding:8px 14px" onclick="eeQACheck(${i})">Kiểm tra</button>
+            </div>
+            ${st.listening ? `<div style="font-size:13px;margin-top:8px;color:var(--o2)">${st.heard ? esc(st.heard) : 'Đang nghe…'}</div>` : ''}
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:14px">
+              ${st.score != null ? `<span style="font-weight:700;color:${scoreColor(st.score)}">${st.score}%</span>` : ''}
+              ${show ? `<span><span class="ee-muted">Đáp án:</span> <b>${esc(it.a)}</b></span>
+                <span class="ee-link" style="font-size:12px" onclick="eeQASayA(${i})">🔊</span>`
+                : `<span class="ee-link" style="font-size:13px" onclick="eeQAShow(${i})">Xem đáp án</span>`}
+            </div>
+          </div>`
+      }).join('')
+    }
     if (tab === 'phrases') {
       const saved = new Set(getState().saved)
       const items = phraseItems(lesson)
@@ -590,22 +628,23 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     fbTimer = setTimeout(() => { if (!wait && $('ee-wait')) $('ee-wait').style.display = 'none' }, 5000)
   }
 
-  // ── Speaking patterns: say your own sentence ───────────────────────────────
-  function patListen(i) {
-    if (patRec) { const was = patRec.i; stopPatRec(); if (was === i) return }
+  // ── Speaking patterns / Q&A: answer by voice ───────────────────────────────
+  // states = patState or qaState; finish(text) returns the item's new state once speech is final
+  function micListen(states, i, finish) {
+    if (patRec) { const was = patRec; stopPatRec(); if (was.i === i && was.states === states) return }
     const SR = getSR()
     if (!SR) return
     $('ee-audio')?.pause()
     const rec = new SR()
     rec.lang = 'en-US'; rec.interimResults = true; rec.maxAlternatives = 1
-    patRec = { i, rec, started: Date.now() }
-    patState[i] = { listening: true, heard: '' }
+    patRec = { i, rec, states, started: Date.now() }
+    states[i] = { ...states[i], listening: true, heard: '' }
     rec.onresult = e => {
       let text = ''
       for (let k = 0; k < e.results.length; k++) text += e.results[k][0].transcript
-      patState[i].heard = text
+      states[i].heard = text
       if (e.results[e.results.length - 1].isFinal) {
-        patState[i] = { text, result: checkPattern(patternItems(lesson)[i], text) }
+        states[i] = finish(text)
         stopPatRec()
       }
       updatePanel()
@@ -616,11 +655,14 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     updatePanel()
   }
 
+  const patListen = i => micListen(patState, i, text => ({ text, result: checkPattern(patternItems(lesson)[i], text) }))
+  const qaListen  = i => micListen(qaState, i, text => ({ text, score: matchScore(text, qaItems(lesson)[i].a), shown: true }))
+
   function stopPatRec() {
     if (!patRec) return
     try { patRec.rec.abort() } catch {}
     addTime('speak', Math.round((Date.now() - patRec.started) / 1000))
-    if (patState[patRec.i]?.listening) patState[patRec.i].listening = false
+    if (patRec.states[patRec.i]?.listening) patRec.states[patRec.i].listening = false
     patRec = null
   }
 
@@ -662,6 +704,13 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
     eePhraseCtx: i  => { const line = lineForPhrase(lesson, phraseItems(lesson)[i].en); const a = $('ee-audio')
                          if (!line) return
                          if (a && audioOk) { a.currentTime = line.t; a.play().catch(() => speak(line.text)) } else speak(line.text) },
+    eeQASay:     i  => speak(qaItems(lesson)[i]?.q, 0.9),
+    eeQASayA:    i  => speak(qaItems(lesson)[i]?.a, 0.9),
+    eeQAShow:    i  => { qaState[i] = { ...qaState[i], shown: true }; updatePanel() },
+    eeQAAll:     () => { qaShowAll = !qaShowAll; updatePanel() },
+    eeQAMic:     i  => qaListen(i),
+    eeQACheck:   i  => { const v = $(`ee-qa-${i}`)?.value.trim(); if (!v) return $(`ee-qa-${i}`)?.focus()
+                         qaState[i] = { text: v, score: matchScore(v, qaItems(lesson)[i].a), shown: true }; updatePanel() },
     eeSayPattern:i  => speak(patternItems(lesson)[i]?.example, 0.85),
     eePatCheck:  i  => { const v = $(`ee-pat-${i}`)?.value.trim(); if (!v) return $(`ee-pat-${i}`)?.focus()
                          patState[i] = { text: v, result: checkPattern(patternItems(lesson)[i], v) }; updatePanel() },
