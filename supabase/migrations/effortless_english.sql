@@ -1221,3 +1221,44 @@ on conflict (slug) do update set
   description = excluded.description, cover = excluded.cover, main_audio = excluded.main_audio, ms_audio = excluded.ms_audio,
   vocab_audio = excluded.vocab_audio, main_story = excluded.main_story, mini_story = excluded.mini_story,
   ms_parts = excluded.ms_parts, vocab = excluded.vocab, patterns = excluded.patterns, phrases = excluded.phrases;
+
+-- ── Bài 5: Drag (mới có Main Story; audio chờ tải lên với đúng tên file dưới đây) ──
+insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, ms_audio, vocab_audio,
+  main_story, mini_story, ms_parts, vocab, patterns, phrases)
+values (
+  'Original Course', 5, 'drag', 'Drag', 'intermediate',
+  'Hai chị em mua lại cơ sở kinh doanh của mẹ, nhưng bà mẹ 77 tuổi vẫn nhận lương dù làm rất ít việc. Học cách nói về tiền bạc, công việc và bày tỏ khó khăn một cách tế nhị.',
+  'https://images.unsplash.com/photo-1764173039506-c5cc7b8ec14b',
+  'Original_Course/105a Drag (main).mp3',
+  null,
+  'Original_Course/105b Drag (vocabulary).mp3',
+$j$[
+  [0,"Drag","Gánh nặng"],
+  [1.5,"High price of mom's help is drag on family business.","Cái giá đắt của sự giúp đỡ từ mẹ đang là gánh nặng cho việc kinh doanh của gia đình."],
+  [10,"Dear Abby, 20 years ago my sister and I bought a business from our mother.","Abby thân mến, 20 năm trước, chị gái tôi và tôi đã mua lại cơ sở kinh doanh của mẹ."],
+  [20,"We all love and respect one another and get along well.","Chúng tôi đều yêu thương, tôn trọng nhau và rất hòa thuận."],
+  [26,"We will be finished paying off the business in two years.","Hai năm nữa chúng tôi sẽ trả xong tiền mua lại cơ sở kinh doanh."],
+  [34,"Our problem: Mom, who is now 77, still draws a salary from us,","Vấn đề của chúng tôi là: mẹ, năm nay 77 tuổi, vẫn nhận lương từ chúng tôi,"],
+  [43,"above and beyond the payment for the business.","ngoài khoản tiền chúng tôi trả để mua lại cơ sở kinh doanh."],
+  [49,"Her workload has lessened greatly, as it should.","Khối lượng công việc của mẹ đã giảm đi rất nhiều, điều đó cũng là đương nhiên."],
+  [55,"She could do all of her work in one day and lessen the burden of her salary.","Mẹ có thể làm hết việc của mình trong một ngày và giảm bớt gánh nặng tiền lương."],
+  [64,"However, she says she'd go crazy if she retired.","Tuy nhiên, mẹ nói mẹ sẽ phát điên nếu nghỉ hưu."],
+  [71,"We don't want that.","Chúng tôi không muốn điều đó."],
+  [73,"She could still come in as often as she wants","Mẹ vẫn có thể đến chỗ làm thường xuyên tùy thích"],
+  [78,"and do her personal paperwork, banking, letter writing, reading, etc.","và làm giấy tờ cá nhân, việc ngân hàng, viết thư, đọc sách, v.v."],
+  [87,"These are all things she does at work, on the clock.","Đó đều là những việc mẹ làm ở chỗ làm, trong giờ được tính lương."],
+  [95,"If we try to discuss this, Mom gets hurt and says,","Nếu chúng tôi cố bàn chuyện này, mẹ thấy tổn thương và nói:"],
+  [101,"“Just let me know when I'm not worth the money.”","“Cứ cho mẹ biết khi nào mẹ không còn đáng đồng lương đó nữa.”"],
+  [107,"We don't want to do that.","Chúng tôi không muốn làm vậy."],
+  [110,"We would hope she would see the fairness of this and suggest it herself.","Chúng tôi mong mẹ tự thấy điều này là công bằng và tự mình đề nghị."],
+  [118,"Business expenses are going through the roof, and there are updates we should make.","Chi phí kinh doanh đang tăng vọt, và có những thứ chúng tôi cần nâng cấp."],
+  [126,"But we can't do it as long as we are paying Mom at the level we are,","Nhưng chúng tôi không làm được khi vẫn trả lương cho mẹ ở mức như hiện nay,"],
+  [133,"on top of the money for the buyout.","cộng thêm khoản tiền mua lại cơ sở kinh doanh."],
+  [138,"Signed, Daughters Dearest","Ký tên: Những cô con gái yêu quý"]
+]$j$::jsonb,
+'[]'::jsonb, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb
+)
+on conflict (slug) do update set
+  course = excluded.course, lesson_no = excluded.lesson_no, title = excluded.title, level = excluded.level,
+  description = excluded.description, cover = excluded.cover, main_audio = excluded.main_audio,
+  vocab_audio = excluded.vocab_audio, main_story = excluded.main_story;
