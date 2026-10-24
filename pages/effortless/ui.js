@@ -137,7 +137,15 @@ function hills() {
     <circle cx="160" cy="18" r="9" fill="#93c5fd"/></svg>`
 }
 
-// Sunset + volcano scenery used for the hero and lesson art (no external images)
+// Lesson picture: the lesson's cover photo (cropped to width w), or the drawn scenery when it has none
+export function art(lesson, opts = {}) {
+  if (!lesson?.cover) return scene(lesson?.lesson_no || 0, opts)
+  const src = `${lesson.cover}?auto=format&fit=crop&w=${opts.w || 800}&q=75`
+  return `<img src="${esc(src)}" alt="${esc(lesson.title || '')}" loading="lazy"
+    style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`
+}
+
+// Sunset + volcano scenery used when a lesson has no cover photo (no external images)
 export function scene(seed = 0, opts = {}) {
   const skies = [
     ['#1e3a8a', '#2563eb', '#93c5fd'],
@@ -171,7 +179,7 @@ export function timeAgo(at) {
 
 export function thumb(lesson, size = 64, radius = 12) {
   return `<div style="position:relative;width:${size}px;height:${size}px;border-radius:${radius}px;overflow:hidden;flex-shrink:0">
-    ${scene(lesson?.lesson_no || 0, { id: `t${size}` })}</div>`
+    ${art(lesson, { id: `t${size}`, w: size * 2 })}</div>`
 }
 
 export function levelLabel(level) {
@@ -200,7 +208,7 @@ export function paywall(app, lesson, freeSlug) {
     <div style="max-width:720px;margin:20px auto">
       <div class="ee-card" style="padding:0;overflow:hidden">
         <div style="position:relative;height:150px;color:#fff">
-          ${scene(lesson?.lesson_no || 0, { id: 'pw' })}
+          ${art(lesson, { id: 'pw', w: 1000 })}
           <div style="position:absolute;inset:0;background:rgba(15,23,42,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
             <div style="font-size:34px">🔒</div>
             <div style="font-size:14px;font-weight:600">Bài ${lesson?.lesson_no ?? ''} – ${esc(lesson?.title || '')}</div>

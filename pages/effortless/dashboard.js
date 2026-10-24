@@ -1,5 +1,5 @@
 import { BASE, DAILY_GOAL_MIN, getState, lessonProgress, nextLesson, dayMinutes, streak } from './store.js'
-import { shell, esc, scene, levelLabel, timeAgo } from './ui.js'
+import { shell, esc, art, levelLabel, timeAgo } from './ui.js'
 
 // Learning path for one lesson: [tab or route, title, subtitle, progress flag, colors]
 const PATH = [
@@ -58,11 +58,14 @@ export default function dashboardView({ app, lessons }) {
             ${current ? `<button class="ee-btn" style="border-radius:999px;padding:12px 24px" onclick="${openLesson(current)}">${started ? 'Tiếp tục học' : 'Bắt đầu học ngay'} ›</button>` : ''}
           </div>
           <div class="ee-hero-art" style="position:absolute;right:0;top:0;bottom:0;width:48%">
-            ${heroArt()}
-            <div style="position:absolute;left:16%;bottom:14%;width:96px;height:96px;border-radius:50%;background:#fff;box-shadow:0 10px 30px rgba(37,99,235,.18);
-              display:flex;align-items:center;justify-content:center;font-size:46px">🎧</div>
-            <div class="ee-hand" style="position:absolute;right:22px;top:18px;font-size:20px;line-height:1.15;text-align:center;transform:rotate(-6deg)">
-              Small steps<br>every day<br>lead to big results.<div style="color:var(--accent);font-size:14px">♥</div></div>
+            ${current?.cover ? `
+              ${art(current, { id: 'hero', w: 900 })}
+              <div style="position:absolute;inset:0;background:linear-gradient(90deg,#f3f8ff 0,rgba(243,248,255,.55) 22%,rgba(243,248,255,0) 45%)"></div>
+              <div style="position:absolute;right:16px;bottom:16px;background:rgba(255,255,255,.92);border-radius:12px;padding:8px 12px;font-size:13px;box-shadow:0 6px 18px rgba(15,23,42,.15)">
+                <div class="ee-muted" style="font-size:11px">${started ? 'Đang học' : 'Bài tiếp theo'}</div><b>Bài ${current.lesson_no} · ${esc(current.title)}</b></div>` : `
+              ${heroArt()}
+              <div style="position:absolute;left:16%;bottom:14%;width:96px;height:96px;border-radius:50%;background:#fff;box-shadow:0 10px 30px rgba(37,99,235,.18);
+                display:flex;align-items:center;justify-content:center;font-size:46px">🎧</div>`}
           </div>
         </div>
 
@@ -87,7 +90,7 @@ export default function dashboardView({ app, lessons }) {
             </div>
 
             <div class="ee-next" style="display:flex;gap:20px;border:1px solid var(--line);border-radius:14px;padding:14px;align-items:center">
-              <div style="position:relative;width:210px;height:150px;border-radius:12px;overflow:hidden;flex-shrink:0">${scene(current.lesson_no, { id: 'next' })}</div>
+              <div style="position:relative;width:210px;height:150px;border-radius:12px;overflow:hidden;flex-shrink:0">${art(current, { id: 'next', w: 440 })}</div>
               <div style="flex:1;min-width:0">
                 <span style="display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px">Bài học tiếp theo</span>
                 <div class="ee-h" style="font-size:20px;margin:6px 0">Bài ${current.lesson_no} – ${esc(current.title)}</div>

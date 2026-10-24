@@ -1,5 +1,5 @@
 import { BASE, DAILY_GOAL_MIN, getState, lessonProgress, nextLesson, streak, totalSeconds, today } from './store.js'
-import { shell, esc, scene, thumb, fmtDuration } from './ui.js'
+import { shell, esc, art, thumb, fmtDuration } from './ui.js'
 
 const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
 const C_LISTEN = '#2563eb'
@@ -101,7 +101,7 @@ export default function progressView({ app, lessons }) {
       <div class="ee-card">
         <div class="ee-h" style="font-size:16px;margin-bottom:12px">Bài tiếp theo</div>
         ${next ? `
-          <div style="position:relative;height:120px;border-radius:12px;overflow:hidden;margin-bottom:12px">${scene(next.lesson_no, { id: 'next' })}</div>
+          <div style="position:relative;height:120px;border-radius:12px;overflow:hidden;margin-bottom:12px">${art(next, { id: 'next', w: 600 })}</div>
           <div style="font-size:15px;font-weight:600">Bài ${next.lesson_no} · ${esc(next.title)}</div>
           <div class="ee-muted" style="margin-bottom:12px">Main Audio + Mini-Story</div>
           <button class="ee-btn" style="width:100%" onclick="navigate('${BASE}/lesson/${encodeURIComponent(next.slug)}')">Tiếp tục</button>`

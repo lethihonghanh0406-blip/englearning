@@ -2,7 +2,7 @@ import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, msParts, vocabItems, ex
          markActivity, setCompleted, lessonProgress, addTime, getSetting, setSetting,
          phraseItems, patternItems, checkPattern, lineForPhrase,
          ROUTINE, getRoutine, setRoutineStep, pendingSeconds } from './store.js'
-import { shell, esc, fmt, scene, levelLabel, speak, matchScore, scoreColor, getSR } from './ui.js'
+import { shell, esc, fmt, art, levelLabel, speak, matchScore, scoreColor, getSR } from './ui.js'
 
 const WAIT_OPTIONS = [0, 5, 10, 15]
 const SPEEDS = [0.75, 1, 1.25, 1.5]
@@ -83,7 +83,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
         <div class="ee-grid" style="grid-template-columns:minmax(0,1fr)">
           <!-- Player -->
           <div style="position:relative;border-radius:18px;overflow:hidden;color:#fff;padding:22px 26px 18px">
-            ${scene(lesson.lesson_no, { id: 'player' })}
+            ${art(lesson, { id: 'player', w: 1400 })}
             <div style="position:absolute;inset:0;background:rgba(15,23,42,.45)"></div>
             <div style="position:relative;text-align:center">
               <div style="font-size:17px;font-weight:700">${pTitle}${tab === 'ms' && parts[msPart].label ? ` ${esc(parts[msPart].label)}` : ''}</div>

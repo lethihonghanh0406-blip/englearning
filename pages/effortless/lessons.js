@@ -1,5 +1,5 @@
 import { BASE, getState, lessonProgress, isPro } from './store.js'
-import { shell, esc, scene, levelLabel } from './ui.js'
+import { shell, esc, art, levelLabel } from './ui.js'
 
 export default function lessonsView({ app, lessons }) {
   const s = getState()
@@ -23,7 +23,7 @@ export default function lessonsView({ app, lessons }) {
             return `
               <div class="ee-card" style="padding:0;overflow:hidden;cursor:pointer" onclick="navigate('${BASE}/lesson/${encodeURIComponent(l.slug)}')">
                 <div style="position:relative;height:130px">
-                  ${scene(l.lesson_no, { id: `l${l.lesson_no}` })}
+                  ${art(l, { id: `l${l.lesson_no}`, w: 600 })}
                   <span style="position:absolute;top:10px;left:10px;background:rgba(15,23,42,.75);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:6px">Bài ${l.lesson_no}</span>
                   ${l.locked ? `<div style="position:absolute;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;gap:6px">🔒 Gói trọn đời</div>` : ''}
                   ${p.completed ? `<span style="position:absolute;top:10px;right:10px;background:#16a34a;color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:6px">✓ Hoàn thành</span>` : ''}
