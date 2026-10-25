@@ -2978,11 +2978,11 @@ on conflict (slug) do update set
   phrases = excluded.phrases,
   patterns = excluded.patterns;
 
--- ── Bài 35: Evil English Teacher (chữ từ audio bằng Whisper, đã soát) ──
+-- ── Flow English · Bài 1: Evil English Teacher (chữ từ audio bằng Whisper, đã soát) ──
 insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, vocab_audio, ms_audio, pov_audio, com_audio, main_story, mini_story, ms_parts, pov_story, com_story, vocab, phrases, patterns)
 values (
   'Flow English',
-  35,
+  1,
   'evil-english-teacher',
   'Evil English Teacher',
   'elementary',
@@ -3023,11 +3023,11 @@ on conflict (slug) do update set
   phrases = excluded.phrases,
   patterns = excluded.patterns;
 
--- ── Bài 36: Baseball Pig (chữ từ audio bằng Whisper, đã soát) ──
+-- ── Flow English · Bài 2: Baseball Pig (chữ từ audio bằng Whisper, đã soát) ──
 insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, vocab_audio, ms_audio, pov_audio, com_audio, main_story, mini_story, ms_parts, pov_story, com_story, vocab, phrases, patterns)
 values (
   'Flow English',
-  36,
+  2,
   'baseball-pig',
   'Baseball Pig',
   'elementary',
@@ -3068,11 +3068,11 @@ on conflict (slug) do update set
   phrases = excluded.phrases,
   patterns = excluded.patterns;
 
--- ── Bài 37: Fat Man (chữ từ audio bằng Whisper, đã soát) ──
+-- ── Flow English · Bài 3: Fat Man (chữ từ audio bằng Whisper, đã soát) ──
 insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, vocab_audio, ms_audio, pov_audio, com_audio, main_story, mini_story, ms_parts, pov_story, com_story, vocab, phrases, patterns)
 values (
   'Flow English',
-  37,
+  3,
   'fat-man',
   'Fat Man',
   'elementary',
@@ -3113,11 +3113,11 @@ on conflict (slug) do update set
   phrases = excluded.phrases,
   patterns = excluded.patterns;
 
--- ── Bài 38: Female Seeks Male (chữ từ audio bằng Whisper, đã soát) ──
+-- ── Flow English · Bài 4: Female Seeks Male (chữ từ audio bằng Whisper, đã soát) ──
 insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, vocab_audio, ms_audio, pov_audio, com_audio, main_story, mini_story, ms_parts, pov_story, com_story, vocab, phrases, patterns)
 values (
   'Flow English',
-  38,
+  4,
   'female-seeks-male',
   'Female Seeks Male',
   'elementary',
@@ -3158,11 +3158,11 @@ on conflict (slug) do update set
   phrases = excluded.phrases,
   patterns = excluded.patterns;
 
--- ── Bài 39: Goats Being Hired (chữ từ audio bằng Whisper, đã soát) ──
+-- ── Flow English · Bài 5: Goats Being Hired (chữ từ audio bằng Whisper, đã soát) ──
 insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, vocab_audio, ms_audio, pov_audio, com_audio, main_story, mini_story, ms_parts, pov_story, com_story, vocab, phrases, patterns)
 values (
   'Flow English',
-  39,
+  5,
   'goats-being-hired',
   'Goats Being Hired',
   'elementary',
@@ -3203,11 +3203,11 @@ on conflict (slug) do update set
   phrases = excluded.phrases,
   patterns = excluded.patterns;
 
--- ── Bài 40: Green Peanut Butter (chữ từ audio bằng Whisper, đã soát) ──
+-- ── Flow English · Bài 6: Green Peanut Butter (chữ từ audio bằng Whisper, đã soát) ──
 insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, vocab_audio, ms_audio, pov_audio, com_audio, main_story, mini_story, ms_parts, pov_story, com_story, vocab, phrases, patterns)
 values (
   'Flow English',
-  40,
+  6,
   'green-peanut-butter',
   'Green Peanut Butter',
   'elementary',
@@ -3248,11 +3248,11 @@ on conflict (slug) do update set
   phrases = excluded.phrases,
   patterns = excluded.patterns;
 
--- ── Bài 41: Mama's Boys (chữ từ audio bằng Whisper, đã soát) ──
+-- ── Flow English · Bài 7: Mama's Boys (chữ từ audio bằng Whisper, đã soát) ──
 insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, vocab_audio, ms_audio, pov_audio, com_audio, main_story, mini_story, ms_parts, pov_story, com_story, vocab, phrases, patterns)
 values (
   'Flow English',
-  41,
+  7,
   'mamas-boys',
   'Mama''s Boys',
   'elementary',
@@ -3293,11 +3293,11 @@ on conflict (slug) do update set
   phrases = excluded.phrases,
   patterns = excluded.patterns;
 
--- ── Bài 42: Man Injured (chữ từ audio bằng Whisper, đã soát) ──
+-- ── Flow English · Bài 8: Man Injured (chữ từ audio bằng Whisper, đã soát) ──
 insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, vocab_audio, ms_audio, pov_audio, com_audio, main_story, mini_story, ms_parts, pov_story, com_story, vocab, phrases, patterns)
 values (
   'Flow English',
-  42,
+  8,
   'man-injured',
   'Man Injured',
   'elementary',
@@ -3338,11 +3338,11 @@ on conflict (slug) do update set
   phrases = excluded.phrases,
   patterns = excluded.patterns;
 
--- ── Bài 43: Sick In India (chữ từ audio bằng Whisper, đã soát) ──
+-- ── Flow English · Bài 9: Sick In India (chữ từ audio bằng Whisper, đã soát) ──
 insert into public.effortless_lessons (course, lesson_no, slug, title, level, description, cover, main_audio, vocab_audio, ms_audio, pov_audio, com_audio, main_story, mini_story, ms_parts, pov_story, com_story, vocab, phrases, patterns)
 values (
   'Flow English',
-  43,
+  9,
   'sick-in-india',
   'Sick In India',
   'elementary',

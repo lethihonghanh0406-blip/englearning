@@ -89,7 +89,8 @@ cols = {
     'pov_story': J(pov), 'com_story': J(com),
     'vocab': J(cfg.get('vocab', [])), 'phrases': J(cfg.get('phrases', [])), 'patterns': J(cfg.get('patterns', [])),
 }
-sql = (f"\n-- ── Bài {cfg['no']}: {cfg['title']} (chữ từ audio bằng Whisper, đã soát) ──\n"
+course = '' if cfg.get('course', 'Original Course') == 'Original Course' else cfg['course'] + ' · '
+sql = (f"\n-- ── {course}Bài {cfg['no']}: {cfg['title']} (chữ từ audio bằng Whisper, đã soát) ──\n"
        f"insert into public.effortless_lessons ({', '.join(cols)})\nvalues (\n  " + ',\n  '.join(cols.values()) + "\n)\n"
        "on conflict (slug) do update set\n  " +
        ',\n  '.join(f'{c} = excluded.{c}' for c in cols if c != 'slug') + ';\n')

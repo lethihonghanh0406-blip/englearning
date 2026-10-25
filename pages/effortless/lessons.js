@@ -30,7 +30,7 @@ export default function lessonsView({ app, lessons }) {
                 </div>
                 <div style="padding:14px 16px">
                   <div class="ee-h" style="font-size:16px">${esc(l.title)}</div>
-                  <div class="ee-muted" style="margin:2px 0 10px">${levelLabel(l.level)} • ${l.vocab_count ?? (l.vocab || []).length} từ vựng${l.lesson_no === 1 && !isPro() ? ' • <b style="color:#16a34a">Miễn phí</b>' : ''}</div>
+                  <div class="ee-muted" style="margin:2px 0 10px">${levelLabel(l.level)} • ${l.vocab_count ?? (l.vocab || []).length} từ vựng${l.lesson_no === 1 && l.course === 'Original Course' && !isPro() ? ' • <b style="color:#16a34a">Miễn phí</b>' : ''}</div>
                   <div class="ee-bar"><div style="width:${p.done / p.total * 100}%"></div></div>
                   <div class="ee-muted" style="margin-top:6px">${p.done}/${p.total} hoạt động</div>
                 </div>

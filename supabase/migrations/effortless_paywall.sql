@@ -11,11 +11,11 @@ language sql stable security definer set search_path = public as $$
 $$;
 grant execute on function public.is_pro() to anon, authenticated;
 
--- ── Lesson content: Bài 1 free, the rest Pro only ────────────────────────────
+-- ── Lesson content: Bài 1 of the Original Course free, the rest Pro only ─────
 drop policy if exists "effortless_lessons public read" on public.effortless_lessons;
 drop policy if exists "effortless_lessons free or pro" on public.effortless_lessons;
 create policy "effortless_lessons free or pro" on public.effortless_lessons
-  for select using (lesson_no = 1 or public.is_pro());
+  for select using ((course = 'Original Course' and lesson_no = 1) or public.is_pro());
 
 -- Catalog (titles only) readable by everyone, so locked lessons can still be listed with 🔒
 create or replace view public.effortless_catalog as
