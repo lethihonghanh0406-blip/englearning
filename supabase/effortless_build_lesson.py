@@ -7,7 +7,7 @@ lesson.json:
   "no": 9, "slug": "double-standard", "title": "Double Standard", "code": "109", "file_title": "Double Standard",
   "description": "…", "cover": "https://images.unsplash.com/photo-…",
   "main": [[t, "English", "Tiếng Việt"], ...],
-  "ms":  "ms.json"  (cleaned [[t, sentence], ...]; or {"A": "msA.json", "B": "msB.json"}),
+  "ms":  "ms.json"  (cleaned [[t, sentence], ...]; or {"A": "msA.json", "B": "msB.json"}; leave out for a Main-only lesson),
   "ms_intro_until": "sentence that ends the story-only intro (optional)", "ms_intro": 0,
   "ms_plain_from": "sentence that starts the repeat-after-me part (optional; a list when the Mini-Story has parts)",
   "pov": "pov.json", "com": "com.json",
@@ -63,7 +63,7 @@ def label(rows):
     return out
 
 
-ms_cfg = cfg['ms'] if isinstance(cfg['ms'], dict) else {'': cfg['ms']}
+ms_cfg = cfg['ms'] if isinstance(cfg.get('ms'), dict) else {'': cfg['ms']} if cfg.get('ms') else {}   # none: Main Audio only
 ms_files = FILES['ms'] if isinstance(FILES.get('ms'), dict) else {'': FILES['ms']} if 'ms' in FILES else {}
 parts = [{'label': lab, 'audio': AUD + ms_files.get(lab, f"{code}c {ft}{(' ' + lab) if lab else ''} (ms).mp3"), 'story': label(load(f))}
          for lab, f in ms_cfg.items()]
@@ -83,10 +83,10 @@ cols = {
     'course': q(cfg.get('course', 'Original Course')), 'lesson_no': str(cfg['no']), 'slug': q(cfg['slug']), 'title': q(cfg['title']),
     'level': q(cfg.get('level', 'intermediate')), 'description': q(cfg['description']), 'cover': q(cfg['cover']),
     'main_audio': audio('main', f'{code}a {ft} (main).mp3'), 'vocab_audio': audio('vocab', f'{code}b {ft} (vocabulary).mp3'),
-    'ms_audio': q(parts[0]['audio']),
+    'ms_audio': q(parts[0]['audio']) if parts else 'null',
     'pov_audio': audio('pov', f'{code}d {ft} (pov).mp3') if pov else 'null',
     'com_audio': audio('com', f'{code}e {ft} (com).mp3') if com else 'null',
-    'main_story': J(cfg['main']), 'mini_story': J(parts[0]['story']), 'ms_parts': J(parts),
+    'main_story': J(cfg['main']), 'mini_story': J(parts[0]['story'] if parts else []), 'ms_parts': J(parts),
     'pov_story': J(pov), 'com_story': J(com),
     'vocab': J(cfg.get('vocab', [])), 'phrases': J(cfg.get('phrases', [])), 'patterns': J(cfg.get('patterns', [])),
 }

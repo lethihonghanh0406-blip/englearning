@@ -1,4 +1,4 @@
-import { BASE, ACTIVITIES, audioUrl, mainLines, msLines, msParts, storyLines, vocabItems, exampleFor, getState, update,
+import { BASE, activitiesFor, audioUrl, mainLines, msLines, msParts, storyLines, vocabItems, exampleFor, getState, update,
          markActivity, setCompleted, lessonProgress, addTime, getSetting, setSetting,
          phraseItems, patternItems, checkPattern, lineForPhrase, qaItems,
          ROUTINE, getRoutine, setRoutineStep, pendingSeconds,
@@ -30,7 +30,8 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
   }
   update(s => { s.last = slug })
 
-  let tab       = AUDIO_FOR[params?.get('tab')] ? params.get('tab') : 'main'   // main | ms | vocab | phrases | patterns
+  const hasMs   = !!lesson.ms_audio                // some lessons only have a Main Audio
+  let tab       = AUDIO_FOR[params?.get('tab')] && (hasMs || params.get('tab') !== 'ms') ? params.get('tab') : 'main'   // main | ms | vocab | phrases | patterns
   let showVI    = getSetting('showVI', true)
   let showIPA   = getSetting('showIPA', false)
   let waitSec   = getSetting('waitSec', 5)
@@ -56,7 +57,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
 
   const lines = () => tab === 'main' ? mainLines(lesson) : tab === 'ms' ? msLines(lesson, msPart)
     : tab === 'pov' ? storyLines(lesson.pov_story) : tab === 'com' ? storyLines(lesson.com_story) : []
-  const tabs = TABS.filter(([k]) => !EXTRA[k] || lesson[EXTRA[k]])
+  const tabs = TABS.filter(([k]) => (!EXTRA[k] || lesson[EXTRA[k]]) && (k !== 'ms' || hasMs))
   const srcFor = t => audioUrl(t === 'ms' ? parts[msPart].audio : lesson[AUDIO_FOR[t]])
   let patState = {}                               // per pattern index: { text, heard, listening, result }
   let patRec   = null
@@ -84,7 +85,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
         <div>
           <div style="font-size:13px;font-weight:600;color:var(--o2)">${esc(lesson.course)} · ${levelLabel(lesson.level)}</div>
           <div class="ee-h" style="font-size:28px;margin:4px 0 6px">Bài ${lesson.lesson_no} – ${esc(lesson.title)}</div>
-          <div class="ee-muted" style="font-size:13px">🔊 Main Audio + Mini-Story${lesson.pov_audio ? ' + POV' : ''}${lesson.com_audio ? ' + Commentary' : ''} &nbsp;•&nbsp; 📖 ${(lesson.vocab || []).length} từ vựng &nbsp;•&nbsp; ✅ ${p.total} hoạt động</div>
+          <div class="ee-muted" style="font-size:13px">🔊 Main Audio${hasMs ? ' + Mini-Story' : ''}${lesson.pov_audio ? ' + POV' : ''}${lesson.com_audio ? ' + Commentary' : ''} &nbsp;•&nbsp; 📖 ${(lesson.vocab || []).length} từ vựng &nbsp;•&nbsp; ✅ ${p.total} hoạt động</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;min-width:220px">
           <span style="font-size:13px;font-weight:600" id="ee-prog-label">${p.done}/${p.total}</span>
@@ -139,7 +140,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
             ${toolRow('💬', '#e0f2fe', 'Cụm từ hay', 'Cụm từ dùng trong bài', `eeTab('phrases')`)}
             ${toolRow('🗣', '#fce7f3', 'Mẫu câu', 'Tự đặt câu & luyện nói', `eeTab('patterns')`)}
             ${toolRow('🙋', '#fef9c3', 'Hỏi đáp', 'Tự trả lời câu hỏi về bài', `eeTab('qa')`)}
-            ${toolRow('❓', '#dcfce7', 'Mini-Story', 'Luyện phản xạ nói', `eeTab('ms')`)}
+            ${hasMs ? toolRow('❓', '#dcfce7', 'Mini-Story', 'Luyện phản xạ nói', `eeTab('ms')`) : ''}
             ${lesson.pov_audio ? toolRow('🔄', '#e0e7ff', 'POV', 'Câu chuyện ở góc nhìn khác', `eeTab('pov')`) : ''}
             ${lesson.com_audio ? toolRow('🎙', '#fae8ff', 'Commentary', 'A.J. bình luận bài học', `eeTab('com')`) : ''}
             ${toolRow('🎯', '#fef3c7', 'Luyện tập', 'Nghe & trả lời, điền từ…', `navigate('${BASE}/practice?lesson=${encodeURIComponent(slug)}')`)}
@@ -234,7 +235,7 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
       </div>
       <div style="display:flex;align-items:baseline;gap:8px;margin:10px 0 8px">
         <span class="ee-h" style="font-size:30px;color:var(--o2)">${n}</span><span class="ee-muted">lần Main Audio</span>
-        <span class="ee-muted" style="margin-left:auto;text-align:right">Mini-Story: <b style="color:var(--ink)">${ms}</b> lần
+        <span class="ee-muted" style="margin-left:auto;text-align:right">${hasMs ? `Mini-Story: <b style="color:var(--ink)">${ms}</b> lần` : ''}
           ${lesson.pov_audio ? `<br>POV: <b style="color:var(--ink)">${plays(slug, 'pov')}</b> lần` : ''}
           ${lesson.com_audio ? `<br>Commentary: <b style="color:var(--ink)">${plays(slug, 'com')}</b> lần` : ''}</span>
       </div>
@@ -243,13 +244,13 @@ export default function lessonView({ app, lessons, params, onLeave }, slug) {
         <div style="font-weight:700;color:var(--o2)">${st.icon} Lần nghe tiếp theo: ${n + 1} · ${st.label}</div>
         <div style="color:var(--ink2);margin-top:2px">${st.text}</div>
         ${st === LISTEN_PLAN[0] && tab === 'main' ? `<span class="ee-link" style="font-size:12px" onclick="eeToggleText()">${hideText ? '👁 Hiện transcript' : '🙈 Ẩn transcript khi nghe'}</span>` : ''}
-        ${st === LISTEN_PLAN[3] && tab !== 'ms' ? `<span class="ee-link" style="font-size:12px" onclick="eeTab('ms')">❓ Luyện Mini-Story →</span>` : ''}
+        ${st === LISTEN_PLAN[3] && tab !== 'ms' && hasMs ? `<span class="ee-link" style="font-size:12px" onclick="eeTab('ms')">❓ Luyện Mini-Story →</span>` : ''}
       </div>`
   }
 
   function buildActivities() {
     const done = getState().lessons[slug]?.done || {}
-    return ACTIVITIES.map(([a, label]) => `
+    return activitiesFor(slug).map(([a, label]) => `
       <div style="display:flex;align-items:center;gap:10px;padding:6px 4px;font-size:13px">
         <span style="width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;
           background:${done[a] ? '#16a34a' : '#f1f5f9'};color:${done[a] ? '#fff' : 'var(--mute)'}">${done[a] ? '✓' : ''}</span>

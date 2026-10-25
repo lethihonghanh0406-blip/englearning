@@ -21,7 +21,7 @@ const PROGRAMS = [
   ['Pronunciation English', 'Luyện phát âm tiếng Anh chuẩn Mỹ', 'Bao gồm 20 chủ điểm, 60 bài học về kỹ thuật phát âm theo chuẩn IPA giúp bạn chuẩn hóa và phản xạ tiếng Anh tự tin khi giao tiếp chỉ sau 20 tuần học.', 'B1+ (Trung cấp)', null, '#db2777', '#fce7f3'],
   ['Real English', 'Tiếng Anh giao tiếp thực tế', 'Bao gồm 30 chủ điểm, 120 bài học về các tình huống giao tiếp thực tế của người bản ngữ Mỹ, giúp bạn cải thiện khả năng nghe, nhận diện âm và phản xạ tự tin chỉ sau 30 tuần học.', 'B2+ (Cao trung cấp)', null, '#b45309', '#fef3c7'],
   ['Succeed English', 'Tiếng Anh để thành công', 'Bao gồm 10 chủ điểm, 30 bài học về chuyên đề tư duy trong kinh doanh, giúp bạn phản xạ tự tin khi giao tiếp chỉ sau 10 tuần học.', 'B2+ (Trung cao cấp)', null, '#4338ca', '#e0e7ff'],
-  ['Business English Conversations', 'Tiếng Anh giao tiếp trong kinh doanh', 'Bao gồm 16 chủ điểm, 60 bài học về chuyên đề tư duy trong kinh doanh, giúp bạn phản xạ tự tin khi giao tiếp chỉ sau 16 tuần học.', 'C+ (Cao cấp)', null, '#334155', '#e2e8f0'],
+  ['Business English Conversations', 'Tiếng Anh giao tiếp trong kinh doanh', 'Bao gồm 16 chủ điểm, 60 bài học về chuyên đề tư duy trong kinh doanh, giúp bạn phản xạ tự tin khi giao tiếp chỉ sau 16 tuần học.', 'C+ (Cao cấp)', 'Business English', '#334155', '#e2e8f0'],
 ]
 
 const ACT_TEXT = {
@@ -43,7 +43,8 @@ export default function dashboardView({ app, lessons }) {
   const todayMin = dayMinutes(s)
   const wordsLearned = lessons.filter(l => s.lessons[l.slug]?.done?.vocab).reduce((n, l) => n + (l.vocab || []).length, 0)
   const practiced    = lessons.filter(l => s.lessons[l.slug]?.done?.practice).length
-  const firstOpen    = PATH.findIndex(([, , , flag]) => !done[flag])
+  const path         = current?.ms_audio ? PATH : PATH.filter(([key]) => key !== 'ms')   // some lessons have no Mini-Story
+  const firstOpen    = path.findIndex(([, , , flag]) => !done[flag])
   const openLesson   = l => `navigate('${BASE}/lesson/${encodeURIComponent(l.slug)}')`
   const stepGo = ([key]) => key === 'practice'
     ? `navigate('${BASE}/practice?lesson=${encodeURIComponent(current.slug)}')`
@@ -91,7 +92,7 @@ export default function dashboardView({ app, lessons }) {
           </div>
           ${current ? `
             <div style="display:flex;margin-bottom:20px">
-              ${PATH.map((step, i) => {
+              ${path.map((step, i) => {
                 const [, title, sub, flag, bg, fg] = step
                 const isDone = !!done[flag], isNow = i === firstOpen
                 return `<div class="ee-step" onclick="${stepGo(step)}" title="${title} – ${sub}">
@@ -109,7 +110,7 @@ export default function dashboardView({ app, lessons }) {
                 <span style="display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px">Bài học tiếp theo</span>
                 <div class="ee-h" style="font-size:20px;margin:6px 0">Bài ${current.lesson_no} – ${esc(current.title)}</div>
                 <div class="ee-muted" style="font-size:13px;display:flex;gap:14px;flex-wrap:wrap">
-                  <span>📖 ${(current.vocab || []).length} từ vựng</span><span>🎧 Main Audio + Mini-Story</span><span>📶 ${levelLabel(current.level)}</span>
+                  <span>📖 ${(current.vocab || []).length} từ vựng</span><span>🎧 Main Audio${current.ms_audio ? ' + Mini-Story' : ''}</span><span>📶 ${levelLabel(current.level)}</span>
                 </div>
                 ${current.description ? `<div style="font-size:14px;color:var(--ink2);line-height:1.6;margin-top:10px">${esc(current.description)}</div>` : ''}
                 <button class="ee-btn" style="border-radius:999px;margin-top:12px" onclick="${openLesson(current)}">Vào học ngay →</button>

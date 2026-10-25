@@ -38,8 +38,9 @@ export const DAILY_GOAL_MIN = ROUTINE.reduce((n, r) => n + r.min, 0)
 
 export const PRICE = 199_000          // gói trọn đời, mở khóa mọi bài (Bài 1 học miễn phí)
 
-const COURSES = ['Original Course', 'Flow English']                  // course order in the lesson list
+const COURSES = ['Original Course', 'Flow English', 'Business English']   // course order in the lesson list
 let lessonsCache = null, cacheKey = null
+const noMiniStory = new Set()                                          // slugs of lessons that only have a Main Audio
 let user = null, pro = false
 
 // All lessons in order. RLS only returns content the user may open (Bài 1, or every lesson for Pro);
@@ -52,6 +53,7 @@ export async function loadLessons() {
     supabase.from('effortless_lessons').select('*'),
   ])
   const open = Object.fromEntries((full || []).map(l => [l.slug, l]))
+  for (const l of full || []) if (!l.ms_audio) noMiniStory.add(l.slug)
   const rank = c => { const i = COURSES.indexOf(c); return i < 0 ? COURSES.length : i }
   lessonsCache = (cat || []).sort((a, b) => rank(a.course) - rank(b.course)).map(c => open[c.slug] ||
     { ...c, locked: true, main_story: [], mini_story: [], ms_parts: [], vocab: [], patterns: [], phrases: [] })
@@ -228,7 +230,7 @@ export function markActivity(slug, act) {
     const l = s.lessons[slug] ||= { done: {}, completed: false }
     if (!l.done[act]) logEvent(s, act, slug)
     l.done[act] = true
-    if (!l.completed && ACTIVITIES.every(([a]) => l.done[a])) { l.completed = true; logEvent(s, 'completed', slug) }
+    if (!l.completed && activitiesFor(slug).every(([a]) => l.done[a])) { l.completed = true; logEvent(s, 'completed', slug) }
     s.last = slug
   })
 }
@@ -265,10 +267,16 @@ export function setCompleted(slug, completed) {
   })
 }
 
+// Activities a lesson can have: a lesson without a Mini-Story is done without one
+export function activitiesFor(slug) {
+  return noMiniStory.has(slug) ? ACTIVITIES.filter(([a]) => a !== 'ms') : ACTIVITIES
+}
+
 export function lessonProgress(slug, s = getState()) {
   const l = s.lessons[slug] || { done: {}, completed: false }
-  const done = ACTIVITIES.filter(([a]) => l.done[a]).length
-  return { done, total: ACTIVITIES.length, completed: !!l.completed }
+  const acts = activitiesFor(slug)
+  const done = acts.filter(([a]) => l.done[a]).length
+  return { done, total: acts.length, completed: !!l.completed }
 }
 
 // Study seconds of a day: active time on the section ("study"); older days only have listen + speak
