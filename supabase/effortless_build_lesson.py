@@ -12,6 +12,8 @@ lesson.json:
   "ms_plain_from": "sentence that starts the repeat-after-me part (optional)",
   "pov": "pov.json", "com": "com.json",
   "vocab": [...], "phrases": [...], "patterns": [...]          (optional)
+  "course": "Flow English", "bucket": "Flow_English_Lesson", "level": "elementary"   (optional, default Original Course, intermediate)
+  "files": {"vocab": null, "ms": "201b … (ms).mp3", "com": "…"}  (optional: audio names that break the pattern; null = none)
 }
 Audio paths follow the bucket naming: <code>a … (main) / b (vocabulary) / c [A|B] (ms) / d (pov) / e (com).
 Mini-Story labels: a "?" sentence (not "…, right?") is a question; in a run of questions only the last pauses;
@@ -22,7 +24,8 @@ import json, os, re, sys
 cfg_path, out = sys.argv[1], sys.argv[2]
 base = os.path.dirname(os.path.abspath(cfg_path))
 cfg = json.load(open(cfg_path, encoding='utf8'))
-AUD = 'Original_Course/'
+AUD = cfg.get('bucket', 'Original_Course') + '/'
+FILES = cfg.get('files', {})
 code, ft = cfg['code'], cfg['file_title']
 def load(f):
     v = json.load(open(os.path.join(base, f), encoding='utf8'))
@@ -60,7 +63,8 @@ def label(rows):
 
 
 ms_cfg = cfg['ms'] if isinstance(cfg['ms'], dict) else {'': cfg['ms']}
-parts = [{'label': lab, 'audio': f"{AUD}{code}c {ft}{(' ' + lab) if lab else ''} (ms).mp3", 'story': label(load(f))}
+ms_files = FILES['ms'] if isinstance(FILES.get('ms'), dict) else {'': FILES['ms']} if 'ms' in FILES else {}
+parts = [{'label': lab, 'audio': AUD + ms_files.get(lab, f"{code}c {ft}{(' ' + lab) if lab else ''} (ms).mp3"), 'story': label(load(f))}
          for lab, f in ms_cfg.items()]
 pov = load(cfg['pov']) if cfg.get('pov') else []
 com = load(cfg['com']) if cfg.get('com') else []
@@ -73,13 +77,14 @@ def J(v):
 
 
 q = lambda s: "'" + s.replace("'", "''") + "'"
+audio = lambda kind, name: 'null' if kind in FILES and FILES[kind] is None else q(AUD + FILES.get(kind, name))
 cols = {
-    'course': q('Original Course'), 'lesson_no': str(cfg['no']), 'slug': q(cfg['slug']), 'title': q(cfg['title']),
-    'level': q('intermediate'), 'description': q(cfg['description']), 'cover': q(cfg['cover']),
-    'main_audio': q(f'{AUD}{code}a {ft} (main).mp3'), 'vocab_audio': q(f'{AUD}{code}b {ft} (vocabulary).mp3'),
+    'course': q(cfg.get('course', 'Original Course')), 'lesson_no': str(cfg['no']), 'slug': q(cfg['slug']), 'title': q(cfg['title']),
+    'level': q(cfg.get('level', 'intermediate')), 'description': q(cfg['description']), 'cover': q(cfg['cover']),
+    'main_audio': audio('main', f'{code}a {ft} (main).mp3'), 'vocab_audio': audio('vocab', f'{code}b {ft} (vocabulary).mp3'),
     'ms_audio': q(parts[0]['audio']),
-    'pov_audio': q(f'{AUD}{code}d {ft} (pov).mp3') if pov else 'null',
-    'com_audio': q(f'{AUD}{code}e {ft} (com).mp3') if com else 'null',
+    'pov_audio': audio('pov', f'{code}d {ft} (pov).mp3') if pov else 'null',
+    'com_audio': audio('com', f'{code}e {ft} (com).mp3') if com else 'null',
     'main_story': J(cfg['main']), 'mini_story': J(parts[0]['story']), 'ms_parts': J(parts),
     'pov_story': J(pov), 'com_story': J(com),
     'vocab': J(cfg.get('vocab', [])), 'phrases': J(cfg.get('phrases', [])), 'patterns': J(cfg.get('patterns', [])),
