@@ -9,7 +9,7 @@ lesson.json:
   "main": [[t, "English", "Tiếng Việt"], ...],
   "ms":  "ms.json"  (cleaned [[t, sentence], ...]; or {"A": "msA.json", "B": "msB.json"}),
   "ms_intro_until": "sentence that ends the story-only intro (optional)", "ms_intro": 0,
-  "ms_plain_from": "sentence that starts the repeat-after-me part (optional)",
+  "ms_plain_from": "sentence that starts the repeat-after-me part (optional; a list when the Mini-Story has parts)",
   "pov": "pov.json", "com": "com.json",
   "vocab": [...], "phrases": [...], "patterns": [...]          (optional)
   "course": "Flow English", "bucket": "Flow_English_Lesson", "level": "elementary"   (optional, default Original Course, intermediate)
@@ -54,7 +54,8 @@ def label(rows):
         r[1] = 's'
     plain = cfg.get('ms_plain_from')                              # repeat-after-me part: no Q&A labels
     if plain:
-        start = next((i for i, r in enumerate(out) if r[2] == plain), len(out))
+        plain = [plain] if isinstance(plain, str) else plain      # one sentence per Mini-Story part
+        start = next((i for i, r in enumerate(out) if r[2] in plain), len(out))
         for r in out[start:]:
             r[1] = 's'
     for i, kind in (cfg.get('ms_overrides') or {}).items():      # {"12": "q"} 1-based line numbers
