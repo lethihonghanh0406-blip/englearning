@@ -12,6 +12,7 @@ lesson.json:
   "ms_plain_from": "sentence that starts the repeat-after-me part (optional; a list when the Mini-Story has parts)",
   "pov": "pov.json", "com": "com.json",
   "vocab": [...], "phrases": [...], "patterns": [...]          (optional)
+  "qa": [["question", "model answer"], ...]                     (optional; else the Q&A tab uses the Mini-Story)
   "course": "Flow English", "bucket": "Flow_English_Lesson", "level": "elementary"   (optional, default Original Course, intermediate)
   "files": {"vocab": null, "ms": "201b … (ms).mp3", "com": "…"}  (optional: audio names that break the pattern; null = none)
 }
@@ -90,6 +91,8 @@ cols = {
     'pov_story': J(pov), 'com_story': J(com),
     'vocab': J(cfg.get('vocab', [])), 'phrases': J(cfg.get('phrases', [])), 'patterns': J(cfg.get('patterns', [])),
 }
+if cfg.get('qa'):                                                 # own Q&A list (lessons without a Mini-Story)
+    cols['qa'] = J(cfg['qa'])
 course = '' if cfg.get('course', 'Original Course') == 'Original Course' else cfg['course'] + ' · '
 sql = (f"\n-- ── {course}Bài {cfg['no']}: {cfg['title']} (chữ từ audio bằng Whisper, đã soát) ──\n"
        f"insert into public.effortless_lessons ({', '.join(cols)})\nvalues (\n  " + ',\n  '.join(cols.values()) + "\n)\n"
