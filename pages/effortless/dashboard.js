@@ -10,6 +10,20 @@ const PATH = [
   ['practice', 'Practice',   'Recall',         'practice', '#dcfce7', '#16a34a'],
 ]
 
+// The whole programme: [name, subtitle, description, level, course name in effortless_lessons (null = not yet), colors]
+const PROGRAMS = [
+  ['Seven Rules', '7 nguyên tắc để nói tiếng Anh xuất sắc', 'Bao gồm 7 chủ đề với 15 bài học giúp bạn nắm được các chìa khóa bí mật để học tiếng Anh hiệu quả nhất.', 'Mọi trình độ', null, '#0f766e', '#ccfbf1'],
+  ['Pimsleur English', 'Tiếng Anh cho người mới bắt đầu', 'Khóa học dành riêng cho người mới bắt đầu: 30 bài học giao tiếp theo tình huống để áp dụng ngay vào thực tế, cùng 21 bài học ngữ âm giúp bạn làm quen với tiếng Anh.', 'Mới bắt đầu', null, '#7c3aed', '#ede9fe'],
+  ['Effortless English Foundation', 'Phản xạ tiếng Anh cho người mất gốc', 'Khóa học nền tảng cho người mới bắt đầu hoặc mất gốc: 15 chủ đề với 45 hoạt động luyện nói giúp cải thiện khả năng nghe và phản xạ tiếng Anh chỉ sau 90 ngày (3 tháng).', 'Mất gốc', null, '#0369a1', '#e0f2fe'],
+  ['Flow English', 'Phản xạ tiếng Anh trôi chảy', 'Bao gồm 20 chủ đề, 80 bài học giúp bạn cải thiện khả năng nghe, nhận diện âm và phản xạ một cách trôi chảy chỉ sau 20 tuần học.', 'A1+ (Sơ cấp)', 'Flow English', '#16a34a', '#dcfce7'],
+  ['Original English', 'Phản xạ tiếng Anh tự động', 'Bao gồm 36 chủ đề, 140 bài học giúp bạn cải thiện khả năng nghe, nhận diện âm và phản xạ một cách tự động chỉ sau 36 tuần học.', 'A2+ (Sơ trung cấp)', 'Original Course', '#2563eb', '#dbeafe'],
+  ['Power English', 'Phản xạ tiếng Anh tự tin', 'Bao gồm 30 chủ đề, 120 bài học giúp bạn cải thiện khả năng nghe, nhận diện âm và phản xạ một cách tự tin khi giao tiếp chỉ sau 30 tuần học.', 'B1+ (Trung cấp)', null, '#ea580c', '#ffedd5'],
+  ['Pronunciation English', 'Luyện phát âm tiếng Anh chuẩn Mỹ', 'Bao gồm 20 chủ điểm, 60 bài học về kỹ thuật phát âm theo chuẩn IPA giúp bạn chuẩn hóa và phản xạ tiếng Anh tự tin khi giao tiếp chỉ sau 20 tuần học.', 'B1+ (Trung cấp)', null, '#db2777', '#fce7f3'],
+  ['Real English', 'Tiếng Anh giao tiếp thực tế', 'Bao gồm 30 chủ điểm, 120 bài học về các tình huống giao tiếp thực tế của người bản ngữ Mỹ, giúp bạn cải thiện khả năng nghe, nhận diện âm và phản xạ tự tin chỉ sau 30 tuần học.', 'B2+ (Cao trung cấp)', null, '#b45309', '#fef3c7'],
+  ['Succeed English', 'Tiếng Anh để thành công', 'Bao gồm 10 chủ điểm, 30 bài học về chuyên đề tư duy trong kinh doanh, giúp bạn phản xạ tự tin khi giao tiếp chỉ sau 10 tuần học.', 'B2+ (Trung cao cấp)', null, '#4338ca', '#e0e7ff'],
+  ['Business English Conversations', 'Tiếng Anh giao tiếp trong kinh doanh', 'Bao gồm 16 chủ điểm, 60 bài học về chuyên đề tư duy trong kinh doanh, giúp bạn phản xạ tự tin khi giao tiếp chỉ sau 16 tuần học.', 'C+ (Cao cấp)', null, '#334155', '#e2e8f0'],
+]
+
 const ACT_TEXT = {
   main:      ['🎧', '#dbeafe', 'Luyện nghe',            'Main Audio'],
   ms:        ['✅', '#dcfce7', 'Hoàn thành Mini-Story',  'Mini-Story'],
@@ -118,6 +132,15 @@ export default function dashboardView({ app, lessons }) {
               `<div class="ee-link" style="margin-top:10px">Luyện ngay →</div>`, `navigate('/english/practice')`)}
           </div>
         </div>
+
+        <!-- Whole programme -->
+        <div class="ee-card">
+          <div class="ee-h" style="font-size:18px">500+ bài học luyện nói tiếng Anh theo cấp độ</div>
+          <div class="ee-muted" style="margin:4px 0 16px">Từ chương trình Effortless English của A.J. Hoge — chọn khóa phù hợp với trình độ của bạn.</div>
+          <div class="ee-grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+            ${PROGRAMS.map(p => program(p, lessons)).join('')}
+          </div>
+        </div>
       </div>
 
       <!-- Right column -->
@@ -178,6 +201,20 @@ function course(icon, bg, title, sub, footer, onclick, tag) {
       <div style="font-size:14px;font-weight:600">${title}</div>
       <div class="ee-muted">${sub}</div>
       ${footer}
+    </div>
+  </div>`
+}
+
+function program([name, sub, desc, level, courseName, fg, bg], lessons) {
+  const count = courseName ? lessons.filter(l => l.course === courseName).length : 0
+  return `<div ${count ? `onclick="navigate('${BASE}/lessons')"` : ''} style="border:1px solid var(--line);border-top:4px solid ${fg};border-radius:14px;padding:14px 16px;background:#fff;display:flex;flex-direction:column;${count ? 'cursor:pointer' : ''}">
+    <div style="font-size:15px;font-weight:700;color:${fg}">${esc(name)}</div>
+    <div style="font-size:14px;font-weight:600;margin:2px 0 8px">${esc(sub)}</div>
+    <div style="font-size:13px;color:var(--ink2);line-height:1.55;flex:1">${esc(desc)}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <span style="background:${bg};color:${fg};font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px">${esc(level)}</span>
+      ${count ? `<span class="ee-link" style="font-size:13px">${count} bài đã có · Vào học →</span>`
+              : `<span class="ee-muted" style="font-size:12px">Sắp ra mắt</span>`}
     </div>
   </div>`
 }
