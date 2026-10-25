@@ -38,7 +38,7 @@ export const DAILY_GOAL_MIN = ROUTINE.reduce((n, r) => n + r.min, 0)
 
 export const PRICE = 199_000          // gói trọn đời, mở khóa mọi bài (Bài 1 học miễn phí)
 
-const COURSES = ['Original Course', 'Flow English', 'Business English']   // course order in the lesson list
+const COURSES = ['Original Course', 'Flow English', 'Business English', 'Power English']   // course order in the lesson list
 let lessonsCache = null, cacheKey = null
 const noMiniStory = new Set()                                          // slugs of lessons that only have a Main Audio
 let user = null, pro = false
