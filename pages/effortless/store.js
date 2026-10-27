@@ -1,6 +1,5 @@
 // Effortless English — lesson data (Supabase) + learner progress (localStorage, per user)
 import { supabase } from '../../supabase/client.js'
-import { SUPABASE_URL } from '../../config/env.js'
 
 export const BASE = '/english/effortless'
 
@@ -75,11 +74,12 @@ export async function loadUser() {
 export function getUser() { return user }
 export function isPro() { return pro }
 
-// Audio paths are full URLs or "bucket/path/file.mp3" in public Supabase Storage
+// Audio paths are full URLs or "bucket/path/file.mp3"; the files live in Cloudflare R2 under the same keys
+const AUDIO_BASE = 'https://audio.learnlang.top'
 export function audioUrl(path) {
   if (!path) return null
   if (/^https?:/.test(path)) return path
-  return `${SUPABASE_URL}/storage/v1/object/public/${path.split('/').map(encodeURIComponent).join('/')}`
+  return `${AUDIO_BASE}/${path.split('/').map(encodeURIComponent).join('/')}`
 }
 
 export function mainLines(lesson) {
