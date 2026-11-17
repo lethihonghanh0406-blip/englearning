@@ -13,14 +13,14 @@ let TOPICS = []
 
 // Doc cau luyen dich tu bang translate_sentences tren Supabase (qua REST API)
 async function loadTopics() {
-  const url = `${SUPABASE_URL}/rest/v1/translate_sentences?select=topic_no,topic_title,idx,vi,en,start_sec,vi_sec,en_sec&order=topic_no.asc,idx.asc`
+  const url = `${SUPABASE_URL}/rest/v1/translate_sentences?select=topic_no,topic_title,idx,vi,en,en_ipa,start_sec,vi_sec,en_sec&order=topic_no.asc,idx.asc`
   const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const rows = await res.json()
   const byTopic = new Map()
   for (const r of rows) {
     if (!byTopic.has(r.topic_no)) byTopic.set(r.topic_no, { n: r.topic_no, title: r.topic_title, items: [] })
-    byTopic.get(r.topic_no).items.push({ vi: r.vi, en: r.en, s: Number(r.start_sec), v: Number(r.vi_sec), e: Number(r.en_sec) })
+    byTopic.get(r.topic_no).items.push({ vi: r.vi, en: r.en, ipa: r.en_ipa || '', s: Number(r.start_sec), v: Number(r.vi_sec), e: Number(r.en_sec) })
   }
   TOPICS = [...byTopic.values()]
 }
@@ -76,7 +76,7 @@ function rows(topic) {
         <div class="tr-num">${idx + 1}</div>
         <div class="tr-vi">${esc(it.vi)}</div>
         <button class="tr-reveal" data-idx="${idx}">Hiện tiếng Anh</button>
-        <div class="tr-en" data-en="${idx}" hidden>${esc(it.en)}</div>
+        <div class="tr-en" data-en="${idx}" hidden>${esc(it.en)}${it.ipa ? `<div class="tr-ipa">/${esc(it.ipa)}/</div>` : ''}</div>
       </div>
       <div class="tr-right">
         <button class="tr-play" data-idx="${idx}">▶ Nghe</button>
@@ -103,6 +103,7 @@ const STYLE = `
 .tr-num{font-size:12px;color:#94a3b8}
 .tr-vi{font-size:16px;color:#0f172a;line-height:1.4}
 .tr-en{font-size:15px;color:#2563eb;font-style:italic;line-height:1.4}
+.tr-ipa{font-family:'Segoe UI','Doulos SIL','Charis SIL',serif;font-style:normal;font-size:14px;color:#64748b;margin-top:2px}
 .tr-reveal{align-self:flex-start;border:none;background:#f1f5f9;color:#334155;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer}
 .tr-right{display:flex;align-items:center}
 .tr-play{border:none;background:#16a34a;color:#fff;border-radius:10px;padding:10px 16px;font-size:14px;cursor:pointer;white-space:nowrap}
