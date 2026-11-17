@@ -25,7 +25,7 @@ import chineseBooksPage from './pages/chinese-books.js'
 import effortlessPage from './pages/effortless/index.js'
 import translatePage  from './pages/translate/page.js'
 import { supabase }   from './supabase/client.js'
-import { requireAuth } from './utils/auth.js'
+import { requireAuth, requirePro } from './utils/auth.js'
 
 const app  = document.getElementById("app")
 const home = document.getElementById("home")
@@ -59,7 +59,7 @@ function router() {
   else if (path === '/english/movies')    showPage(moviesPage)
   else if (path === '/english/practice')  showPage(practicePage)
   else if (path === '/english/effortless' || path.startsWith('/english/effortless/')) showPage(effortlessPage, params)
-  else if (path === '/english/translate')      showPage(translatePage)
+  else if (path === '/english/translate')      requirePro(() => showPage(translatePage))
   else if (path === '/english/vocab')          showPage(vocabHubPage)
   else if (path === '/english/vocab/body')     showPage(vocabBodyPage)
   else if (path === '/english/vocab/camping')    showPage(vocabCampingPage)

@@ -15,11 +15,17 @@ create table if not exists public.translate_sentences (
 alter table public.translate_sentences add column if not exists en_ipa text not null default '';
 alter table public.translate_sentences enable row level security;
 
+-- Chi tai khoan Pro (con han) doc duoc cau luyen dich
 drop policy if exists "public read translate_sentences" on public.translate_sentences;
-create policy "public read translate_sentences"
+drop policy if exists "pro read translate_sentences" on public.translate_sentences;
+create policy "pro read translate_sentences"
   on public.translate_sentences for select
-  to anon, authenticated
-  using (true);
+  to authenticated
+  using (exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.plan = 'pro'
+      and (p.plan_expires_at is null or p.plan_expires_at > now())
+  ));
 
 insert into public.translate_sentences (topic_no, topic_title, idx, vi, en, en_ipa, start_sec, vi_sec, en_sec) values
 (1,'Family – Gia đình',1,'Gia đình tôi có bốn người.','There are four people in my family.','ðɛr ər fɔr ˈpipəl ɪn maɪ ˈfæməli',0.0,2.135,2.605),

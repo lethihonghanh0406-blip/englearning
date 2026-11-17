@@ -1,4 +1,5 @@
 import { SUPABASE_URL, SUPABASE_KEY } from '../../config/env.js'
+import { supabase } from '../../supabase/client.js'
 
 // Noi dat cac file Chu_de_NN.mp3 (da upload). De trong thi trang se bao chua cau hinh.
 const AUDIO_BASE = 'https://audio.learnlang.top/Luyen%20dich%20tieng%20Anh'
@@ -15,7 +16,10 @@ let TOPICS = []
 // Doc cau luyen dich tu bang translate_sentences tren Supabase (qua REST API)
 async function loadTopics() {
   const url = `${SUPABASE_URL}/rest/v1/translate_sentences?select=topic_no,topic_title,idx,vi,en,en_ipa,start_sec,vi_sec,en_sec&order=topic_no.asc,idx.asc`
-  const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } })
+  // Dung token cua nguoi dung dang nhap de RLS chi cho tai khoan Pro doc
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token || SUPABASE_KEY
+  const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` } })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const rows = await res.json()
   const byTopic = new Map()
