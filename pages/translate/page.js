@@ -1,6 +1,6 @@
-import { TRANSLATION_TOPICS } from './data.js'
+import { SUPABASE_URL, SUPABASE_KEY } from '../../config/env.js'
 
-// Noi dat cac file Chu_de_NN.wav (da upload). De trong thi trang se bao chua cau hinh.
+// Noi dat cac file Chu_de_NN.mp3 (da upload). De trong thi trang se bao chua cau hinh.
 const AUDIO_BASE = 'https://audio.learnlang.top/Luyen%20dich%20tieng%20Anh'
 
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
@@ -9,6 +9,21 @@ let audio = null
 let stopAt = 0
 let activeBtn = null
 let currentTopic = 0
+let TOPICS = []
+
+// Doc cau luyen dich tu bang translate_sentences tren Supabase (qua REST API)
+async function loadTopics() {
+  const url = `${SUPABASE_URL}/rest/v1/translate_sentences?select=topic_no,topic_title,idx,vi,en,start_sec,vi_sec,en_sec&order=topic_no.asc,idx.asc`
+  const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const rows = await res.json()
+  const byTopic = new Map()
+  for (const r of rows) {
+    if (!byTopic.has(r.topic_no)) byTopic.set(r.topic_no, { n: r.topic_no, title: r.topic_title, items: [] })
+    byTopic.get(r.topic_no).items.push({ vi: r.vi, en: r.en, s: Number(r.start_sec), v: Number(r.vi_sec), e: Number(r.en_sec) })
+  }
+  TOPICS = [...byTopic.values()]
+}
 
 function ensureAudio() {
   if (audio) return audio
@@ -49,7 +64,7 @@ function playItem(topic, item, btn) {
 }
 
 function topicChips() {
-  return TRANSLATION_TOPICS.map((t, i) =>
+  return TOPICS.map((t, i) =>
     `<button class="tr-chip ${i === currentTopic ? 'active' : ''}" data-i="${i}">${String(t.n).padStart(2, '0')}. ${esc(t.title)}</button>`
   ).join('')
 }
@@ -120,8 +135,18 @@ export default function translatePage(app) {
     </div>`
 
   const list = app.querySelector('#tr-list')
+  list.innerHTML = '<div class="tr-sub">Đang tải câu...</div>'
+  loadTopics()
+    .then(() => init(app, list))
+    .catch(err => {
+      list.innerHTML = `<div class="tr-sub">Không tải được câu luyện dịch (${esc(err.message)}).</div>`
+    })
+}
+
+function init(app, list) {
+  app.querySelector('#tr-chips').innerHTML = topicChips()
   const renderList = () => {
-    const topic = TRANSLATION_TOPICS[currentTopic]
+    const topic = TOPICS[currentTopic]
     list.innerHTML = rows(topic)
     stopPlayback()
   }
@@ -136,7 +161,7 @@ export default function translatePage(app) {
   })
 
   list.addEventListener('click', (e) => {
-    const topic = TRANSLATION_TOPICS[currentTopic]
+    const topic = TOPICS[currentTopic]
     const reveal = e.target.closest('.tr-reveal')
     if (reveal) {
       const en = list.querySelector(`[data-en="${reveal.dataset.idx}"]`)
