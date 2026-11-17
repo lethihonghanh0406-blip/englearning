@@ -110,6 +110,7 @@ function dictRows(topic) {
       <div class="tr-left">
         <div class="tr-num">${idx + 1}</div>
         <div class="tr-vi">${esc(it.vi)}</div>
+        ${ipaBlock(it)}
         <div class="tr-hint">Nghe câu tiếng Anh rồi gõ lại</div>
         <input class="tr-input" data-idx="${idx}" placeholder="Gõ câu tiếng Anh..." autocomplete="off" spellcheck="false">
         <div class="tr-result" data-res="${idx}" hidden></div>
