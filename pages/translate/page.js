@@ -37,7 +37,7 @@ function playItem(topic, item, btn) {
   }
   stopPlayback()
   const a = ensureAudio()
-  const file = `${AUDIO_BASE}/Chu_de_${String(topic.n).padStart(2, '0')}.wav`
+  const file = `${AUDIO_BASE}/Chu_de_${String(topic.n).padStart(2, '0')}.mp3`
   if (a.src !== file) a.src = file
   // Phat tieng Viet, nghi 3s, phat tieng Anh (khop voi file ghep)
   stopAt = item.s + item.v + 3.0 + item.e
