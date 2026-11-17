@@ -154,7 +154,7 @@ export const TRANSLATION_TOPICS = [
   "items": [
    {
     "vi": "Tôi thức dậy lúc sáu giờ sáng.",
-    "en": "I wake up at six o&apos;clock in the morning.",
+    "en": "I wake up at six o'clock in the morning.",
     "s": 0.0,
     "v": 2.33,
     "e": 4.005
@@ -238,7 +238,7 @@ export const TRANSLATION_TOPICS = [
    },
    {
     "vi": "Tôi thường kiểm tra email lúc tám giờ.",
-    "en": "I usually check my email at eight o&apos;clock.",
+    "en": "I usually check my email at eight o'clock.",
     "s": 125.6,
     "v": 2.755,
     "e": 4.305
@@ -443,7 +443,7 @@ export const TRANSLATION_TOPICS = [
  },
  {
   "n": 4,
-  "title": "Food &amp; Drinks – Đồ ăn và thức uống",
+  "title": "Food & Drinks – Đồ ăn và thức uống",
   "total": 200.305,
   "items": [
    {
@@ -1043,7 +1043,7 @@ export const TRANSLATION_TOPICS = [
    },
    {
     "vi": "Công việc của tôi bắt đầu lúc tám giờ.",
-    "en": "My work starts at eight o&apos;clock.",
+    "en": "My work starts at eight o'clock.",
     "s": 10.15,
     "v": 2.52,
     "e": 3.685
@@ -2128,7 +2128,7 @@ export const TRANSLATION_TOPICS = [
    },
    {
     "vi": "Bảo vệ môi trường là trách nhiệm của mọi người.",
-    "en": "Protecting the environment is everyone&apos;s responsibility.",
+    "en": "Protecting the environment is everyone's responsibility.",
     "s": 91.595,
     "v": 3.065,
     "e": 4.995
@@ -2163,7 +2163,7 @@ export const TRANSLATION_TOPICS = [
    },
    {
     "vi": "Nhiệt độ Trái Đất đang tăng lên.",
-    "en": "The Earth&apos;s temperature is rising.",
+    "en": "The Earth's temperature is rising.",
     "s": 144.81,
     "v": 2.285,
     "e": 3.745
@@ -2207,7 +2207,7 @@ export const TRANSLATION_TOPICS = [
  },
  {
   "n": 16,
-  "title": "City &amp; Countryside – Thành thị và nông thôn",
+  "title": "City & Countryside – Thành thị và nông thôn",
   "total": 215.27,
   "items": [
    {
@@ -2443,7 +2443,7 @@ export const TRANSLATION_TOPICS = [
    },
    {
     "vi": "Chúng tôi đi chùa vào ngày đầu năm mới.",
-    "en": "We go to the pagoda on New Year&apos;s Day.",
+    "en": "We go to the pagoda on New Year's Day.",
     "s": 129.285,
     "v": 2.725,
     "e": 3.995
@@ -2541,7 +2541,7 @@ export const TRANSLATION_TOPICS = [
    },
    {
     "vi": "Chúng ta nên tôn trọng ý kiến của người khác.",
-    "en": "We should respect other people&apos;s opinions.",
+    "en": "We should respect other people's opinions.",
     "s": 52.51,
     "v": 2.805,
     "e": 4.285
@@ -2800,7 +2800,7 @@ export const TRANSLATION_TOPICS = [
   "items": [
    {
     "vi": "Dân số thành phố đang tăng nhanh.",
-    "en": "The city&apos;s population is growing fast.",
+    "en": "The city's population is growing fast.",
     "s": 0.0,
     "v": 2.325,
     "e": 4.365

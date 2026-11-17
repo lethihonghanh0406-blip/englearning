@@ -73,9 +73,16 @@ const STYLE = `
 .tr-wrap{max-width:960px;margin:0 auto;padding:16px;font-family:inherit}
 .tr-title{font-size:22px;font-weight:700;margin:8px 0 4px}
 .tr-sub{color:#64748b;font-size:14px;margin-bottom:12px}
-.tr-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
-.tr-chip{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;color:#0f172a}
-.tr-chip.active{background:#2563eb;border-color:#2563eb;color:#fff}
+.tr-layout{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start}
+.tr-chips{display:flex;flex-direction:column;gap:4px;position:sticky;top:12px;max-height:85vh;overflow-y:auto;padding-right:4px}
+.tr-chip{border:1px solid transparent;background:transparent;border-radius:8px;padding:8px 10px;font-size:14px;cursor:pointer;color:#0f172a;text-align:left;width:100%}
+.tr-chip:hover{background:#f1f5f9}
+.tr-chip.active{background:#2563eb;color:#fff}
+@media (max-width:760px){
+  .tr-layout{grid-template-columns:1fr}
+  .tr-chips{flex-direction:row;overflow-x:auto;overflow-y:hidden;position:static;max-height:none;padding-bottom:6px}
+  .tr-chip{width:auto;white-space:nowrap;border:1px solid #cbd5e1;border-radius:999px}
+}
 .tr-row{display:flex;gap:12px;align-items:stretch;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
 .tr-left{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .tr-num{font-size:12px;color:#94a3b8}
@@ -91,7 +98,8 @@ const STYLE = `
   .tr-vi{font-size:15px}
 }
 @media (prefers-color-scheme: dark){
-  .tr-chip{background:#0f172a;color:#e2e8f0;border-color:#334155}
+  .tr-chip{color:#e2e8f0}
+  .tr-chip:hover{background:#1e293b}
   .tr-row{background:#0f172a;border-color:#334155}
   .tr-vi{color:#e2e8f0}
   .tr-reveal{background:#1e293b;color:#cbd5e1}
@@ -105,8 +113,10 @@ export default function translatePage(app) {
     <div class="tr-wrap">
       <div class="tr-title">Luyện dịch tiếng Anh – 20 chủ đề</div>
       <div class="tr-sub">Đọc câu tiếng Việt, tự nghĩ câu tiếng Anh, rồi bấm “Hiện tiếng Anh” để kiểm tra. Nút “Nghe” phát tiếng Việt, nghỉ 3 giây, rồi phát tiếng Anh.</div>
-      <div class="tr-chips" id="tr-chips">${topicChips()}</div>
-      <div id="tr-list"></div>
+      <div class="tr-layout">
+        <div class="tr-chips" id="tr-chips">${topicChips()}</div>
+        <div id="tr-list"></div>
+      </div>
     </div>`
 
   const list = app.querySelector('#tr-list')
