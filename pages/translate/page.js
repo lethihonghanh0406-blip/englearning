@@ -1,7 +1,7 @@
 import { TRANSLATION_TOPICS } from './data.js'
 
 // Noi dat cac file Chu_de_NN.wav (da upload). De trong thi trang se bao chua cau hinh.
-const AUDIO_BASE = 'https://pub-693e3a32630c47669ee5eee2b66d4e8c.r2.dev/Luyen%20dich%20tieng%20Anh'
+const AUDIO_BASE = 'https://audio.learnlang.top/Luyen%20dich%20tieng%20Anh'
 
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 
